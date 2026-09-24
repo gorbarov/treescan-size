@@ -29,6 +29,20 @@ if args.contains("--snapshot") {
         }
     }
     RunLoop.current.run()
+} else if args.contains("--uitest") {
+    guard let rootIdx = args.firstIndex(of: "--root"), rootIdx + 1 < args.count else {
+        fputs("--root <папка> обязателен\n", stderr)
+        exit(1)
+    }
+    let root = args[rootIdx + 1]
+    NSApplication.shared.setActivationPolicy(.regular)
+    Task { @MainActor in
+        let f = runUITest(root: root)
+        let jsonData = try! JSONSerialization.data(withJSONObject: f, options: [.sortedKeys])
+        fputs(String(data: jsonData, encoding: .utf8)! + "\n", stdout)
+        exit(0)
+    }
+    RunLoop.current.run()
 } else {
     // Нормальный запуск GUI
     NSApplication.shared.setActivationPolicy(.regular)

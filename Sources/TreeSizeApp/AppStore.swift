@@ -33,6 +33,9 @@ public final class AppStore: ObservableObject {
 
     @Published public var showPlaces = false
 
+    /// Рамки размеченных вью — без @Published, чтобы не было цикла перерисовки
+    public var uiFrames: [String: CGRect] = [:]
+
     public init() {}
 
     // MARK: - Режим

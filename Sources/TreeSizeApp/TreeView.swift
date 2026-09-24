@@ -211,6 +211,7 @@ struct TreeRowView: View {
             .zIndex(1) // поверх полоски
         }
         .frame(height: 26)
+        .uiTag("row:" + displayName)
     }
 
     // MARK: - Полоска

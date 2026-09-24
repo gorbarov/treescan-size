@@ -28,6 +28,8 @@ struct ContentView: View {
             }
         }
         .background(Color.windowBg)
+        .onPreferenceChange(UIFramesKey.self) { store.uiFrames = $0 }
+        .coordinateSpace(name: "uitest")
     }
 
     // MARK: - Панель инструментов (как .top в эталоне)
@@ -67,13 +69,33 @@ struct ContentView: View {
             }
             .buttonStyle(.borderless)
 
-            // Сегмент Размер | На диске
-            Picker("", selection: $store.mode) {
-                Text("Размер").tag(AppStore.SizeMode.size)
-                Text("На диске").tag(AppStore.SizeMode.alloc)
+            // Сегмент Размер | На диске — заменяем Picker на две Button (чтобы попадать в половинки)
+            HStack(spacing: 0) {
+                Button("Размер") { store.mode = .size }
+                    .buttonStyle(.plain)
+                    .font(.system(size: 12))
+                    .fontWeight(store.mode == .size ? .semibold : .regular)
+                    .foregroundColor(store.mode == .size ? .white : .primary)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 4)
+                    .background(store.mode == .size ? Color.accentLinkColor : Color.clear)
+                    .cornerRadius(6)
+                    .uiTag("mode:size")
+
+                Button("На диске") { store.mode = .alloc }
+                    .buttonStyle(.plain)
+                    .font(.system(size: 12))
+                    .fontWeight(store.mode == .alloc ? .semibold : .regular)
+                    .foregroundColor(store.mode == .alloc ? .white : .primary)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 4)
+                    .background(store.mode == .alloc ? Color.accentLinkColor : Color.clear)
+                    .cornerRadius(6)
+                    .uiTag("mode:alloc")
             }
-            .pickerStyle(.segmented)
             .frame(width: 180)
+            .background(Color.panel2Bg)
+            .cornerRadius(8)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
@@ -304,6 +326,7 @@ struct ContentView: View {
                         }
                     }
                 )
+                .uiTag("tab:" + label)
         }
         .buttonStyle(.plain)
     }

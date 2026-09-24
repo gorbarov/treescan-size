@@ -200,6 +200,7 @@ struct PieView: View {
                 .lineLimit(1)
                 .frame(width: 58, alignment: .trailing)
         }
+        .uiTag("legend:" + slice.title)
     }
 
     private func subtitle(for slice: AppStore.PieSlice) -> String {

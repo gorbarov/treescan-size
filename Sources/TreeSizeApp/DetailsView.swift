@@ -83,6 +83,7 @@ struct DetailsView: View {
                         .lineLimit(1)
                         .truncationMode(.tail)
                 }
+                .uiTag("cell:" + row.displayName)
             }
             .width(min: 110, ideal: 140)
 
