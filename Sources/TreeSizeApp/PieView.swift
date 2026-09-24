@@ -46,7 +46,6 @@ struct PieView: View {
     private var centerTitle: String {
         guard let dir = store.viewDir else { return "" }
         if dir.parent == nil {
-            // Корень: последний сегмент пути
             let path = store.result?.root ?? dir.name
             return (path as NSString).lastPathComponent
         }
@@ -71,32 +70,17 @@ struct PieView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                // Основное содержимое: диаграмма слева, легенда справа
-                // Как .piebox в эталоне: display:flex; gap:28px; padding:18px 22px; align-items:flex-start
                 HStack(alignment: .top, spacing: 28) {
-                    // Круговая диаграмма — clamp(200px, 36%, 380px), квадратная
+                    // Кольцо: 36% ширины, макс 380, квадратное
                     pieChartContainer
-                        .frame(
-                            minWidth: 200,
-                            maxWidth: 380
-                        )
-                        .aspectRatio(1, contentMode: .fit)
 
-                    // Легенда занимает остаток
+                    // Легенда прижата к верху, занимает остаток
                     legendView
                         .frame(maxWidth: .infinity, alignment: .top)
                 }
-                .padding(EdgeInsets(top: 18, leading: 22, bottom: 18, trailing: 22))
-
-                // Подсказка сразу под легендой — мелким серым
-                if !slices.isEmpty {
-                    Text("Клик по сектору или строке открывает папку. Дерево слева — то же самое, полосками.")
-                        .font(.system(size: 12))
-                        .foregroundColor(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 8)
-                        .padding(.bottom, 6)
-                }
+                .padding(.horizontal, 22)
+                .padding(.top, 18)
+                .padding(.bottom, 20)
             }
         }
         .background(Color.panelBg)
@@ -104,10 +88,10 @@ struct PieView: View {
 
     // MARK: - Круговая диаграмма
 
-    /// Контейнер для кольца: квадратный, с обёрткой Chart
+    /// Кольцо: 36 % ширины контейнера, макс 380, квадратное
     private var pieChartContainer: some View {
         GeometryReader { geo in
-            let size = min(geo.size.width, geo.size.height)
+            let side = min(geo.size.width * 0.36, 380)
             Chart {
                 ForEach(slices.indices, id: \.self) { i in
                     let sl = slices[i]
@@ -121,11 +105,7 @@ struct PieView: View {
                     .opacity(hoveredIndex == nil || hoveredIndex == i ? 1 : 0.3)
                 }
             }
-            .chartOverlay { proxy in
-                Color.clear
-            }
             .overlay(
-                // Текст в центре кольца
                 VStack(spacing: 2) {
                     Text(fmtBytes(total))
                         .font(.system(size: 17, weight: .bold))
@@ -137,16 +117,19 @@ struct PieView: View {
                 }
                 .allowsHitTesting(false)
             )
-            .frame(width: size, height: size)
+            .frame(width: side, height: side)
             .position(x: geo.size.width / 2, y: geo.size.height / 2)
         }
+        .frame(maxWidth: 380)
+        .aspectRatio(1, contentMode: .fit)
     }
 
     // MARK: - Легенда
 
     private var legendView: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: 0) {
+            // VStack(alignment: .leading, spacing: 4) как колонка, прижатая к левому и верхнему краю
+            VStack(alignment: .leading, spacing: 4) {
                 ForEach(slices.indices, id: \.self) { i in
                     let sl = slices[i]
                     let color = sl.colorIndex != nil ? pieColor(at: sl.colorIndex!) : greyColor
@@ -168,22 +151,30 @@ struct PieView: View {
                             handleClick(index: i)
                         }
                 }
+
+                // Подсказка — последний элемент VStack легенды
+                Text("Клик по сектору или строке открывает папку. Дерево слева — то же самое, полосками.")
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal, 8)
+                    .padding(.top, 6)
             }
+            .padding(.top, 4)
         }
     }
 
-    /// Одна строка легенды — 4 колонки: квадрат, имя+подпись, размер, процент
+    /// Одна строка легенды — все строки имеют одинаковую раскладку колонок.
+    /// Как .lg в эталоне: display:grid; grid-template-columns:12px minmax(0,1fr) auto 58px; gap:2px 12px;
     private func legendRow(slice: AppStore.PieSlice, color: Color, pct: Double, index: Int) -> some View {
-        // GridLayout: 12px квадрат | 1fr имя | auto размер | 58px процент, gap 12px 2px
-        HStack(spacing: 12) {
-            // Цветной квадрат
+        HStack(alignment: .center, spacing: 12) {
+            // Квадрат 12×12
             RoundedRectangle(cornerRadius: 3)
                 .fill(color)
                 .frame(width: 12, height: 12)
 
-            // Имя + подпись (растягивается)
+            // Имя + подпись — растягивается, прижато к левому краю
             VStack(alignment: .leading, spacing: 0) {
-                Text(sliceTitle(slice))
+                Text(slice.title)
                     .font(.system(size: 13))
                     .fontWeight(slice.node?.kind == .dir ? .bold : .regular)
                     .lineLimit(1)
@@ -194,33 +185,27 @@ struct PieView: View {
                     .foregroundColor(.secondary)
                     .lineLimit(1)
             }
-            .layoutPriority(1)
+            .frame(maxWidth: .infinity, alignment: .leading)
 
-            // Размер жирным
+            // Размер — 90pt, прижато к правому краю
             Text(fmtBytes(slice.value))
                 .fontWeight(.bold)
                 .font(.system(size: 13).monospacedDigit())
                 .lineLimit(1)
-                .fixedSize()
+                .frame(width: 90, alignment: .trailing)
 
-            // Процент серым — 58 pt
+            // Процент — 58pt, прижато к правому краю
             Text(fmtPct(pct))
                 .font(.system(size: 12).monospacedDigit())
                 .foregroundColor(.secondary)
-                .frame(width: 58, alignment: .trailing)
                 .lineLimit(1)
+                .frame(width: 58, alignment: .trailing)
         }
-    }
-
-    /// Имя сектора: папки жирным, файлы обычным
-    private func sliceTitle(_ slice: AppStore.PieSlice) -> String {
-        slice.title
     }
 
     /// Подпись под именем в легенде (как sub() в renderPie эталона)
     private func subtitle(for slice: AppStore.PieSlice) -> String {
         guard let node = slice.node else {
-            // «Прочее»: N элементов помельче (как в эталоне renderPie sub())
             let count = Int64(slice.restCount)
             return plural(count, "элемент", "элемента", "элементов") + " помельче"
         }
@@ -234,7 +219,6 @@ struct PieView: View {
             }
             return result
         } else {
-            // Файл: группа файла
             let ext = extOf(node.name)
             let gIdx = groupIndex(forExt: ext)
             return fileGroups[gIdx].title
@@ -246,7 +230,6 @@ struct PieView: View {
         guard index < slices.count else { return }
         let sl = slices[index]
         guard let node = sl.node else {
-            // «Прочее» → переключиться на «Детали»
             store.tab = .details
             return
         }
