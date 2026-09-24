@@ -185,10 +185,9 @@ struct ContentView: View {
 
     private var mainSplit: some View {
         HSplitView {
-            // Левая панель — дерево (заглушка)
-            Text("дерево — задание 05")
+            // Левая панель — дерево (задание 05)
+            TreeView()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color(nsColor: .controlBackgroundColor))
                 .frame(minWidth: 380, idealWidth: 610)
 
             // Правая панель — вкладки (заглушки)
