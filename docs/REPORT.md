@@ -811,3 +811,29 @@ $ tools/check_task.sh 03
 - **Созданы**: `Sources/TreeSizeCore/L10n.swift`, `Sources/TreeSizeCore/L10n_en.swift`, `Sources/TreeSizeCore/L10n_zh.swift`
 - **Изменены**: `Sources/TreeSizeCore/Format.swift` (fmtBytes, fmtPct, fmtDate, plural, fmtCount для локалей), `Sources/TreeSizeCore/Model.swift` (plural через tr), `Sources/TreeSizeApp/ContentView.swift` (tr во всех строках), `Sources/TreeSizeApp/AgeView.swift`, `Sources/TreeSizeApp/CrumbsView.swift`, `Sources/TreeSizeApp/DetailsView.swift`, `Sources/TreeSizeApp/ExtView.swift`, `Sources/TreeSizeApp/TopView.swift`, `Sources/TreeSizeApp/DupsView.swift`, `Sources/TreeSizeApp/PieView.swift`, `Sources/TreeSizeApp/PlacesView.swift`, `Sources/TreeSizeApp/TreeView.swift`, `Sources/TreeSizeApp/TreeSizeUIApp.swift`, `Sources/TreeSizeApp/NodeMenu.swift`, `Sources/TreeSizeApp/SelfTest.swift`, `Sources/TreeSizeApp/UITest.swift`, `Sources/TreeSizeApp/AppStore.swift`, `Sources/tscan/main.swift`
 - **Коммит**: `bdeb85f` — «Задание 14: английский и китайский интерфейс»
+
+## Задание 15. Разметка в плашках и подписях
+
+**Что сделано:**
+
+1. Добавлена функция-хелпер `mdText(_:)` в `Sources/TreeSizeApp/TreeSizeUIApp.swift` — парсит markdown через `AttributedString(markdown:options:)` с `inlineOnlyPreservingWhitespace`, при ошибке возвращает обычный `Text`.
+
+2. Найдены все строки с `**` через `grep -rn '\*\*' Sources/TreeSizeCore/L10n_*.swift Sources/TreeSizeApp`:
+   - **ContentView.swift**: Dropbox-баннер (`Text` → `mdText`), Stuck-предупреждение (`Text(msg)` → `mdText(msg)`)
+   - **DupsView.swift**: обе строки-подписи с кандидатами в дубли (две ветки `if/else`)
+   - **TopView.swift**: подпись с «N из M крупнейших файлов» (две ветки — русская и английская)
+
+3. Больше ничего не менялось.
+
+**Сборка:** 0 неудач. Собралась с первой попытки.
+
+**Проверка:**
+- `tools/check_task.sh 03`: ЗАДАНИЕ 03: OK
+- `tools/check_task.sh 15`: ЗАДАНИЕ 15: снимок готов, его смотрит приёмщик
+- Дополнительные снимки в en/ru с `--tab dups`: созданы `/tmp/ts-build/snap_15.png` (en) и `/tmp/ts-build/snap_15_ru.png` (ru), ~31 КБ каждый.
+
+**Изменённые файлы:**
+- `Sources/TreeSizeApp/TreeSizeUIApp.swift` — добавлен `mdText`
+- `Sources/TreeSizeApp/ContentView.swift` — Dropbox и Stuck на `mdText`
+- `Sources/TreeSizeApp/DupsView.swift` — обе подписи дублей на `mdText`
+- `Sources/TreeSizeApp/TopView.swift` — подпись топа на `mdText`
