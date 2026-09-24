@@ -6,3 +6,4 @@ build/
 .pi-home/
 docs/runs/*.jsonl
 docs/runs/*.stderr
+__pycache__/

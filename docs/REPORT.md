@@ -882,3 +882,5 @@ $ tools/check_task.sh 03
 - **Изменён**: `Sources/TreeSizeApp/Snapshot.swift` — `snapshotModeHelp()`
 - **Изменён**: `Sources/TreeSizeApp/main.swift` — обработка `--mode-help`
 - **Изменены**: `Sources/TreeSizeCore/L10n_en.swift`, `L10n_zh.swift`, `L10n_ja.swift`, `L10n_ko.swift`, `L10n_de.swift`, `L10n_es.swift`, `L10n_fr.swift`, `L10n_pt.swift` — 10 новых ключей в каждом
+
+**Доработка:** убрана развилка `if L10n.isRussian` в подписи топа — оставлена единая строка с `tr(" из ")`. Ключ « из » есть во всех 8 словарях. Снимки top с английским и китайским — OK.
