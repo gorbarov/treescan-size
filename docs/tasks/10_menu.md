@@ -11,4 +11,12 @@
 Проверка:
 - сборка;
 - `tools/check_task.sh 03` — OK;
-- `tools/check_task.sh 10 --select /tmp/ts-fixture/docs` — снимок не сломался.
+- `tools/check_task.sh 10 --select /tmp/ts-fixture/docs` — снимок не сломался;
+- `tools/check_task.sh 10p --places` — снимок поповера мест.
+
+Подсказки по реализации:
+- Меню: `.contextMenu { NodeMenu(node: node) }`; внутри — `Button`, `Divider`, для неактивного — `Button(...).disabled(true)`. Для `Table` — `.contextMenu(forSelectionType: Node.ID.self) { ids in ... }`.
+- Подтверждение — синхронно через `NSAlert`: `alert.addButton(withTitle: "В корзину")`, `alert.addButton(withTitle: "Отмена")`, `alert.runModal() == .alertFirstButtonReturn`.
+- Корзина в фоне: `Task.detached { let err = moveToTrash(path); await MainActor.run { if let err { undo(); показать NSAlert } } }`, где `undo` — замыкание из `store.removeLocal(node)`, вызванного **до** запуска фоновой задачи.
+- Поповер: `.popover(isPresented: $store.showPlaces) { PlacesView() }` на кнопке «📂 Открыть…».
+- Снимок: добавь режим `--places`, который рисует `PlacesView` отдельным снимком вместо окна (NSHostingView с `PlacesView` размером 460×520). Проверка: `tools/check_task.sh 10p --places`.

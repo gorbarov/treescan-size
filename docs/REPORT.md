@@ -533,3 +533,21 @@ Git-коммит не сделан из-за сандахбокных огран
 ```
 
 **Коммит:** `07a9c65` — Задание 09: доработка по приёмке
+
+## Задание 09b
+
+**Что сделано:**
+1. **Scanner.swift** — `topResult()` теперь сортирует топ-файлы по убыванию размера, при равном размере — по убыванию пути (как `sorted(sc.top, reverse=True)` в эталоне).
+2. **TopView.swift** — `viewPrefix` теперь всегда возвращает путь папки с `/` (даже для корня), `cutLen` всегда её длина. `relPath` переписан: обрезает префикс, берёт часть до последнего `/` (папку файла), если слеша нет — `"."`.
+
+**Сборка:** не было сбоев.
+
+**Проверки:**
+- `python3 tools/compare.py /tmp/ts-fixture` → `OK`
+- `tools/check_task.sh 09t --tab top` → снимок готов
+- `tools/check_task.sh 01` → `OK`
+- `tools/check_task.sh 03` → `OK`
+
+**Файлы:**
+- Изменён: `Sources/TreeSizeCore/Scanner.swift`
+- Изменён: `Sources/TreeSizeApp/TopView.swift`
