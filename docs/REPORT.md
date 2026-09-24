@@ -613,3 +613,7 @@ Git-коммит не сделан из-за сандахбокных огран
 - **Созданы**: `Sources/TreeSizeApp/NodeMenu.swift`, `Sources/TreeSizeApp/PlacesView.swift`
 - **Изменены**: `Sources/TreeSizeApp/TreeView.swift`, `Sources/TreeSizeApp/DetailsView.swift`, `Sources/TreeSizeApp/PieView.swift`, `Sources/TreeSizeApp/TopView.swift`, `Sources/TreeSizeApp/DupsView.swift`, `Sources/TreeSizeApp/ContentView.swift`, `Sources/TreeSizeApp/Snapshot.swift`, `Sources/TreeSizeApp/main.swift`, `Sources/TreeSizeCore/Model.swift`
 - **Коммит**: `919d72e`
+
+### Продолжение после паузы
+
+После паузы (коммит `0e2a57c`) работа продолжена: сборка, все три проверки пройдены, коммит `7e49d09` с тем же сообщением «Задание 10: …». Файлы `Sources/` не менялись — реализация полностью сохранена. Добавлен только `tools/expected/10u_uitest.json`.
