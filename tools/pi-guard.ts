@@ -10,7 +10,7 @@ const BANNED_BASH = [
 	/>\s*(tools|docs\/tasks)\//, /\b(tools|docs\/tasks)\/\S*\s*<</,
 	/(^|\s)(\.\.\/){2,}/,            // выход за пределы проекта по относительному пути
 ];
-const PROTECTED = [/(^|\/)tools\//, /(^|\/)docs\/tasks\//, /(^|\/)docs\/UI-SPEC\.md$/, /(^|\/)AGENTS\.md$/];
+const PROTECTED = [/(^|\/)tools\//, /(^|\/)docs\/tasks\//, /(^|\/)docs\/UI-SPEC\.md$/, /(^|\/)AGENTS\.md$/, /(^|\/)docs\/board\.json$/];
 
 export default function (pi: ExtensionAPI) {
 	pi.on("tool_call", async (event) => {

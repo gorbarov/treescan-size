@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Стройка TreeSize</title>
+<style>
+:root{--bg:#eef1f5;--panel:#fff;--line:#dde2ea;--text:#1b2330;--muted:#687384;--accent:#2a78d6;--ok:#0ca30c;--warn:#e69500;--bad:#d03b3b;--chip:#f3f5f8;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#121418;--panel:#1a1d23;--line:#2c323c;--text:#e6eaf0;--muted:#8e98a8;--accent:#5b9cf0;--chip:#23272f;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.4 -apple-system,BlinkMacSystemFont,system-ui,sans-serif}
+header{display:flex;align-items:center;gap:14px;padding:14px 20px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.logo{display:grid;grid-template-columns:10px 6px;grid-template-rows:10px 6px;gap:2px}
+.logo i{border-radius:2px}.logo i:nth-child(1){grid-row:span 2;background:#2a78d6}.logo i:nth-child(2){background:#eda100}.logo i:nth-child(3){background:#eb6834}
+h1{font-size:17px;margin:0}
+h1 small{font-weight:400;color:var(--muted)}
+.spent{margin-left:auto;font-size:13px;color:var(--muted)}
+.spent b{color:var(--text);font-size:18px}
+main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,380px);gap:16px;padding:16px 20px;align-items:start}
+@media (max-width:1100px){main{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:0 0 10px}
+.board{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.task{border:1px solid var(--line);border-radius:9px;padding:8px 10px;background:var(--chip);position:relative}
+.task b{display:block;font-size:12px;color:var(--muted)}
+.task span{font-size:13px}
+.task .st{display:inline-block;margin-top:6px;font-size:11px;padding:1px 7px;border-radius:10px;background:var(--line)}
+.st.принято{background:#0ca30c22;color:var(--ok)}.st.в.работе,.st.работе{background:#2a78d622;color:var(--accent)}
+.st.приёмка{background:#e6950022;color:var(--warn)}.st.переделка{background:#d03b3b22;color:var(--bad)}
+.task.live{border-color:var(--accent);box-shadow:0 0 0 2px #2a78d633}
+.task.live::after{content:"";position:absolute;top:9px;right:9px;width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pulse 1.2s infinite}
+@keyframes pulse{50%{opacity:.25}}
+.live-head{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;margin-bottom:10px}
+.live-head .name{font-size:18px;font-weight:650}
+.pill{font-size:12px;padding:2px 8px;border-radius:10px;background:var(--chip);border:1px solid var(--line)}
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin-bottom:12px}
+.stat{background:var(--chip);border-radius:9px;padding:8px 10px}
+.stat small{display:block;color:var(--muted);font-size:11px}
+.stat b{font-size:18px;font-variant-numeric:tabular-nums}
+.idle.ok b{color:var(--ok)}.idle.warn b{color:var(--warn)}.idle.bad b{color:var(--bad)}
+.feed{max-height:52vh;overflow:auto;border-top:1px solid var(--line)}
+.ev{display:grid;grid-template-columns:26px minmax(0,1fr) 54px;gap:6px;padding:5px 2px;border-bottom:1px solid var(--line);font-size:13px}
+.ev .tx{white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+.ev.say .tx{font-family:inherit;font-size:13px;color:var(--muted)}
+.ev .ago{color:var(--muted);font-size:11px;text-align:right}
+.ev.new{animation:flash 1.5s}
+@keyframes flash{from{background:#2a78d633}}
+.snaps{display:grid;gap:10px}
+.snaps a{display:block;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.snaps img{width:100%;display:block}
+.snaps small{display:block;padding:4px 8px;color:var(--muted);font-size:11px}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th,td{padding:5px 6px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{color:var(--muted);font-weight:500}
+td.r,th.r{text-align:right;font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.empty{color:var(--muted);padding:20px 0;text-align:center}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><i></i><i></i><i></i></div>
+  <h1>Стройка TreeSize.app <small>— дешёвые агенты под присмотром Claude</small></h1>
+  <div class="spent">потрачено всего <b id="total">…</b> · обновлено <span id="now">…</span></div>
+</header>
+<main>
+  <div style="display:grid;grid-template-columns:minmax(0,1fr);gap:16px;min-width:0">
+    <section class="card"><h2>Задания</h2><div class="board" id="board"></div></section>
+    <section class="card" id="live"></section>
+    <section class="card"><h2>Все прогоны</h2><div style="overflow:auto"><table id="runs"></table></div></section>
+  </div>
+  <aside class="card"><h2>Снимки окна приложения</h2><div class="snaps" id="snaps"><div class="empty">появятся с задания 04</div></div></aside>
+</main>
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const num = n => new Intl.NumberFormat('ru-RU').format(n);
+const ago = s => s < 60 ? s + ' с' : s < 3600 ? Math.floor(s/60) + ' мин' : Math.floor(s/3600) + ' ч';
+let lastFeedKey = '', seen = new Set();
+async function tick(){
+  let d; try { d = await (await fetch('/api/state')).json(); } catch(e){ return; }
+  $('#total').textContent = d.total_rub.toFixed(2).replace('.', ',') + ' ₽';
+  $('#now').textContent = d.now;
+  const liveTasks = new Set(d.runs.filter(r => r.running).map(r => r.task));
+  $('#board').innerHTML = d.board.tasks.map(t => `<div class="task${liveTasks.has(t.id) ? ' live' : ''}"><b>${t.id}</b><span>${esc(t.title)}</span><br><span class="st ${esc(t.status)}">${esc(t.status)}</span>${t.note ? `<div class="muted" style="font-size:11px;margin-top:4px">${esc(t.note)}</div>` : ''}</div>`).join('');
+  const cur = d.runs.filter(r => r.running).slice(-1)[0] || d.runs.slice(-1)[0];
+  if (cur){
+    const idleCls = !cur.running ? '' : cur.idle < 45 ? 'ok' : cur.idle < 240 ? 'warn' : 'bad';
+    const fk = cur.file + cur.feed.length;
+    $('#live').innerHTML = `<h2>${cur.running ? 'Сейчас работает' : 'Последний прогон'}</h2>
+      <div class="live-head"><span class="name">Задание ${esc(cur.task)} · ${esc(cur.title.replace(/^\d+_/, ''))}</span>
+      <span class="pill">${esc(cur.harness)}</span><span class="pill">${esc(cur.model)}</span><span class="pill">${esc(cur.status)}</span></div>
+      <div class="stats">
+        <div class="stat"><small>старт</small><b>${cur.started}</b></div>
+        <div class="stat"><small>ходов</small><b>${cur.turns}</b></div>
+        <div class="stat"><small>токены вход</small><b>${num(cur.tin)}</b></div>
+        <div class="stat"><small>токены выход</small><b>${num(cur.tout)}</b></div>
+        <div class="stat"><small>≈ рублей</small><b>${cur.rub.toFixed(2).replace('.', ',')}</b></div>
+        <div class="stat idle ${idleCls}"><small>${cur.running ? 'тишина' : 'закончил'}</small><b>${cur.running ? ago(cur.idle) : '✓'}</b></div>
+      </div>
+      <div class="feed" id="feed">${cur.feed.slice().reverse().map(([a, ic, tx], i) => {
+        const key = cur.file + (cur.feed.length - i) + tx.slice(0, 40);
+        const isNew = !seen.has(key); seen.add(key);
+        return `<div class="ev${ic === '💬' ? ' say' : ''}${isNew && lastFeedKey ? ' new' : ''}"><span>${ic}</span><span class="tx">${esc(tx)}</span><span class="ago">${ago(a)}</span></div>`;
+      }).join('') || '<div class="empty">пока тихо</div>'}</div>`;
+    lastFeedKey = fk;
+  }
+  $('#runs').innerHTML = '<tr><th>старт</th><th>задание</th><th>оболочка</th><th>модель</th><th>итог</th><th class="r">ходов</th><th class="r">вход</th><th class="r">выход</th><th class="r">₽</th></tr>' +
+    d.runs.slice().reverse().map(r => `<tr><td>${r.started}</td><td>${esc(r.title)}</td><td>${esc(r.harness)}</td><td class="muted">${esc(r.model)}</td><td>${esc(r.status)}</td><td class="r">${r.turns}</td><td class="r">${num(r.tin)}</td><td class="r">${num(r.tout)}</td><td class="r">${r.rub.toFixed(2).replace('.', ',')}</td></tr>`).join('');
+  if (d.snaps.length) $('#snaps').innerHTML = d.snaps.map(s => `<a href="/snap/${s}" target="_blank"><img src="/snap/${s}?t=${Date.now() >> 14}" alt=""><small>${esc(s)}</small></a>`).join('');
+}
+tick(); setInterval(tick, 2000);
+</script>
+</body>
+</html>

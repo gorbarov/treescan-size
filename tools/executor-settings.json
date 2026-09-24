@@ -65,7 +65,9 @@
       "Edit(docs/tasks/**)",
       "Write(docs/tasks/**)",
       "Edit(docs/UI-SPEC.md)",
-      "Edit(AGENTS.md)"
+      "Edit(AGENTS.md)",
+      "Edit(docs/board.json)",
+      "Write(docs/board.json)"
     ]
   },
   "sandbox": {
