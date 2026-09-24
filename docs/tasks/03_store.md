@@ -22,6 +22,8 @@
    - вызвать откат → `after_rollback_root_size`, `after_rollback_media_files`.
 3. `main.swift`: если в аргументах есть `--selftest`, взять `--root <папка>`, выполнить `runSelfTest`, напечатать JSON (`JSONSerialization`, `.sortedKeys`) в stdout и выйти `exit(0)`. Без `--selftest` пока напечатать `TreeSizeApp: интерфейс — задание 04` и выйти.
 
+В `Node` (Sources/TreeSizeCore/Model.swift) поля `size`, `alloc`, `cloud`, `files`, `dirs`, `ign`, `selfIgnored` сейчас `let` — для `removeLocal` и отката сделай их `var`. Остальное в Model.swift не меняй.
+
 Всё это делается без окна и без SwiftUI-вью. `AppStore` на `@MainActor` вызывай из главного потока (`main.swift` и так в нём).
 
 Проверка: `tools/check_task.sh 03` → `ЗАДАНИЕ 03: OK` (сравниваются значения по ключам из `tools/expected/03_selftest.json`).
