@@ -19,5 +19,12 @@ e=json.load(open('tools/expected/03_selftest.json')); g=json.load(open('$B/03.js
 bad=[(k,e[k],g.get(k)) for k in e if g.get(k)!=e[k]]
 [print(f'  {k}: ждали {a!r}, получили {b!r}') for k,a,b in bad]
 sys.exit(1 if bad else 0)" && echo "ЗАДАНИЕ 03: OK" ;;
+  10u) $B/release/TreeSizeApp --root /tmp/ts-fixture --uitest > $B/10u.json
+      python3 -c "
+import json,sys
+e=json.load(open('tools/expected/10u_uitest.json')); g=json.load(open('$B/10u.json'))
+bad=[(k,e[k],g.get(k)) for k in e if g.get(k)!=e[k]]
+[print(f'  {k}: ждали {a!r}, получили {b!r}') for k,a,b in bad]
+sys.exit(1 if bad else 0)" && echo "ЗАДАНИЕ 10u: OK" ;;
   *)  $B/release/TreeSizeApp --root /tmp/ts-fixture --snapshot $B/snap_$N.png ${@:2} && ls -la $B/snap_$N.png && echo "ЗАДАНИЕ $N: снимок готов, его смотрит приёмщик" ;;
 esac
