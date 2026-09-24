@@ -112,5 +112,59 @@ public func runSelfTest(root: String) -> [String: Any] {
         facts["after_rollback_media_files"] = 0
     }
 
+    // --- dir_trash: removeLocal папки media на свежем скане ---
+    do {
+        let data2 = scanRoot(root, options: ScanOptions())
+        let store2 = AppStore()
+        store2.result = ScanResult(data: data2)
+        guard let tree2 = store2.result?.tree else { return facts }
+
+        // Находим media
+        var media2: Node? = nil
+        for child in store2.children(tree2) {
+            if child.name == "media" { media2 = child; break }
+        }
+
+        if let m = media2 {
+            let rollback2 = store2.removeLocal(m)
+
+            facts["dir_trash_root_dirs"] = tree2.dirs
+            facts["dir_trash_top_total"] = store2.result?.top.count ?? 0
+            facts["dir_trash_dups_root"] = store2.dupGroups(in: tree2).count
+
+            rollback2()
+
+            facts["dir_rollback_root_dirs"] = tree2.dirs
+            facts["dir_rollback_top_total"] = store2.result?.top.count ?? 0
+        }
+    }
+
+    // --- ign_trash: removeLocal файла ignored/big.bin на свежем скане ---
+    do {
+        let data3 = scanRoot(root, options: ScanOptions())
+        let store3 = AppStore()
+        store3.result = ScanResult(data: data3)
+        guard let tree3 = store3.result?.tree else { return facts }
+
+        // Находим ignored/big.bin
+        var ignoredDir: Node? = nil
+        for child in store3.children(tree3) {
+            if child.name == "ignored" { ignoredDir = child; break }
+        }
+
+        if let ignDir = ignoredDir, let ignKids = ignDir.children {
+            var bigBin: Node? = nil
+            for child in ignKids {
+                if child.name == "big.bin" { bigBin = child; break }
+            }
+
+            if let bb = bigBin {
+                _ = store3.removeLocal(bb)
+                facts["ign_trash_root_ign"] = tree3.ign
+                facts["ign_trash_ignored_dir_ign_equals_size"] = ignDir.ign == ignDir.size
+            }
+        }
+    }
+
     return facts
 }

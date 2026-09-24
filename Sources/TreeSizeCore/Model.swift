@@ -154,6 +154,11 @@ public struct AgeBucket {
 public struct DupGroup {
     public let size: Int64
     public let paths: [String]
+
+    public init(size: Int64, paths: [String]) {
+        self.size = size
+        self.paths = paths
+    }
 }
 
 public struct ScanResult {

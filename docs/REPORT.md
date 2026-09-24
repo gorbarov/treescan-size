@@ -138,3 +138,18 @@ Swift: 12.87 с, Python-эталон: 11.78 с на этом же реально
 ```
 ЗАДАНИЕ 03: OK
 ```
+
+### Исправления по приёмке (removeLocal)
+
+После приёмки исправлена логика `removeLocal`:
+1. **Top**: убираются все записи, чей путь равен пути узла или начинается с `путь_узла + "/"`.
+2. **Dups**: пути удаляются из каждой группы, группа остаётся, если в ней ≥ 2 путей.
+3. **dirs у предков**: вычитается `node.dirs + (node.kind == .dir ? 1 : 0)`.
+4. **ign у предков**: как `effIgn` + `shiftUp` в эталоне — если узел внутри папки с `selfIgnored`, вычитаемое = `node.size`, иначе `node.ign`. У предка с `selfIgnored` после вычитания `ign = size`.
+5. **Откат**: восстанавливает `top` и `dups` целиком из сохранённых копий (прежний порядок).
+
+Добавлены новые факты в SelfTest.swift: `dir_trash_root_dirs`, `dir_trash_top_total`, `dir_trash_dups_root`, `dir_rollback_root_dirs`, `dir_rollback_top_total`, `ign_trash_root_ign`, `ign_trash_ignored_dir_ign_equals_size`.
+
+`DupGroup.init` сделан `public`.
+
+Проверка: `ЗАДАНИЕ 03: OK`.

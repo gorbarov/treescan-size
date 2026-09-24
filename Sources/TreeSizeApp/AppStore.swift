@@ -137,61 +137,65 @@ public final class AppStore: ObservableObject {
 
     // MARK: - Корзина (шаг 2, без FileManager)
 
+    /// Убрать узел из модели — как removeLocal() в эталоне template.html.
+    /// Вычитает из предков, чистит top/dups, перевыбор.
+    /// Возвращает замыкание отката. Сам файл не трогает.
     public func removeLocal(_ node: Node) -> () -> Void {
         let nodePath = node.path
+        let pre = nodePath + "/"
 
-        let savedParent = node.parent
-        let savedChildrenIndex = savedParent?.children?.firstIndex(where: { $0.id == node.id })
-        let savedSize = node.size
-        let savedAlloc = node.alloc
-        let savedCloud = node.cloud
-        let savedFiles = node.files
-        let savedDirs = node.dirs
-        let savedIgn = node.ign
+        // Сохраняем состояние для отката (как saved = {top, dups, SEL, MSEL} в эталоне)
+        let savedTop = result?.top ?? []
+        let savedDups = result?.dups ?? []
+        let savedSelected = selected
 
-        // Запоминаем top-записи, которые удаляем
-        var removedTop: [(index: Int, entry: TopFile)] = []
-        if let top = result?.top {
-            for (i, t) in top.enumerated() where t.path == nodePath {
-                removedTop.append((i, t))
-            }
+        // trashDelta: как в эталоне — {s, a, c, f, d, eff}
+        // d: у папки node.dirs + 1 (сама папка), у файла node.dirs
+        let deltaDirs = node.dirs + (node.kind == .dir ? 1 : 0)
+        // effIgn: как effIgn() в эталоне — если есть предок с selfIgnored, то size, иначе ign
+        var hasIgnoredAncestor = false
+        var a: Node? = node.parent
+        while let anc = a {
+            if anc.selfIgnored { hasIgnoredAncestor = true; break }
+            a = anc.parent
         }
-        for (i, _) in removedTop.sorted(by: { $0.index > $1.index }) {
-            result?.top.remove(at: i)
-        }
+        let effIgn = hasIgnoredAncestor ? node.size : node.ign
 
-        // Запоминаем dup-группы, которые удаляем
-        var removedDups: [(index: Int, group: DupGroup)] = []
-        if let dups = result?.dups {
-            for (i, g) in dups.enumerated() {
-                if g.paths.contains(where: { $0 == nodePath || $0.hasPrefix(nodePath + "/") }) {
-                    removedDups.append((i, g))
-                }
-            }
-        }
-        for (i, _) in removedDups.sorted(by: { $0.index > $1.index }) {
-            result?.dups.remove(at: i)
-        }
+        // Top: убираем записи с путём узла или внутри него (как D.top.filter в эталоне)
+        result?.top = savedTop.filter { $0.path != nodePath && !$0.path.hasPrefix(pre) }
 
-        // Вычитаем из предков
-        var p: Node? = savedParent
-        while let ancestor = p {
-            ancestor.size -= savedSize
-            ancestor.alloc -= savedAlloc
-            ancestor.cloud -= savedCloud
-            ancestor.files -= savedFiles
-            ancestor.dirs -= savedDirs
-            ancestor.ign -= savedIgn
-            p = ancestor.parent
+        // Dups: из каждой группы убираем пути узла/внутри; группа остаётся, если >= 2 путей
+        result?.dups = savedDups.compactMap { group in
+            let kept = group.paths.filter { $0 != nodePath && !$0.hasPrefix(pre) }
+            guard kept.count > 1 else { return nil }
+            return DupGroup(size: group.size, paths: kept)
         }
 
         // Убираем из детей родителя
+        let savedParent = node.parent
+        let savedChildrenIndex = savedParent?.children?.firstIndex(where: { $0.id == node.id })
         if let parent = savedParent, let idx = savedChildrenIndex {
             parent.children?.remove(at: idx)
         }
 
+        // shiftUp: вычитаем из предков (как shiftUp(node.p, dl, 1) в эталоне)
+        var p: Node? = savedParent
+        while let ancestor = p {
+            ancestor.size -= node.size
+            ancestor.alloc -= node.alloc
+            ancestor.cloud -= node.cloud
+            ancestor.files -= node.files
+            ancestor.dirs -= deltaDirs
+            // a.x = a.si ? a.s : a.x - sign*eff  (как shiftUp в эталоне)
+            if ancestor.selfIgnored {
+                ancestor.ign = ancestor.size
+            } else {
+                ancestor.ign -= effIgn
+            }
+            p = ancestor.parent
+        }
+
         // Если выделение было внутри удалённого — выделяем родителя
-        let savedSelected = selected
         if let sel = selected {
             var cur: Node? = sel
             var inside = false
@@ -204,17 +208,21 @@ public final class AppStore: ObservableObject {
             }
         }
 
-        // Замыкание отката
+        // Замыкание отката (как в эталоне: восстанавливает saved целиком)
         return {
-            // Восстанавливаем предков
+            // shiftUp обратно: shiftUp(start, dl, -1)
             var p: Node? = savedParent
             while let ancestor = p {
-                ancestor.size += savedSize
-                ancestor.alloc += savedAlloc
-                ancestor.cloud += savedCloud
-                ancestor.files += savedFiles
-                ancestor.dirs += savedDirs
-                ancestor.ign += savedIgn
+                ancestor.size += node.size
+                ancestor.alloc += node.alloc
+                ancestor.cloud += node.cloud
+                ancestor.files += node.files
+                ancestor.dirs += deltaDirs
+                if ancestor.selfIgnored {
+                    ancestor.ign = ancestor.size
+                } else {
+                    ancestor.ign += effIgn
+                }
                 p = ancestor.parent
             }
 
@@ -224,16 +232,9 @@ public final class AppStore: ObservableObject {
                 parent.children!.insert(node, at: idx)
             }
 
-            // Восстанавливаем top
-            for (_, entry) in removedTop {
-                self.result?.top.append(entry)
-            }
-            // Восстанавливаем dups
-            for (_, group) in removedDups {
-                self.result?.dups.append(group)
-            }
-
-            // Восстанавливаем выделение
+            // Восстанавливаем top и dups целиком (сохраняя порядок)
+            self.result?.top = savedTop
+            self.result?.dups = savedDups
             self.selected = savedSelected
         }
     }

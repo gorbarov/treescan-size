@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Сводка по прогону исполнителя: модель, ходы, токены, оценка в рублях.
     python3 tools/run_cost.py docs/runs/<лог>.jsonl [...]
-Цены coding-lite (₽ за 1 млн токенов) со слов CEO 24.09.2026; выход — оценка, уточнить по кабинету шлюза.
+Цены coding-lite (₽ за 1 млн токенов) со слов CEO 24.09.2026; выход — оценка. Кэш считается по полной цене входа, поэтому сумма — верхняя граница.
 """
 import json, sys
 PRICE = {  # вход, выход
@@ -37,7 +37,9 @@ for path in sys.argv[1:]:
     pin, pout = PRICE.get(m, (10, 30))
     rub = tin / 1e6 * pin + tout / 1e6 * pout
     total += rub
+    cached = u.get("cache_read_input_tokens", 0)
+    share = f" (из кэша {cached / tin:.0%})" if tin and cached else ""
     print(f"{path.split('/')[-1]}: {m} | {res.get('subtype')} | ходов {res.get('num_turns')} | "
-          f"{res.get('duration_ms', 0) / 60000:.1f} мин | вход {tin:,} / выход {tout:,} токенов | ≈ {rub:.2f} ₽".replace(",", " "))
+          f"{res.get('duration_ms', 0) / 60000:.1f} мин | вход {tin:,}{share} / выход {tout:,} токенов | ≤ {rub:.2f} ₽".replace(",", " "))
 if len(sys.argv) > 2:
     print(f"ИТОГО ≈ {total:.2f} ₽")
