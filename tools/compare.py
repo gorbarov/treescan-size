@@ -75,9 +75,22 @@ def main():
     if not a.swift_json:
         subprocess.run(["swift", "run", "-c", "release", "--disable-sandbox", "--scratch-path", "/tmp/ts-build", "tscan", a.folder, "--json", sw_json],
                        cwd=PROJECT, check=True)
+    raw_sw = json.loads(Path(sw_json).read_text())
+    # порядок важен интерфейсу: топ — по убыванию размера, расширения — по убыванию объёма,
+    # дубли — по убыванию «лишнего». Нормализация ниже его прячет, поэтому проверяем до неё.
+    order = []
+    tops = [t[0] for t in raw_sw["top"]]
+    if tops != sorted(tops, reverse=True):
+        order.append("top не отсортирован по убыванию размера: первые " + str(tops[:5]))
+    exts = [e[1] for e in raw_sw["ext"]]
+    if exts != sorted(exts, reverse=True):
+        order.append("ext не отсортирован по убыванию размера")
+    waste = [g[0] * (len(g[1]) - 1) for g in raw_sw["dups"]]
+    if waste != sorted(waste, reverse=True):
+        order.append("dups не отсортированы по убыванию size*(n-1)")
     py = normalize(json.loads(Path(py_json).read_text()))
-    sw = normalize(json.loads(Path(sw_json).read_text()))
-    problems = diff(py, sw, "data")
+    sw = normalize(raw_sw)
+    problems = order + diff(py, sw, "data")
     if problems:
         print(f"РАСХОЖДЕНИЯ ({len(problems)}{'+' if len(problems) >= 30 else ''}), слева python, справа swift:")
         print("\n".join("  " + x for x in problems))
