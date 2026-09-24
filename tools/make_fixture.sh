@@ -20,6 +20,9 @@ mk docs/no_extension 300000
 mk docs/.hidden_config 5000
 mk docs/archive.tar.gz 900000                  # расширение «gz»
 mk docs/weird.verylongextension 700            # слишком длинное расширение — считается «без расширения»
+# «й» в разложенной форме (и + U+0306): 6 видимых букв, но 12 кодовых точек — расширение слишком длинное
+mk "docs/nfd.$(python3 -c 'print("и\u0306" * 6, end="")')" 777
+mk "docs/short.$(python3 -c 'print("и\u0306" * 2, end="")')" 555     # 4 кодовые точки — нормальное расширение
 
 # разреженный файл: размер 200 МБ, на диске почти ноль
 mkdir -p sparse; mkfile -n 200m sparse/disk.img

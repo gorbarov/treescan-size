@@ -326,11 +326,14 @@ public final class Scanner {
 
 /// Извлечение расширения — как в эталоне: точка не первая и не последняя, само расширение не длиннее 12 символов.
 func extOf(_ name: String) -> String {
-    let chars = Array(name)
-    guard let dot = chars.lastIndex(of: ".") else { return "" }
-    let len = chars.count
+    // считаем кодовые точки, как len() в Python: у «й» в разложенной форме их две
+    let scalars = Array(name.unicodeScalars)
+    guard let dot = scalars.lastIndex(of: ".") else { return "" }
+    let len = scalars.count
     if dot > 0 && dot < len - 1 && (len - dot) <= 12 {
-        return String(chars[(dot + 1)...]).lowercased()
+        var tail = String.UnicodeScalarView()
+        tail.append(contentsOf: scalars[(dot + 1)...])
+        return String(tail).lowercased()
     }
     return ""
 }
