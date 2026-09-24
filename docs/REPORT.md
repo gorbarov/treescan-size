@@ -377,3 +377,21 @@ Swift: 12.87 с, Python-эталон: 11.78 с на этом же реально
 
 ### Созданные/изменённые файлы
 - **Изменены**: `Sources/TreeSizeApp/AppStore.swift` (PieSlice.restCount, pieSlices считает restCount), `Sources/TreeSizeApp/PieView.swift` (пропорции, центр кольца, «Прочее» plural, подсказка), `Sources/TreeSizeApp/Snapshot.swift` (режим без UserDefaults).
+
+### Доработка 2 — раскладка легенды, пропорции кольца, подсказка
+
+1. **Легенда**: каждая строка — `HStack(alignment: .center, spacing: 12)` с фиксированными колонками: квадрат 12×12, `VStack(alignment: .leading)` имя+подпись с `frame(maxWidth: .infinity, alignment: .leading)`, размер `frame(width: 90, alignment: .trailing)`, процент `frame(width: 58, alignment: .trailing)`. Весь список — `VStack(alignment: .leading, spacing: 4)`.
+
+2. **Кольцо**: `GeometryReader` → `let side = min(geo.size.width * 0.36, 380)`. Chart в `.frame(width: side, height: side)`. Внешний контейнер — `.frame(maxWidth: 380).aspectRatio(1, contentMode: .fit)`. Паддинг `.padding(.horizontal, 22)`, `.padding(.top, 18)`, `.padding(.bottom, 20)`.
+
+3. **Подсказка**: последний элемент `VStack` легенды (под строками). Убран отдельный HStack в body.
+
+### Сколько раз не собиралось
+- **0 раз**.
+
+### Вывод проверки
+```
+ЗАДАНИЕ 07: снимок готов, его смотрит приёмщик
+ЗАДАНИЕ 07b: снимок готов, его смотрит приёмщик
+ЗАДАНИЕ 03: OK
+```
