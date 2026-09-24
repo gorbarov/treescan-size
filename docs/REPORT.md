@@ -617,3 +617,34 @@ Git-коммит не сделан из-за сандахбокных огран
 ### Продолжение после паузы
 
 После паузы (коммит `0e2a57c`) работа продолжена: сборка, все три проверки пройдены, коммит `7e49d09` с тем же сообщением «Задание 10: …». Файлы `Sources/` не менялись — реализация полностью сохранена. Добавлен только `tools/expected/10u_uitest.json`.
+
+### Доработка по приёмке — безопасность корзины, места, полоса диска
+
+**Что исправлено:**
+
+1. **КРИТИЧНО, корзина.** В `NodeMenu.swift` свойство `isProtected` перекрывало одноимённую функцию `isProtected(_:)` из TreeSizeCore, и пункт «В корзину» блокировался только проверкой «внутри корня», без защиты системных и корневых папок.
+   - В `FileActions.swift` добавлена публичная `func canTrash(path:root:)` — `isActionAllowed && !isProtected`.
+   - В `NodeMenu.swift` свойство переименовано в `trashBlocked`, считает `!canTrash(path:root:)`.
+   - В `performTrash()` перед вызовом `moveToTrash` добавлена повторная проверка `canTrash` — если нельзя, выход без действия.
+   - В `isProtected()` путь больше не разрешается через `realpath` (чтобы `/Applications/Safari.app` не считался системным). Используется `URL.standardized`. `realpath` оставлен только для сравнения с `home`.
+
+2. **Места («Macintosh HD» два раза).** В `Places.swift`:
+   - Тома из `/Volumes` с `realpath == "/"` или `"/System/Volumes/Data"` пропускаются.
+   - Добавлена проверка уникальности `seenPaths` — повторяющиеся пути не добавляются.
+   - `realpath` используется через `Darwin.realpath` (libc), не `resolvingSymlinksInPath`.
+
+3. **Полоса занятости диска** в `PlacesView.swift` — доля занятого `(total-free)/total`, заливка синяя `#2a78d6`, красная при > 90 %.
+
+4. **Снимок Places:** `PlacesView` получил второй инициализатор `init(places:)` с предзаполненными местами. `snapshotPlaces` использует его, чтобы не ждать `.onAppear`. Снимок 460×520 снова нормального размера (8 700 байт).
+
+5. **Факты самопроверки** в `SelfTest.swift`:
+   - `can_trash_file` → `canTrash("/tmp/ts-fixture/media/film.mov", "/tmp/ts-fixture")`
+   - `can_trash_scan_root` → `canTrash("/tmp/ts-fixture", "/tmp/ts-fixture")` (ложь — корень)
+   - `can_trash_home_under_users` → `canTrash(NSHomeDirectory(), "/Users")` (ложь — защищён)
+   - `can_trash_applications_app` → `canTrash("/Applications/Safari.app", "/Applications")` (истина)
+   - `can_trash_applications_dir` → `canTrash("/Applications", "/")` (ложь — защищён)
+   - `places_unique_paths` → `true` если все `listPlaces()` имеют разные пути
+
+**Созданные/изменённые файлы:**
+- Изменены: `Sources/TreeSizeCore/FileActions.swift`, `Sources/TreeSizeCore/Places.swift`, `Sources/TreeSizeApp/NodeMenu.swift`, `Sources/TreeSizeApp/PlacesView.swift`, `Sources/TreeSizeApp/Snapshot.swift`, `Sources/TreeSizeApp/SelfTest.swift`
+- **Коммит**: `ab0ce53` — «Задание 10: безопасность корзины, места»
