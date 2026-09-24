@@ -9,7 +9,7 @@ public final class AppStore: ObservableObject {
     @Published public var mode: SizeMode = .size {
         didSet { if oldValue != mode { saveMode() } }
     }
-    @Published public var tab: Tab = .details
+    @Published public var tab: Tab = .pie
     @Published public var isScanning: Bool = false
     @Published public var progress: (files: Int64, bytes: Int64, cur: String) = (0, 0, "")
     @Published public var scanPath: String = ""
@@ -18,8 +18,8 @@ public final class AppStore: ObservableObject {
         case size, alloc
     }
 
-    public enum Tab: String, Sendable {
-        case details, pie, ext, age, top, dups
+    public enum Tab: String, Sendable, CaseIterable {
+        case pie, details, ext, age, top, dups
     }
 
     public struct PieSlice {

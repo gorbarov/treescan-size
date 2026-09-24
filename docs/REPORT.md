@@ -302,3 +302,53 @@ Swift: 12.87 с, Python-эталон: 11.78 с на этом же реально
 - **Изменён**: `Sources/TreeSizeApp/AppStore.swift` — `loadMode`/`saveMode`/`didSet` на mode, `setDefaultMode` удалён.
 - **Изменён**: `Sources/TreeSizeApp/ContentView.swift` — плашки, infoBar с layoutPriority, свои вкладки, statusBar с кнопками, цвета.
 - **Изменён**: `Sources/TreeSizeApp/Snapshot.swift` — принудительный `.aqua`/`.darkAqua`, `loadMode`.
+
+## Задание 07. Вкладка «Диаграмма»
+
+**Модель:** current agent, Claude Code.
+
+### Что сделано
+
+1. **AppStore.swift**:
+   - `tab` по умолчанию изменён с `.details` на `.pie`.
+   - `Tab` приведён к `CaseIterable` для использования в `ForEach`.
+
+2. **ContentView.swift**:
+   - Полоса вкладок (`tabBar`) прижата влево — внутри `HStack` с `Spacer(minLength: 0)` справа.
+   - Отступ слева `.padding(.horizontal, 8)`. Фон полосы — `Color.panel2Bg` (`#f7f9fb` / `#1f232a`).
+   - Разделитель под всеми вкладками — `Rectangle().fill(Color.lineColor).frame(height: 1)`.
+   - Активная вкладка: жирный шрифт, фон `Color.panelBg` (белый/тёмный), рамка сверху и с боков (`UnevenRoundedRectangle` с `.stroke`).
+   - Правая панель: `PieView()` для `.pie`, остальные — заглушки (без верхнего разделителя, так как вкладки уже дают границу).
+
+3. **PieView.swift** — новый файл:
+   - `Chart` + `SectorMark` с `innerRadius: .ratio(0.6)` и `angularInset: 1`.
+   - Секторы из `store.pieSlices(for:)` — до 8 секторов с долей ≥ 1 %, не сводки, остальное «Прочее» серым.
+   - Цвета по порядку: светлая `#2a78d6 #eb6834 #1baf7a #eda100 #e87ba4 #008300 #4a3aa7 #e34948`, тёмная `#3987e5 #d95926 #199e70 #c98500 #d55181 #008300 #9085e9 #e66767`.
+   - В центре кольца — сумма крупно и имя папки мелко (обрезано до 22 символов).
+   - Легенда справа: цветной квадрат, имя (папка жирным), подпись «N файлов, M папок» или тип файла, размер жирным, процент серым.
+   - Наведение на строку легенды подсвечивает её (фон `treeHover`) и затемняет остальные секторы.
+   - Клик по строке легенды: если узел — папка, `select(node, expand: true)`; файл — `select(node)`; «Прочее» — `store.tab = .details`.
+   - Hover-эффект на диаграмме: при наведении на легенду затемняются все секторы, кроме подсвеченного.
+
+4. **CrumbsView.swift** — новый файл:
+   - Кнопка «↑ Вверх» (для перехода к родителю, отключается если нет родителя) с рамкой `Color.lineColor`.
+   - Сегменты пути от корня до текущего узла, разделённые «›».
+   - Каждый сегмент кликабелен — `store.select(ancestor, expand: true)`.
+
+5. **Colors.swift**:
+   - Добавлен `faintColor` (`#9aa3b1` / `#646d7b`) для мелкого серого текста.
+   - Добавлен `accentLinkColor` (`#2a78d6` / `#5b9cf0`) для ссылок в крошках.
+
+### Сколько раз не собиралось
+- **0 раз**: сборка с первого раза.
+
+### Вывод проверки
+```
+ЗАДАНИЕ 07: снимок готов, его смотрит приёмщик
+ЗАДАНИЕ 07b: снимок готов, его смотрит приёмщик
+ЗАДАНИЕ 03: OK
+```
+
+### Созданные/изменённые файлы
+- **Созданы**: `Sources/TreeSizeApp/PieView.swift`, `Sources/TreeSizeApp/CrumbsView.swift`
+- **Изменены**: `Sources/TreeSizeApp/AppStore.swift` (tab по умолчанию .pie, Tab CaseIterable), `Sources/TreeSizeApp/ContentView.swift` (tabBar прижат влево, разделитель, PieView вместо заглушки), `Sources/TreeSizeApp/Colors.swift` (faintColor, accentLinkColor)

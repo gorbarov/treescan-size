@@ -108,8 +108,14 @@ extension Color {
     /// Фон панели (дерево, правая панель) — #ffffff / #1a1d23
     static let panelBg = Color.dynamicColor(lightHex: "#ffffff", darkHex: "#1a1d23")
 
+    /// Цвет акцента (ссылки) — #2a78d6 / #5b9cf0
+    static let accentLinkColor = Color.dynamicColor(lightHex: "#2a78d6", darkHex: "#5b9cf0")
+
     /// Фон второй панели (строка сведений, плашки) — #f7f9fb / #1f232a
     static let panel2Bg = Color.dynamicColor(lightHex: "#f7f9fb", darkHex: "#1f232a")
+
+    /// Цвет faint (мелкий серый текст) — #9aa3b1 / #646d7b
+    static let faintColor = Color.dynamicColor(lightHex: "#9aa3b1", darkHex: "#646d7b")
 
     /// Фон окна между панелями (разделитель) — #eef1f5 / #121418
     static let windowBg = Color.dynamicColor(lightHex: "#eef1f5", darkHex: "#121418")

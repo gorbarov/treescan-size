@@ -238,19 +238,36 @@ struct ContentView: View {
     }
 
     // MARK: - Свои вкладки (как .tabs button в эталоне, без TabView)
+    // Прижаты влево, отступ 8 pt, фон #f7f9fb / #1f232a
 
     private var tabBar: some View {
-        HStack(spacing: 2) {
-            tabButton(label: "Диаграмма", tab: .pie)
-            tabButton(label: "Детали", tab: .details)
-            tabButton(label: "Расширения", tab: .ext)
-            tabButton(label: "Возраст файлов", tab: .age)
-            tabButton(label: "Топ файлов", tab: .top)
-            tabButton(label: "Дубли", tab: .dups)
+        VStack(spacing: 0) {
+            HStack(spacing: 2) {
+                ForEach(AppStore.Tab.allCases, id: \.self) { tab in
+                    tabButton(label: tabLabel(tab), tab: tab)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 8)
+            .padding(.top, 6)
+            .background(Color.panel2Bg)
+
+            // Разделитель под всеми вкладками
+            Rectangle()
+                .fill(Color.lineColor)
+                .frame(height: 1)
         }
-        .padding(.horizontal, 8)
-        .padding(.top, 6)
-        .background(Color.panel2Bg)
+    }
+
+    private func tabLabel(_ tab: AppStore.Tab) -> String {
+        switch tab {
+        case .pie: "Диаграмма"
+        case .details: "Детали"
+        case .ext: "Расширения"
+        case .age: "Возраст файлов"
+        case .top: "Топ файлов"
+        case .dups: "Дубли"
+        }
     }
 
     private func tabButton(label: String, tab: AppStore.Tab) -> some View {
@@ -271,7 +288,6 @@ struct ContentView: View {
                     )
                 )
                 .overlay(
-                    // Рамка сверху и с боков у активной вкладки (как border-top-left-radius/border-top-right-radius)
                     Group {
                         if store.tab == tab {
                             UnevenRoundedRectangle(
@@ -286,35 +302,15 @@ struct ContentView: View {
                 )
         }
         .buttonStyle(.plain)
-        .overlay(
-            // Нижний разделитель: у неактивных линия под вкладкой
-            Group {
-                if store.tab != tab {
-                    Rectangle()
-                        .fill(Color.lineColor)
-                        .frame(height: 1)
-                        .offset(y: 0)
-                }
-            },
-            alignment: .bottom
-        )
-    }
-
-    /// Нижняя граница вкладок (общая разделительная линия под всей панелью вкладок)
-    private var tabBorder: some View {
-        Rectangle()
-            .fill(Color.lineColor)
-            .frame(height: 1)
     }
 
     // Каждая вкладка займёт весь низ правой панели
     @ViewBuilder
     private var rightContent: some View {
-        Group {
+        VStack(spacing: 0) {
             switch store.tab {
             case .pie:
-                Text("Диаграмма — задание 07")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                PieView()
             case .details:
                 Text("Детали — задание 07")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -333,12 +329,6 @@ struct ContentView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .overlay(
-            Rectangle()
-                .fill(Color.lineColor)
-                .frame(height: 1),
-            alignment: .top
-        )
     }
 
     // MARK: - Строка состояния (как .status в эталоне)
