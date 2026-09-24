@@ -195,10 +195,15 @@ def collect():
         stem, _, mt = Path(p).stem.rpartition("__")
         snaps.append({"file": os.path.basename(p), "name": stem, "time": time.strftime("%H:%M", time.localtime(int(mt or 0)))})
     refs = sorted(os.path.basename(p) for p in glob.glob(str(REF / "*.png")))
-    return {"runs": runs, "board": board, "snaps": snaps, "refs": refs, "now": time.strftime("%H:%M:%S"),
+    try:
+        launch = json.loads(LAUNCH.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        launch = None
+    return {"runs": runs, "board": board, "snaps": snaps, "refs": refs, "launch": launch, "now": time.strftime("%H:%M:%S"),
             "total_rub": round(sum(r["rub"] for r in runs), 2)}
 
 
+LAUNCH = Path(__file__).resolve().parent.parent / "docs/launch/tracker.json"
 PAGE = (Path(__file__).resolve().parent / "dashboard.html")
 
 

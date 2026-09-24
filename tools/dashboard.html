@@ -65,6 +65,10 @@ th{color:var(--muted);font-weight:500}
 td.r,th.r{text-align:right;font-variant-numeric:tabular-nums}
 .muted{color:var(--muted)}
 .empty{color:var(--muted);padding:20px 0;text-align:center}
+.lst{display:inline-block;padding:1px 8px;border-radius:10px;font-size:11.5px;background:var(--chip)}
+.lst.posted{background:#0ca30c22;color:var(--ok)}.lst.ready{background:#2a78d622;color:var(--accent)}.lst.skipped{opacity:.5}
+.acc{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 12px}.acc span{padding:2px 8px;border-radius:10px;background:var(--chip);font-size:12px}.acc span.yes{background:#0ca30c22}
+.kpi{display:flex;gap:18px;flex-wrap:wrap;margin:4px 0 10px}.kpi div small{display:block;color:var(--muted);font-size:11px}.kpi div b{font-size:18px}
 </style>
 </head>
 <body>
@@ -75,6 +79,7 @@ td.r,th.r{text-align:right;font-variant-numeric:tabular-nums}
 </header>
 <main>
   <div style="display:grid;grid-template-columns:minmax(0,1fr);gap:16px;min-width:0">
+    <section class="card" id="launch"></section>
     <section class="card"><h2>Задания</h2><div class="board" id="board"></div></section>
     <section class="card" id="live"></section>
     <section class="card"><h2>Все прогоны</h2><div style="overflow:auto"><table id="runs"></table></div></section>
@@ -94,6 +99,7 @@ async function tick(){
   let d; try { d = await (await fetch('/api/state')).json(); } catch(e){ return; }
   $('#total').textContent = d.total_rub.toFixed(2).replace('.', ',') + ' ₽';
   $('#now').textContent = d.now;
+  renderLaunch(d.launch);
   const liveTasks = new Set(d.runs.filter(r => r.running).map(r => r.task));
   $('#board').innerHTML = d.board.tasks.map(t => `<div class="task${liveTasks.has(t.id) ? ' live' : ''}"><b>${t.id}</b><span>${esc(t.title)}</span><br><span class="st ${esc(t.status)}">${esc(t.status)}</span>${t.note ? `<div class="muted" style="font-size:11px;margin-top:4px">${esc(t.note)}</div>` : ''}</div>`).join('');
   const cur = d.runs.filter(r => r.running).slice(-1)[0] || d.runs.slice(-1)[0];
@@ -126,6 +132,17 @@ async function tick(){
 }
 const GAL = {app: [], ref: [], mode: 'app', shown: ''};
 let lbIdx = -1;
+function renderLaunch(L){
+  if (!L){ $('#launch').style.display = 'none'; return; }
+  const m = L.metrics.slice(-1)[0] || {};
+  const done = L.channels.filter(c => c.status === 'posted').length;
+  const acc = Object.entries(L.accounts).map(([k, v]) => `<span class="${v.status === 'есть' ? 'yes' : ''}">${v.status === 'есть' ? '✓' : '○'} ${esc(k)}${v.name ? ' · ' + esc(v.name) : ''}</span>`).join('');
+  const rows = L.channels.slice().sort((a, b) => a.day - b.day).map(c => `<tr><td class="r">${c.day}</td><td>${esc(c.name)}</td><td class="muted">${esc(c.region)}</td><td><span class="lst ${esc(c.status)}">${esc(c.status)}</span></td><td>${c.url ? `<a href="${esc(c.url)}" target="_blank" rel="noopener">ссылка</a>` : ''}</td><td class="muted">${esc(c.notes || '')}</td></tr>`).join('');
+  $('#launch').innerHTML = `<h2>Запуск <small class="muted">${esc(L.repo)} · опубликовано ${done} из ${L.channels.length}</small></h2>
+    <div class="kpi">${[['звёзды', m.stars], ['форки', m.forks], ['скачивания', m.downloads], ['issues', m.issues], ['просмотры 14 дн', m.views14d]].map(([k, v]) => `<div><small>${k}</small><b>${v ?? '—'}</b></div>`).join('')}<div><small>замер</small><b style="font-size:13px">${esc(m.date || 'нет')}</b></div></div>
+    <div class="acc">${acc}</div>
+    <div style="overflow:auto;max-height:340px"><table><tr><th class="r">день</th><th>площадка</th><th>регион</th><th>статус</th><th></th><th>заметки</th></tr>${rows}</table></div>`;
+}
 function renderGallery(){
   const items = GAL[GAL.mode], key = GAL.mode + items.map(i => i.src).join();
   if (key === GAL.shown) return;               // не перерисовывать без изменений — картинки не мигают

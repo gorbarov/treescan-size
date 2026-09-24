@@ -7,6 +7,7 @@ import TreeSizeCore
 /// Главный экран приложения
 struct ContentView: View {
     @EnvironmentObject var store: AppStore
+    @State private var showModeHelp = false
 
     var body: some View {
         ZStack {
@@ -82,6 +83,7 @@ struct ContentView: View {
                     .background(store.mode == .size ? Color.accentLinkColor : Color.clear)
                     .cornerRadius(6)
                     .uiTag("mode:size")
+                    .help(tr("Сколько весят файлы. По нему считают квоту Dropbox и iCloud."))
 
                 Button(tr("На диске")) { store.mode = .alloc }
                     .buttonStyle(.plain)
@@ -93,10 +95,21 @@ struct ContentView: View {
                     .background(store.mode == .alloc ? Color.accentLinkColor : Color.clear)
                     .cornerRadius(6)
                     .uiTag("mode:alloc")
+                    .help(tr("Сколько места файлы реально занимают на этом маке."))
             }
             .frame(width: 180)
             .background(Color.panel2Bg)
             .cornerRadius(8)
+
+            // Кнопка ⓘ с пояснением
+            Button { showModeHelp.toggle() } label: {
+                Image(systemName: "info.circle")
+            }
+            .buttonStyle(.plain)
+            .help(tr("Чем отличаются «Размер» и «На диске»?"))
+            .popover(isPresented: $showModeHelp, arrowEdge: .bottom) {
+                ModeHelpView()
+            }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
@@ -463,4 +476,33 @@ extension Color {
 
     /// Фон предупреждения (stuck — жёлтый)
     static let warningBg = Color.dynamicColor(lightHex: "#fff3cd", darkHex: "#332701")
+}
+
+// MARK: - ModeHelpView: пояснение Размер vs На диске
+
+struct ModeHelpView: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(tr("Размер и «На диске» — в чём разница"))
+                .fontWeight(.bold)
+
+            mdText(tr("**Размер** — сколько весят файлы: столько байт вы получите, если их скопировать. По нему считают квоту Dropbox и iCloud."))
+                .font(.system(size: 12.5))
+
+            mdText(tr("**На диске** — сколько места файлы реально занимают на этом маке. Обычно почти то же самое, но есть два исключения:"))
+                .font(.system(size: 12.5))
+
+            Text(tr("☁️ Файлы «только в облаке»: размер есть, а на диске — ноль."))
+                .font(.system(size: 12.5))
+
+            Text(tr("🧊 Разреженные файлы (например, диск Docker или виртуальной машины): размер может быть 460 ГБ, а занято 39 ГБ."))
+                .font(.system(size: 12.5))
+
+            Text(tr("Чтобы освободить место на маке, смотрите «На диске». Чтобы уложиться в тариф облака — «Размер»."))
+                .font(.system(size: 11))
+                .foregroundColor(.secondary)
+        }
+        .padding(16)
+        .frame(width: 360)
+    }
 }

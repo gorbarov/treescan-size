@@ -44,6 +44,17 @@ extension L10n {
         "(без расширения)": "(sem extensão)",
         "Тип": "Tipo",
         "Доля": "Proporção",
+        // MARK: - Mode help (Задание 16)
+        "Сколько весят файлы. По нему считают квоту Dropbox и iCloud.": "Quanto os arquivos pesam. As cotas do Dropbox e do iCloud contam isso.",
+        "Сколько места файлы реально занимают на этом маке.": "Quanto espaço os arquivos realmente ocupam neste Mac.",
+        "Чем отличаются «Размер» и «На диске»?": "Qual a diferença entre “Tamanho” e “No disco”?",
+        "Размер и «На диске» — в чём разница": "Tamanho e No disco: a diferença",
+        "**Размер** — сколько весят файлы: столько байт вы получите, если их скопировать. По нему считают квоту Dropbox и iCloud.": "**Tamanho** é quanto os arquivos pesam — os bytes que você obteria ao copiá-los. As cotas do Dropbox e do iCloud contam isso.",
+        "**На диске** — сколько места файлы реально занимают на этом маке. Обычно почти то же самое, но есть два исключения:": "**No disco** é o espaço que eles realmente ocupam neste Mac. Geralmente é quase igual, com duas exceções:",
+        "☁️ Файлы «только в облаке»: размер есть, а на диске — ноль.": "☁️ Arquivos só na nuvem: têm tamanho, mas ocupam zero no disco.",
+        "🧊 Разреженные файлы (например, диск Docker или виртуальной машины): размер может быть 460 ГБ, а занято 39 ГБ.": "🧊 Arquivos esparsos (como o disco do Docker ou de uma máquina virtual): o tamanho pode ser 460 GB com apenas 39 GB ocupados.",
+        "Чтобы освободить место на маке, смотрите «На диске». Чтобы уложиться в тариф облака — «Размер».": "Para liberar espaço no Mac, veja “No disco”; para caber no plano da nuvem, veja “Tamanho”.",
+
         "Изменён": "Modificado",
         "Файл": "Arquivo",
         " крупнейших файлов скана лежат в «": " maiores arquivos do exame estão em “",

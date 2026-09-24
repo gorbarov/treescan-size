@@ -24,6 +24,8 @@ if args.contains("--snapshot") {
     Task { @MainActor in
         if args.contains("--places") {
             snapshotPlaces(args: args)
+        } else if args.contains("--mode-help") {
+            snapshotModeHelp(args: args)
         } else {
             takeSnapshot(args: args)
         }

@@ -66,6 +66,17 @@ extension L10n {
         "Тип": "Type",
         "Доля": "Share",
 
+        // MARK: - Mode help (Задание 16)
+        "Сколько весят файлы. По нему считают квоту Dropbox и iCloud.": "How much the files weigh. Dropbox and iCloud quotas count this.",
+        "Сколько места файлы реально занимают на этом маке.": "How much space the files actually take on this Mac.",
+        "Чем отличаются «Размер» и «На диске»?": "What's the difference between Size and On disk?",
+        "Размер и «На диске» — в чём разница": "Size vs. On disk",
+        "**Размер** — сколько весят файлы: столько байт вы получите, если их скопировать. По нему считают квоту Dropbox и iCloud.": "**Size** is how much the files weigh — the bytes you'd get if you copied them. Dropbox and iCloud quotas count this.",
+        "**На диске** — сколько места файлы реально занимают на этом маке. Обычно почти то же самое, но есть два исключения:": "**On disk** is the space they actually take on this Mac. Usually about the same, with two exceptions:",
+        "☁️ Файлы «только в облаке»: размер есть, а на диске — ноль.": "☁️ Cloud-only files: they have a size but take zero space on disk.",
+        "🧊 Разреженные файлы (например, диск Docker или виртуальной машины): размер может быть 460 ГБ, а занято 39 ГБ.": "🧊 Sparse files (like a Docker or virtual-machine disk): the size can be 460 GB while only 39 GB is used.",
+        "Чтобы освободить место на маке, смотрите «На диске». Чтобы уложиться в тариф облака — «Размер».": "To free space on your Mac, look at On disk. To fit your cloud plan, look at Size.",
+
         // MARK: - Top
         "Изменён": "Modified",
         "Файл": "File",

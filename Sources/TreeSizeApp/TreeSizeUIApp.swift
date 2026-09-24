@@ -8,6 +8,19 @@ func mdText(_ s: String) -> Text {
     return Text(s)
 }
 
+/// Экранирование спецсимволов Markdown: \, *, _, `, []
+func mdEscape(_ s: String) -> String {
+    var r = ""
+    for c in s {
+        switch c {
+        case "\\", "*", "_", "`", "[", "]": r += "\\"
+        default: break
+        }
+        r.append(c)
+    }
+    return r
+}
+
 /// Приложение без @main (запуск из main.swift)
 public struct TreeSizeUIApp: App {
     @StateObject private var store = AppStore()
