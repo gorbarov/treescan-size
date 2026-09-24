@@ -27,6 +27,8 @@ public final class AppStore: ObservableObject {
         public let title: String
         public let value: Int64
         public let colorIndex: Int?
+        /// Количество «остальных» элементов для сектора «Прочее»
+        public let restCount: Int
     }
 
     @Published public var showPlaces = false
@@ -216,14 +218,18 @@ public final class AppStore: ObservableObject {
         for kid in kids {
             let v = value(kid)
             if v >= threshold && kid.kind != .rest && slices.count < 8 {
-                slices.append(PieSlice(node: kid, title: kid.name, value: v, colorIndex: slices.count))
+                slices.append(PieSlice(node: kid, title: kid.name, value: v, colorIndex: slices.count, restCount: 0))
             } else {
                 otherValue += v
             }
         }
 
         if otherValue > 0 {
-            slices.append(PieSlice(node: nil, title: "Прочее", value: otherValue, colorIndex: nil))
+            let restCount = kids.filter { k in
+                let v = value(k)
+                return v < threshold || k.kind == .rest || slices.count >= 8
+            }.count
+            slices.append(PieSlice(node: nil, title: "Прочее", value: otherValue, colorIndex: nil, restCount: restCount))
         }
 
         return slices

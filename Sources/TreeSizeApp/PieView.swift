@@ -34,14 +34,24 @@ struct PieView: View {
     /// Цвет для индекса (учёт текущей темы)
     private func pieColor(at index: Int) -> Color {
         guard index >= 0 && index < 8 else { return Color(hex: "#b9c1cc") }
-        // Используем NSAppearance для определения тёмной темы
-        // В SwiftUI доступ к цветам через environment, но для диаграммы используем dynamicColor
         return Color.dynamicColor(lightHex: pieColorsLight[index], darkHex: pieColorsDark[index])
     }
 
     /// Серый цвет для «Прочее»
     private var greyColor: Color {
         Color.dynamicColor(lightHex: "#b9c1cc", darkHex: "#5d646f")
+    }
+
+    /// Имя для центра кольца: у корня — последний сегмент пути, иначе имя папки
+    private var centerTitle: String {
+        guard let dir = store.viewDir else { return "" }
+        if dir.parent == nil {
+            // Корень: последний сегмент пути
+            let path = store.result?.root ?? dir.name
+            return (path as NSString).lastPathComponent
+        }
+        let t = dir.name
+        return t.count > 22 ? String(t.prefix(21)) + "…" : t
     }
 
     var body: some View {
@@ -62,34 +72,42 @@ struct PieView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 // Основное содержимое: диаграмма слева, легенда справа
+                // Как .piebox в эталоне: display:flex; gap:28px; padding:18px 22px; align-items:flex-start
                 HStack(alignment: .top, spacing: 28) {
-                    // Круговая диаграмма
-                    pieChart
-                        .frame(width: min(380, 360), height: min(380, 360))
+                    // Круговая диаграмма — clamp(200px, 36%, 380px), квадратная
+                    pieChartContainer
+                        .frame(
+                            minWidth: 200,
+                            maxWidth: 380
+                        )
+                        .aspectRatio(1, contentMode: .fit)
 
-                    // Легенда
+                    // Легенда занимает остаток
                     legendView
-                        .padding(.top, 4)
+                        .frame(maxWidth: .infinity, alignment: .top)
                 }
                 .padding(EdgeInsets(top: 18, leading: 22, bottom: 18, trailing: 22))
 
-                // Подсказка внизу
+                // Подсказка сразу под легендой — мелким серым
                 if !slices.isEmpty {
                     Text("Клик по сектору или строке открывает папку. Дерево слева — то же самое, полосками.")
                         .font(.system(size: 12))
                         .foregroundColor(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 8)
-                        .padding(.vertical, 6)
+                        .padding(.bottom, 6)
                 }
             }
         }
         .background(Color.panelBg)
     }
 
-    // MARK: - Круговая диаграмма (Chart + SectorMark)
+    // MARK: - Круговая диаграмма
 
-    private var pieChart: some View {
-        VStack(spacing: 0) {
+    /// Контейнер для кольца: квадратный, с обёрткой Chart
+    private var pieChartContainer: some View {
+        GeometryReader { geo in
+            let size = min(geo.size.width, geo.size.height)
             Chart {
                 ForEach(slices.indices, id: \.self) { i in
                     let sl = slices[i]
@@ -103,9 +121,7 @@ struct PieView: View {
                     .opacity(hoveredIndex == nil || hoveredIndex == i ? 1 : 0.3)
                 }
             }
-            .chartAngleSelection(value: $hoveredIndex)
             .chartOverlay { proxy in
-                // Кастомная обработка кликов через gesture
                 Color.clear
             }
             .overlay(
@@ -114,16 +130,15 @@ struct PieView: View {
                     Text(fmtBytes(total))
                         .font(.system(size: 17, weight: .bold))
                         .foregroundColor(.primary)
-                    if let dir = store.viewDir {
-                        let title = dir.parent != nil ? dir.name : (store.result?.root ?? dir.name)
-                        Text(title.count > 22 ? String(title.prefix(21)) + "…" : title)
-                            .font(.system(size: 9.5))
-                            .foregroundColor(.secondary)
-                    }
+                    Text(centerTitle)
+                        .font(.system(size: 9.5))
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
                 }
                 .allowsHitTesting(false)
             )
-            .frame(maxWidth: 380, maxHeight: 380)
+            .frame(width: size, height: size)
+            .position(x: geo.size.width / 2, y: geo.size.height / 2)
         }
     }
 
@@ -157,49 +172,38 @@ struct PieView: View {
         }
     }
 
-    /// Одна строка легенды
+    /// Одна строка легенды — 4 колонки: квадрат, имя+подпись, размер, процент
     private func legendRow(slice: AppStore.PieSlice, color: Color, pct: Double, index: Int) -> some View {
+        // GridLayout: 12px квадрат | 1fr имя | auto размер | 58px процент, gap 12px 2px
         HStack(spacing: 12) {
             // Цветной квадрат
             RoundedRectangle(cornerRadius: 3)
                 .fill(color)
                 .frame(width: 12, height: 12)
 
+            // Имя + подпись (растягивается)
             VStack(alignment: .leading, spacing: 0) {
-                // Имя
-                if slice.node != nil {
-                    if slice.node?.kind == .dir {
-                        Text(slice.title)
-                            .fontWeight(.bold)
-                            .font(.system(size: 13))
-                            .lineLimit(1)
-                    } else {
-                        Text(slice.title)
-                            .font(.system(size: 13))
-                            .lineLimit(1)
-                    }
-                } else {
-                    Text("Прочее")
-                        .font(.system(size: 13))
-                        .lineLimit(1)
-                }
+                Text(sliceTitle(slice))
+                    .font(.system(size: 13))
+                    .fontWeight(slice.node?.kind == .dir ? .bold : .regular)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
 
-                // Подпись мелко серым
                 Text(subtitle(for: slice))
                     .font(.system(size: 11))
                     .foregroundColor(.secondary)
                     .lineLimit(1)
             }
-
-            Spacer(minLength: 8)
+            .layoutPriority(1)
 
             // Размер жирным
             Text(fmtBytes(slice.value))
                 .fontWeight(.bold)
                 .font(.system(size: 13).monospacedDigit())
                 .lineLimit(1)
+                .fixedSize()
 
-            // Процент серым
+            // Процент серым — 58 pt
             Text(fmtPct(pct))
                 .font(.system(size: 12).monospacedDigit())
                 .foregroundColor(.secondary)
@@ -208,11 +212,17 @@ struct PieView: View {
         }
     }
 
+    /// Имя сектора: папки жирным, файлы обычным
+    private func sliceTitle(_ slice: AppStore.PieSlice) -> String {
+        slice.title
+    }
+
     /// Подпись под именем в легенде (как sub() в renderPie эталона)
     private func subtitle(for slice: AppStore.PieSlice) -> String {
         guard let node = slice.node else {
-            // «Прочее»: N элементов помельче
-            return "\(slice.title.lowercased()) помельче"
+            // «Прочее»: N элементов помельче (как в эталоне renderPie sub())
+            let count = Int64(slice.restCount)
+            return plural(count, "элемент", "элемента", "элементов") + " помельче"
         }
         if node.kind == .dir {
             var parts: [String] = []
@@ -245,17 +255,5 @@ struct PieView: View {
         } else {
             store.select(node)
         }
-    }
-}
-
-// MARK: - chartAngleSelection binding
-
-/// Binding для chartAngleSelection: преобразует Double? → Int?
-extension ChartProxy {
-    func angleSelection() -> Binding<Int?> {
-        Binding<Int?>(
-            get: { nil },
-            set: { _ in }
-        )
     }
 }

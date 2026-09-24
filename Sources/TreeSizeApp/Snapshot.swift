@@ -27,8 +27,8 @@ func takeSnapshot(args: [String]) {
     let store = AppStore()
     store.result = ScanResult(data: data)
 
-    // Режим: загружаем из UserDefaults, иначе по умолчанию
-    store.loadMode(for: rootPath)
+    // Режим: по умолчанию (UserDefaults не читаем в режиме снимка)
+    store.mode = rootPath.contains("/CloudStorage/Dropbox") ? .size : .alloc
 
     // Выделить корень, раскрыть его
     if let tree = store.result?.tree {
