@@ -352,3 +352,28 @@ Swift: 12.87 с, Python-эталон: 11.78 с на этом же реально
 ### Созданные/изменённые файлы
 - **Созданы**: `Sources/TreeSizeApp/PieView.swift`, `Sources/TreeSizeApp/CrumbsView.swift`
 - **Изменены**: `Sources/TreeSizeApp/AppStore.swift` (tab по умолчанию .pie, Tab CaseIterable), `Sources/TreeSizeApp/ContentView.swift` (tabBar прижат влево, разделитель, PieView вместо заглушки), `Sources/TreeSizeApp/Colors.swift` (faintColor, accentLinkColor)
+
+### Доработка по приёмке
+
+1. **РЕГРЕСС режима**: Snapshot.swift вызывал `store.loadMode(for: rootPath)`, который читал UserDefaults. Для `--root /tmp/ts-fixture` (не Dropbox) при ранее сохранённом `.size` из пред. запуска GUI устанавливался «Размер», а не «На диске». Исправлено: в `takeSnapshot()` заменено на `store.mode = rootPath.contains("/CloudStorage/Dropbox") ? .size : .alloc` — UserDefaults не читается.
+
+2. **Пропорции кольца**: `GeometryReader` + `.aspectRatio(1, contentMode: .fit)` + `minWidth: 200, maxWidth: 380` — как `clamp(200px, 36%, 380px)`. Кольцо квадратное, прижато к верху (`alignment: .top` в HStack). Легенда занимает оставшуюся ширину через `.frame(maxWidth: .infinity)`. Подписи не обрезаются благодаря `layoutPriority(1)` на VStack с именем.
+
+3. **Центр кольца**: для корня показывается `(path as NSString).lastPathComponent` — «ts-fixture», а не полный путь `/tmp/ts-fixture`. Для остальных — имя папки.
+
+4. **«Прочее»**: в `AppStore.PieSlice` добавлено поле `restCount: Int`. Подпись — `plural(count, "элемент", "элемента", "элементов") + " помельче"`.
+
+5. **Подсказка**: перенесена под легенду (`alignment: .leading`) вместо низа панели. Мелким серым шрифтом.
+
+### Сколько раз не собиралось
+- **0 раз**.
+
+### Вывод проверки
+```
+ЗАДАНИЕ 07: снимок готов, его смотрит приёмщик
+ЗАДАНИЕ 07b: снимок готов, его смотрит приёмщик
+ЗАДАНИЕ 03: OK
+```
+
+### Созданные/изменённые файлы
+- **Изменены**: `Sources/TreeSizeApp/AppStore.swift` (PieSlice.restCount, pieSlices считает restCount), `Sources/TreeSizeApp/PieView.swift` (пропорции, центр кольца, «Прочее» plural, подсказка), `Sources/TreeSizeApp/Snapshot.swift` (режим без UserDefaults).
