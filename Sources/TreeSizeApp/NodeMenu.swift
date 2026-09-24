@@ -50,9 +50,9 @@ struct NodeMenu: View {
         return nil
     }
 
-    private var isProtected: Bool {
+    private var trashBlocked: Bool {
         guard let root = store.result?.root else { return true }
-        return !isActionAllowed(path: path, root: root)
+        return !canTrash(path: path, root: root)
     }
 
     var body: some View {
@@ -106,7 +106,7 @@ struct NodeMenu: View {
                     Button("Переместить в корзину…") {
                         performTrash()
                     }
-                    .disabled(isProtected)
+                    .disabled(trashBlocked)
                 }
             }
         }
@@ -147,6 +147,9 @@ struct NodeMenu: View {
         alert.addButton(withTitle: "В корзину")
         alert.addButton(withTitle: "Отмена")
         guard alert.runModal() == .alertFirstButtonReturn else { return }
+
+        // Повторная проверка безопасности перед действием
+        guard let root = store.result?.root, canTrash(path: path, root: root) else { return }
 
         // Сразу убираем из модели (removeLocal)
         let undo: (() -> Void)?

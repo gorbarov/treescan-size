@@ -20,16 +20,22 @@ private func resolveRealPath(_ path: String) -> String {
 }
 
 /// Защищённые папки: корни дисков, системные, домашняя — как protected() в эталоне.
+/// Проверяем исходный путь (без разрешения симлинков), чтобы /Applications/Safari.app не считался системным.
 public func isProtected(_ path: String) -> Bool {
-    let p = resolveRealPath(path)
+    let std = URL(fileURLWithPath: path).standardized.path
     let home = resolveRealPath(NSHomeDirectory())
 
-    if p == home || p == home + "/Library" {
+    // Для home и home/Library — разрешаем симлинки (может быть в ~)
+    if std == home || std == home + "/Library" {
+        return true
+    }
+    if resolveRealPath(std) == home || resolveRealPath(std) == home + "/Library" {
         return true
     }
 
-    var parts = (p as NSString).pathComponents
-    if p.hasPrefix("/System/Volumes/Data") {
+    var parts = (std as NSString).pathComponents
+    // Если путь внутри /System/Volumes/Data — сдвигаем, чтобы вести отсчёт от /
+    if std.hasPrefix("/System/Volumes/Data") {
         parts = ["/"] + Array(parts.dropFirst(4))
     }
 
@@ -119,6 +125,11 @@ public func isDropboxIgnored(_ path: String) -> Bool {
             Darwin.getxattr(UnsafePointer<Int8>(fsPath), attrPtr, nil, 0, 0, XATTR_NOFOLLOW) >= 0
         }
     }
+}
+
+/// Можно ли отправить путь в корзину: путь не защищён системой и внутри корня.
+public func canTrash(path: String, root: String) -> Bool {
+    isActionAllowed(path: path, root: root) && !isProtected(path)
 }
 
 /// Скопировать текст в буфер обмена

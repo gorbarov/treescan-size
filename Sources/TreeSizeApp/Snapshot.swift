@@ -127,8 +127,8 @@ func snapshotPlaces(args: [String]) {
     store.result = ScanResult(data: data)
 
     // Создаём PlacesView
-    let placesView = PlacesView().environmentObject(store)
-    let hostingView = NSHostingView(rootView: AnyView(placesView))
+    let placesView = PlacesView(places: listPlaces()).environmentObject(store)
+    let hostingView = NSHostingView(rootView: placesView)
     hostingView.frame = NSRect(x: 0, y: 0, width: 460, height: 520)
 
     let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 460, height: 520),
@@ -148,6 +148,9 @@ func snapshotPlaces(args: [String]) {
         exit(1)
     }
     hostingView.cacheDisplay(in: hostingView.bounds, to: rep)
+
+    // Скрываем окно
+    window.orderOut(nil)
 
     guard let data = rep.representation(using: .png, properties: [:]) else {
         fputs("Ошибка: не удалось создать PNG\n", stderr)

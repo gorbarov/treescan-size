@@ -1,5 +1,6 @@
 // Самопроверка без окна — UI-SPEC 13
 import TreeSizeCore
+import Darwin
 
 /// Синхронный скан + AppStore + сбор фактов для проверки
 @MainActor
@@ -164,6 +165,30 @@ public func runSelfTest(root: String) -> [String: Any] {
                 facts["ign_trash_ignored_dir_ign_equals_size"] = ignDir.ign == ignDir.size
             }
         }
+    }
+
+    // --- canTrash факты (проверка безопасности корзины) ---
+    facts["can_trash_file"] = canTrash(path: "/tmp/ts-fixture/media/film.mov", root: "/tmp/ts-fixture")
+    facts["can_trash_scan_root"] = canTrash(path: "/tmp/ts-fixture", root: "/tmp/ts-fixture")
+    facts["can_trash_home_under_users"] = canTrash(path: NSHomeDirectory(), root: "/Users")
+    facts["can_trash_applications_app"] = canTrash(path: "/Applications/Safari.app", root: "/Applications")
+    facts["can_trash_applications_dir"] = canTrash(path: "/Applications", root: "/")
+
+    // --- places_unique_paths: все listPlaces() имеют разные path и ни у одного realpath не повторяется
+    do {
+        let places = listPlaces()
+        let paths = places.map(\.path)
+        let realpaths = places.compactMap { p -> String? in
+            let nsPath = p.path as NSString
+            guard let fsPath = nsPath.utf8String else { return nil }
+            guard let r = Darwin.realpath(UnsafePointer<Int8>(fsPath), nil) else { return nil }
+            let s = String(cString: r)
+            free(r)
+            return s
+        }
+        let pathsUnique = Set(paths).count == paths.count
+        let realpathsUnique = Set(realpaths).count == realpaths.count
+        facts["places_unique_paths"] = pathsUnique && realpathsUnique
     }
 
     return facts

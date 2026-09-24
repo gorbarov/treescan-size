@@ -1,5 +1,6 @@
 // Список дисков и типовых папок — как places() в эталоне treesize.py
 import Foundation
+import Darwin
 
 /// Место (диск или папка) для панели «Открыть»
 public struct Place {
@@ -10,12 +11,28 @@ public struct Place {
     public let free: Int64?
 }
 
+/// Нормализация пути через Darwin.realpath (не resolvingSymlinksInPath)
+private func realPath(_ path: String) -> String? {
+    let nsPath = path as NSString
+    guard let fsPath = nsPath.utf8String else { return nil }
+    guard let r = Darwin.realpath(UnsafePointer<Int8>(fsPath), nil) else { return nil }
+    let s = String(cString: r)
+    free(r)
+    return s
+}
+
 /// Диски и типовые папки
 public func listPlaces() -> [Place] {
     let home = NSHomeDirectory()
     var result: [Place] = []
+    // Уникальные пути — используем Set, чтобы не допустить дубликатов
+    var seenPaths = Set<String>()
 
     func addDisk(name: String, path: String) {
+        // Если realpath ведёт на / или /System/Volumes/Data — пропускаем
+        if let rp = realPath(path), rp == "/" || rp == "/System/Volumes/Data" { return }
+        guard !seenPaths.contains(path) else { return }
+        seenPaths.insert(path)
         let url = URL(fileURLWithPath: path)
         guard let values = try? url.resourceValues(forKeys: [.volumeTotalCapacityKey, .volumeAvailableCapacityKey]),
               let total = values.volumeTotalCapacity,
@@ -26,7 +43,16 @@ public func listPlaces() -> [Place] {
     }
 
     // Macintosh HD — том с данными
-    addDisk(name: "Macintosh HD", path: "/System/Volumes/Data")
+    if !seenPaths.contains("/System/Volumes/Data") {
+        seenPaths.insert("/System/Volumes/Data")
+        let url = URL(fileURLWithPath: "/System/Volumes/Data")
+        if let values = try? url.resourceValues(forKeys: [.volumeTotalCapacityKey, .volumeAvailableCapacityKey]),
+           let total = values.volumeTotalCapacity,
+           let free = values.volumeAvailableCapacity {
+            result.append(Place(kind: "disk", name: "Macintosh HD", path: "/System/Volumes/Data",
+                                total: Int64(total), free: Int64(free)))
+        }
+    }
 
     // Тома в /Volumes
     if let volumes = try? FileManager.default.contentsOfDirectory(atPath: "/Volumes") {
@@ -34,15 +60,9 @@ public func listPlaces() -> [Place] {
             let p = "/Volumes/\(v)"
             var isDir: ObjCBool = false
             guard FileManager.default.fileExists(atPath: p, isDirectory: &isDir), isDir.boolValue else { continue }
-            // ismount — проверяем, что это точка монтирования и не корень
-            guard let dest = try? FileManager.default.destinationOfSymbolicLink(atPath: p),
-                  URL(fileURLWithPath: dest).standardized.path != "/"
-            else {
-                // Не симлинк — всё равно добавляем, если смонтировано
-                addDisk(name: v, path: p)
-                continue
-            }
-            _ = dest  // симлинк на корень — пропускаем
+            // Если realpath ведёт на / или /System/Volumes/Data — пропускаем
+            if let rp = realPath(p), rp == "/" || rp == "/System/Volumes/Data" { continue }
+            addDisk(name: v, path: p)
         }
     }
 
@@ -56,6 +76,8 @@ public func listPlaces() -> [Place] {
     ]
 
     for (name, path) in folders {
+        guard !seenPaths.contains(path) else { continue }
+        seenPaths.insert(path)
         var isDir: ObjCBool = false
         if FileManager.default.fileExists(atPath: path, isDirectory: &isDir), isDir.boolValue {
             result.append(Place(kind: "folder", name: name, path: path, total: nil, free: nil))
@@ -67,6 +89,8 @@ public func listPlaces() -> [Place] {
     if let items = try? FileManager.default.contentsOfDirectory(atPath: cs) {
         for item in items.sorted() {
             let p = cs + "/" + item
+            guard !seenPaths.contains(p) else { continue }
+            seenPaths.insert(p)
             var isDir: ObjCBool = false
             if FileManager.default.fileExists(atPath: p, isDirectory: &isDir), isDir.boolValue {
                 result.append(Place(kind: "folder", name: item, path: p, total: nil, free: nil))

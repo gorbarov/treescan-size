@@ -5,8 +5,16 @@ import TreeSizeCore
 /// Поповер «Что просканировать» — кнопка «📂 Открыть…» и ⌘O
 struct PlacesView: View {
     @EnvironmentObject var store: AppStore
-    @State private var places: [Place] = []
+    @State private var places: [Place]
     @State private var customPath: String = ""
+
+    init() {
+        self._places = State(initialValue: [])
+    }
+
+    init(places: [Place]) {
+        self._places = State(initialValue: places)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -108,9 +116,13 @@ struct PlacesView: View {
         .contentShape(Rectangle())
     }
 
-    /// Строка диска: 💽, имя, «свободно X из Y», полоса занятости
+    /// Строка диска: 💽, имя, «свободно X из Y», полоса занятости (как .dbar{grid-column:2/4} в эталоне)
     private func diskRow(_ place: Place, isCurrent: Bool) -> some View {
-        VStack(spacing: 3) {
+        let total = place.total ?? 1
+        let used = total - (place.free ?? 0)
+        let pct = total > 0 ? Double(used) / Double(total) : 0.0
+
+        return VStack(spacing: 3) {
             HStack(spacing: 10) {
                 Text("💽")
                     .font(.system(size: 16))
@@ -128,8 +140,6 @@ struct PlacesView: View {
                 RoundedRectangle(cornerRadius: 4)
                     .fill(Color.panelBg)
                     .frame(height: 8)
-                let used = (place.total ?? 1) - (place.free ?? 0)
-                let pct = place.total.map { t -> Double in t > 0 ? Double(used) / Double(t) : 0 } ?? 0
                 RoundedRectangle(cornerRadius: 4)
                     .fill(pct > 0.9 ? Color.red : Color.accentLinkColor)
                     .frame(width: max(0, 300 * pct), height: 8)
