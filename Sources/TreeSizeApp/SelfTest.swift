@@ -5,6 +5,7 @@ import Darwin
 /// Синхронный скан + AppStore + сбор фактов для проверки
 @MainActor
 public func runSelfTest(root: String) -> [String: Any] {
+    L10n.forceLang("ru")
     // Синхронный скан с параметрами по умолчанию
     let options = ScanOptions()
     let data = scanRoot(root, options: options)

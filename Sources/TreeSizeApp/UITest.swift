@@ -4,6 +4,7 @@ import TreeSizeCore
 
 @MainActor
 func runUITest(root: String) -> [String: Any] {
+    L10n.forceLang("ru")
     let options = ScanOptions()
     let data = scanRoot(root, options: options)
 

@@ -65,7 +65,7 @@ struct NodeMenu: View {
                 if let n = node {
                     let sz = store.value(n)
                     Text(n.kind == .dir
-                         ? "\(fmtBytes(sz)) · \(plural(n.files, "файл", "файла", "файлов"))"
+                         ? "\(fmtBytes(sz)) · \(plural(n.files, tr("файл"), tr("файла"), tr("файлов")))"
                          : fmtBytes(sz))
                         .foregroundColor(.secondary)
                 } else {
@@ -75,10 +75,10 @@ struct NodeMenu: View {
 
                 Divider()
 
-                Button("Показать в Finder") {
+                Button(tr("Показать в Finder")) {
                     NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
                 }
-                Button("Скопировать путь") {
+                Button(tr("Скопировать путь")) {
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(path, forType: .string)
                 }
@@ -89,21 +89,21 @@ struct NodeMenu: View {
                     // Dropbox — не синхронизировать
                     if isDropbox {
                         if let anc = ignoredAncestor {
-                            Text("Не синхронизируется: исключена папка «\(anc.name)»")
+                            Text(tr("Не синхронизируется: исключена папка «") + "\(anc.name)" + tr("»"))
                                 .foregroundColor(.secondary)
                         } else if let n = node, n.selfIgnored {
-                            Button("Снова синхронизировать с Dropbox") {
+                            Button(tr("Снова синхронизировать с Dropbox")) {
                                 performIgnore(on: false)
                             }
                         } else {
-                            Button("Не синхронизировать с Dropbox") {
+                            Button(tr("Не синхронизировать с Dropbox")) {
                                 performIgnore(on: true)
                             }
                         }
                     }
 
                     // Корзина
-                    Button("Переместить в корзину…") {
+                    Button(tr("Переместить в корзину…")) {
                         performTrash()
                     }
                     .disabled(trashBlocked)
@@ -131,21 +131,21 @@ struct NodeMenu: View {
     private func performTrash() {
         let note: String
         if isDropbox && !(node?.selfIgnored == true || ignoredAncestor != nil) {
-            note = "Из Dropbox удалится на всех устройствах. Вернуть можно из корзины мака или из удалённых файлов на dropbox.com."
+            note = tr("Из Dropbox удалится на всех устройствах. Вернуть можно из корзины мака или из удалённых файлов на dropbox.com.")
         } else {
-            note = "Вернуть можно из корзины."
+            note = tr("Вернуть можно из корзины.")
         }
         let what: String
         if let n = node {
             let sz = fmtBytes(store.value(n))
-            what = n.kind == .dir ? "\(sz), \(plural(n.files, "файл", "файла", "файлов"))" : sz
+            what = n.kind == .dir ? "\(sz), \(plural(n.files, tr("файл"), tr("файла"), tr("файлов")))" : sz
         } else { what = "" }
 
         let alert = NSAlert()
-        alert.messageText = "Переместить в корзину?"
+        alert.messageText = tr("Переместить в корзину?")
         alert.informativeText = "\(path)\n\(what)\n\n\(note)"
-        alert.addButton(withTitle: "В корзину")
-        alert.addButton(withTitle: "Отмена")
+        alert.addButton(withTitle: tr("В корзину"))
+        alert.addButton(withTitle: tr("Отмена"))
         guard alert.runModal() == .alertFirstButtonReturn else { return }
 
         // Повторная проверка безопасности перед действием
@@ -168,7 +168,7 @@ struct NodeMenu: View {
                 if let e = err {
                     if let u = undo { u() }
                     let alert = NSAlert()
-                    alert.messageText = "Не удалось переместить в корзину"
+                    alert.messageText = tr("Не удалось переместить в корзину")
                     alert.informativeText = e
                     alert.addButton(withTitle: "OK")
                     alert.runModal()
@@ -182,17 +182,17 @@ struct NodeMenu: View {
     private func performIgnore(on: Bool) {
         if on {
             let alert = NSAlert()
-            alert.messageText = "Не синхронизировать с Dropbox?"
-            alert.informativeText = "\(path)\n\nНа этом маке всё останется, но из облака и с других устройств удалится и перестанет занимать квоту. Вернуть — правый клик → «Снова синхронизировать»."
-            alert.addButton(withTitle: "Не синхронизировать")
-            alert.addButton(withTitle: "Отмена")
+            alert.messageText = tr("Не синхронизировать с Dropbox?")
+            alert.informativeText = "\(path)\n\n" + tr("На этом маке всё останется, но из облака и с других устройств удалится и перестанет занимать квоту. Вернуть — правый клик → «Снова синхронизировать».")
+            alert.addButton(withTitle: tr("Не синхронизировать"))
+            alert.addButton(withTitle: tr("Отмена"))
             guard alert.runModal() == .alertFirstButtonReturn else { return }
         }
 
         let err = setDropboxIgnored(path, on)
         if let e = err {
             let alert = NSAlert()
-            alert.messageText = "Не получилось: \(e)"
+            alert.messageText = tr("Не получилось: ") + "\(e)"
             alert.addButton(withTitle: "OK")
             alert.runModal()
             return

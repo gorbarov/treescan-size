@@ -43,7 +43,7 @@ struct ContentView: View {
                 Text(AppInfo.name)
                     .fontWeight(.bold)
                     .font(.system(size: 15))
-                Text(" для мака")
+                Text(tr(" для мака"))
                     .foregroundColor(.secondary)
                     .font(.system(size: 15))
             }
@@ -56,7 +56,7 @@ struct ContentView: View {
                 .truncationMode(.middle)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            Button("📂 Открыть…") {
+            Button(tr("📂 Открыть…")) {
                 store.showPlaces = true
             }
             .buttonStyle(.borderless)
@@ -65,14 +65,14 @@ struct ContentView: View {
                     .environmentObject(store)
             }
 
-            Button("⟳ Пересканировать") {
+            Button(tr("⟳ Пересканировать")) {
                 store.rescan()
             }
             .buttonStyle(.borderless)
 
             // Сегмент Размер | На диске — заменяем Picker на две Button (чтобы попадать в половинки)
             HStack(spacing: 0) {
-                Button("Размер") { store.mode = .size }
+                Button(tr("Размер")) { store.mode = .size }
                     .buttonStyle(.plain)
                     .font(.system(size: 12))
                     .fontWeight(store.mode == .size ? .semibold : .regular)
@@ -83,7 +83,7 @@ struct ContentView: View {
                     .cornerRadius(6)
                     .uiTag("mode:size")
 
-                Button("На диске") { store.mode = .alloc }
+                Button(tr("На диске")) { store.mode = .alloc }
                     .buttonStyle(.plain)
                     .font(.system(size: 12))
                     .fontWeight(store.mode == .alloc ? .semibold : .regular)
@@ -126,13 +126,13 @@ struct ContentView: View {
         // Dropbox-баннер
         if isDropbox && UserDefaults.standard.string(forKey: "banner") != "off" {
             HStack(spacing: 10) {
-                Text("☁️ **Квоту Dropbox считают по «Размеру»**: файлы «только онлайн» на маке не занимают места, но в тариф входят. Фиолетовым — сколько лежит только в облаке. Папки с пометкой «⊘ не синхр.» лежат только на этом маке и в квоту не входят. Общие папки считаются в квоту каждого участника.")
+                Text(tr("☁️ **Квоту Dropbox считают по «Размеру»**: файлы «только онлайн» на маке не занимают места, но в тариф входят. Фиолетовым — сколько лежит только в облаке. Папки с пометкой «⊘ не синхр.» лежат только на этом маке и в квоту не входят. Общие папки считаются в квоту каждого участника."))
                     .font(.system(size: 12.5))
                 Spacer()
                 Button(action: {
                     UserDefaults.standard.set("off", forKey: "banner")
                 }) {
-                    Text("×")
+                    Text(tr("×"))
                         .foregroundColor(.secondary)
                         .font(.system(size: 16))
                 }
@@ -152,8 +152,18 @@ struct ContentView: View {
                 guard let root = store.result?.root else { return p }
                 return String(p.dropFirst(root.count)) // относительный путь
             }
+            let stuckCnt = Int64(stuck.count)
+            let pathsStr = paths.map { "`\($0)`" }.joined(separator: ", ")
+            let suffix = stuck.count > 5 ? tr(" и другие") : ""
+            let msg: String = {
+                if L10n.isRussian {
+                    return "⚠️ **\(plural(stuckCnt, "папку", "папки", "папок")) прочитать не удалось**: облако не ответило за отведённое время, их размер не учтён. " + pathsStr + suffix
+                } else {
+                    return "⚠️ **\(stuckCnt) " + tr("⚠️ **папки прочитать не удалось**: облако не ответило за отведённое время, их размер не учтён. ") + pathsStr + suffix
+                }
+            }()
             HStack(alignment: .top, spacing: 10) {
-                Text("⚠️ **\(plural(Int64(stuck.count), "папку", "папки", "папок")) прочитать не удалось**: облако не ответило за отведённое время, их размер не учтён. \(paths.map { "`\($0)`" }.joined(separator: ", "))\(stuck.count > 5 ? " и другие" : "")")
+                Text(msg)
                     .font(.system(size: 12.5))
             }
             .padding(.horizontal, 16)
@@ -191,28 +201,28 @@ struct ContentView: View {
                             .frame(maxWidth: 260) // ~40ch × ~6.5pt ≈ 260pt, но с приоритетом
                             .fixedSize(horizontal: false, vertical: false)
 
-                        infoItem(label: "Размер", value: fmtBytes(store.value(sel)))
-                        infoItem(label: "На диске", value: fmtBytes(sel.alloc))
+                infoItem(label: tr("Размер"), value: fmtBytes(store.value(sel)))
+                        infoItem(label: tr("На диске"), value: fmtBytes(sel.alloc))
 
                         if let parent = sel.parent {
                             let pct = store.value(parent) > 0
                                 ? Double(store.value(sel)) / Double(store.value(parent))
                                 : 0
-                            infoItem(label: "Доля в родителе", value: fmtPct(pct))
+                            infoItem(label: tr("Доля в родителе"), value: fmtPct(pct))
                         }
 
                         // «Только в облаке» всегда, даже 0 Б, фиолетовым
-                        infoItem(label: "Только в облаке", value: fmtBytes(sel.cloud), color: .cloudColor)
+                        infoItem(label: tr("Только в облаке"), value: fmtBytes(sel.cloud), color: .cloudColor)
 
                         if isDropbox && sel.ign > 0 {
-                            infoItem(label: "Не синхронизируется", value: fmtBytes(sel.ign))
+                            infoItem(label: tr("Не синхронизируется"), value: fmtBytes(sel.ign))
                             let inQuota = sel.size - sel.ign
-                            infoItem(label: "В квоте Dropbox", value: fmtBytes(inQuota))
+                            infoItem(label: tr("В квоте Dropbox"), value: fmtBytes(inQuota))
                         }
 
-                        infoItem(label: "Файлов", value: formatCount(sel.files))
-                        infoItem(label: "Папок", value: formatCount(sel.dirs))
-                        infoItem(label: "Последнее изменение", value: fmtDate(sel.mtime))
+                        infoItem(label: tr("Файлов"), value: formatCount(sel.files))
+                        infoItem(label: tr("Папок"), value: formatCount(sel.dirs))
+                        infoItem(label: tr("Последнее изменение"), value: fmtDate(sel.mtime))
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
@@ -234,12 +244,8 @@ struct ContentView: View {
         }
     }
 
-    /// Форматирование счётчика с разделителями тысяч, как NF.format() в эталоне
     private func formatCount(_ n: Int64) -> String {
-        let nf = NumberFormatter()
-        nf.numberStyle = .decimal
-        nf.locale = Locale(identifier: "ru-RU")
-        return nf.string(from: NSNumber(value: n)) ?? "\(n)"
+        fmtCount(n)
     }
 
     // MARK: - HSplitView (48/52)
@@ -288,12 +294,12 @@ struct ContentView: View {
 
     private func tabLabel(_ tab: AppStore.Tab) -> String {
         switch tab {
-        case .pie: "Диаграмма"
-        case .details: "Детали"
-        case .ext: "Расширения"
-        case .age: "Возраст файлов"
-        case .top: "Топ файлов"
-        case .dups: "Дубли"
+        case .pie: tr("Диаграмма")
+        case .details: tr("Детали")
+        case .ext: tr("Расширения")
+        case .age: tr("Возраст файлов")
+        case .top: tr("Топ файлов")
+        case .dups: tr("Дубли")
         }
     }
 
@@ -367,7 +373,7 @@ struct ContentView: View {
 
             // Кнопки «Показать в Finder» и «Скопировать путь»
             if let sel = store.selected {
-                Button("Показать в Finder") {
+                Button(tr("Показать в Finder")) {
                     let url = URL(fileURLWithPath: sel.path)
                     NSWorkspace.shared.activateFileViewerSelecting([url])
                 }
@@ -382,7 +388,7 @@ struct ContentView: View {
                         .stroke(Color.lineColor, lineWidth: 1)
                 )
 
-                Button("Скопировать путь") {
+                Button(tr("Скопировать путь")) {
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(sel.path, forType: .string)
                 }
@@ -400,8 +406,8 @@ struct ContentView: View {
 
             // Мета-информация справа
             if let result = store.result {
-                let meta = "Скан \(result.scanned) · \(String(format: "%.1f", result.took)) с"
-                    + (result.errors > 0 ? " · нет доступа: \(result.errors)" : "")
+                let meta = tr("Скан") + " \(result.scanned) · \(String(format: "%.1f", result.took)) " + tr("с")
+                    + (result.errors > 0 ? " · " + tr("нет доступа") + ": \(result.errors)" : "")
                 Text(meta)
                     .foregroundColor(.secondary)
                     .font(.system(size: 12))
@@ -419,13 +425,13 @@ struct ContentView: View {
             .edgesIgnoringSafeArea(.all)
             .overlay(
                 VStack(spacing: 8) {
-                    Text("Сканирую \(store.scanPath)…")
+                    Text(tr("Сканирую ") + store.scanPath + tr("…"))
                         .fontWeight(.bold)
                     if store.progress.files > 0 {
-                        Text("\(store.progress.files) файлов · \(fmtBytes(store.progress.bytes)) · \(String(format: "%.0f", Date().timeIntervalSince1970)) с")
+                        Text(String(store.progress.files) + tr(" файлов · ") + "\(fmtBytes(store.progress.bytes)) · \(String(format: "%.0f", Date().timeIntervalSince1970)) " + tr("с"))
                             .foregroundColor(.secondary)
                     } else {
-                        Text("0 с")
+                        Text(tr("0 с"))
                             .foregroundColor(.secondary)
                     }
                     if !store.progress.cur.isEmpty {

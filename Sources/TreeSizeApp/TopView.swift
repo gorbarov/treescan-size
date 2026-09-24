@@ -48,14 +48,22 @@ struct TopView: View {
             // Подпись (как #topNote в эталоне)
             if let view = store.viewDir {
                 if view.parent != nil {
-                    Text("**\(nf(Int64(filteredTop.count)))** из \(nf(Int64(allCount))) крупнейших файлов скана лежат в «\(view.name)».")
-                        .font(.system(size: 13))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
-                        .background(Color.panelBg)
+                    let n1 = nf(Int64(filteredTop.count))
+                    let n2 = nf(Int64(allCount))
+                    Group {
+                        if L10n.isRussian {
+                            Text("**\(n1)** из \(n2)\(tr(" крупнейших файлов скана лежат в «"))\(view.name)\(tr("»."))")
+                        } else {
+                            Text("**\(n1)** \(tr(" крупнейших файлов скана лежат в «"))\(n2)\(tr("»."))")
+                        }
+                    }
+                    .font(.system(size: 13))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(Color.panelBg)
                 } else {
-                    Text("\(nf(Int64(allCount))) крупнейших файлов. Выберите папку в дереве, чтобы оставить только её файлы.")
+                    Text(nf(Int64(allCount)) + tr(" крупнейших файлов. Выберите папку в дереве, чтобы оставить только её файлы."))
                         .font(.system(size: 13))
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 14)
@@ -85,12 +93,12 @@ struct TopView: View {
             }
             .width(28)
 
-            TableColumn("Файл") { row in
+            TableColumn(tr("Файл")) { row in
                 fileCell(top: row.top)
                     .padding(.leading, 10) // отступ 10 после #
             }
 
-            TableColumn("Размер") { row in
+            TableColumn(tr("Размер")) { row in
                 Text(fmtBytes(row.top.size))
                     .fontWeight(.bold)
                     .font(.system(.body).monospacedDigit())
@@ -98,14 +106,14 @@ struct TopView: View {
             }
             .width(76)
 
-            TableColumn("На диске") { row in
+            TableColumn(tr("На диске")) { row in
                 Text(fmtBytes(row.top.alloc))
                     .font(.system(.body).monospacedDigit())
                     .frame(maxWidth: .infinity, alignment: .trailing)
             }
             .width(76)
 
-            TableColumn("Изменён") { row in
+            TableColumn(tr("Изменён")) { row in
                 Text(fmtDate(row.top.mtime))
                     .font(.system(.body).monospacedDigit())
                     .frame(maxWidth: .infinity, alignment: .trailing)
@@ -180,12 +188,7 @@ struct TopView: View {
         }
     }
 
-    // MARK: - Помощники
-
     private func nf(_ n: Int64) -> String {
-        let f = NumberFormatter()
-        f.numberStyle = .decimal
-        f.locale = Locale(identifier: "ru-RU")
-        return f.string(from: NSNumber(value: n)) ?? "\(n)"
+        fmtCount(n)
     }
 }

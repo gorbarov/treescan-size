@@ -192,7 +192,7 @@ struct TreeRowView: View {
 
                 // ⊘ не синхр. — серым, прямо перед колонкой процентов (как в эталоне)
                 if node.selfIgnored {
-                    Text("⊘ не синхр.")
+                    Text(tr("⊘ не синхр."))
                         .font(.system(size: 12))
                         .foregroundColor(.secondary)
                         .lineLimit(1)

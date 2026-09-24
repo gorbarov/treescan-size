@@ -19,7 +19,7 @@ struct PlacesView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Заголовок
-            Text("Что просканировать")
+            Text(tr("Что просканировать"))
                 .fontWeight(.semibold)
                 .padding(.horizontal, 8)
                 .padding(.bottom, 8)
@@ -51,7 +51,7 @@ struct PlacesView: View {
                 Divider()
                     .padding(.horizontal, 0)
 
-                Button("Выбрать папку в Finder…") {
+                Button(tr("Выбрать папку в Finder…")) {
                     chooseFolder()
                 }
                 .buttonStyle(.plain)
@@ -62,7 +62,7 @@ struct PlacesView: View {
                 .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.lineColor, lineWidth: 1))
 
                 HStack(spacing: 6) {
-                    TextField("или путь: ~/Movies, /Volumes/Диск", text: $customPath)
+                    TextField(tr("или путь: ~/Movies, /Volumes/Диск"), text: $customPath)
                         .textFieldStyle(.plain)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)
@@ -70,7 +70,7 @@ struct PlacesView: View {
                         .cornerRadius(8)
                         .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.lineColor, lineWidth: 1))
 
-                    Button("Сканировать") {
+                    Button(tr("Сканировать")) {
                         let p = (customPath as NSString).expandingTildeInPath
                         store.showPlaces = false
                         store.scan(path: p)
@@ -126,12 +126,12 @@ struct PlacesView: View {
             HStack(spacing: 10) {
                 Text("💽")
                     .font(.system(size: 16))
-                Text(place.name)
+                Text(tr(place.name))
                     .fontWeight(.semibold)
                     .lineLimit(1)
                     .truncationMode(.tail)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                Text("свободно \(fmtBytes(place.free ?? 0)) из \(fmtBytes(place.total ?? 0))")
+                Text(tr("свободно ") + "\(fmtBytes(place.free ?? 0))" + tr(" из ") + "\(fmtBytes(place.total ?? 0))")
                     .font(.system(size: 12))
                     .foregroundColor(.secondary)
             }
@@ -155,7 +155,7 @@ struct PlacesView: View {
             Text("📁")
                 .font(.system(size: 16))
             VStack(alignment: .leading, spacing: 0) {
-                Text(place.name)
+                Text(tr(place.name))
                     .fontWeight(.semibold)
                     .lineLimit(1)
                     .truncationMode(.tail)

@@ -42,7 +42,7 @@ struct ExtView: View {
         return byIdx
             .filter { $0.value > 0 }
             .sorted { $0.value > $1.value }
-            .map { ExtGroupInfo(id: $0.key, color: Color(hex: fileGroups[$0.key].colorHex), title: fileGroups[$0.key].title, size: $0.value) }
+            .map { ExtGroupInfo(id: $0.key, color: Color(hex: fileGroups[$0.key].colorHex), title: tr(fileGroups[$0.key].title), size: $0.value) }
     }
 
     /// Строки таблицы (до 300)
@@ -55,7 +55,7 @@ struct ExtView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Подпись (как .note в эталоне)
-            Text("Типы файлов по всему скану.")
+            Text(tr("Типы файлов по всему скану."))
                 .font(.system(size: 13))
                 .foregroundColor(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -129,34 +129,34 @@ struct ExtView: View {
 
     private var extTable: some View {
         Table(rows) {
-            TableColumn("Расширение") { row in
+            TableColumn(tr("Расширение")) { row in
                 let g = fileGroups[groupIndex(forExt: row.ext)]
                 HStack(spacing: 4) {
                     RoundedRectangle(cornerRadius: 1)
                         .fill(Color(hex: g.colorHex))
                         .frame(width: 11, height: 14)
-                    Text(row.ext.isEmpty ? "(без расширения)" : "." + row.ext)
+                    Text(row.ext.isEmpty ? tr("(без расширения)") : "." + row.ext)
                         .fontWeight(.bold)
                         .font(.system(size: 13))
                 }
             }
             .width(120)
 
-            TableColumn("Тип") { row in
-                Text(fileGroups[groupIndex(forExt: row.ext)].title)
+            TableColumn(tr("Тип")) { row in
+                Text(tr(fileGroups[groupIndex(forExt: row.ext)].title))
                     .foregroundColor(.secondary)
                     .lineLimit(1)
             }
             .width(130)
 
-            TableColumn("Размер") { row in
+            TableColumn(tr("Размер")) { row in
                 Text(fmtBytes(row.size))
                     .font(.system(.body).monospacedDigit())
                     .frame(maxWidth: .infinity, alignment: .trailing)
             }
             .width(76)
 
-            TableColumn("Доля") { row in
+            TableColumn(tr("Доля")) { row in
                 let pct = Double(row.size) / Double(max(totalSize, 1))
                 HStack(spacing: 4) {
                     ZStack(alignment: .leading) {
@@ -174,14 +174,14 @@ struct ExtView: View {
             }
             .width(118)
 
-            TableColumn("Файлов") { row in
+            TableColumn(tr("Файлов")) { row in
                 Text(formatCount(row.count))
                     .font(.system(.body).monospacedDigit())
                     .frame(maxWidth: .infinity, alignment: .trailing)
             }
             .width(56)
 
-            TableColumn("Только в облаке") { row in
+            TableColumn(tr("Только в облаке")) { row in
                 Text(row.cloud > 0 ? fmtBytes(row.cloud) : "")
                     .font(.system(.body).monospacedDigit())
                     .foregroundColor(.cloudColor)
@@ -192,12 +192,7 @@ struct ExtView: View {
         .tableStyle(.inset)
     }
 
-    // MARK: - Помощники
-
     private func formatCount(_ n: Int64) -> String {
-        let nf = NumberFormatter()
-        nf.numberStyle = .decimal
-        nf.locale = Locale(identifier: "ru-RU")
-        return nf.string(from: NSNumber(value: n)) ?? "\(n)"
+        fmtCount(n)
     }
 }

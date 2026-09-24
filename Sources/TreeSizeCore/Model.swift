@@ -130,9 +130,9 @@ public final class Node: Identifiable {
     public var displayName: String {
         if kind == .rest {
             var parts: [String] = []
-            if files > 0 { parts.append(plural(files, "файл", "файла", "файлов")) }
-            if dirs > 0 { parts.append(plural(dirs, "папка", "папки", "папок")) }
-            return "[" + parts.joined(separator: " и ") + " помельче]"
+            if files > 0 { parts.append(plural(files, tr("файл"), tr("файла"), tr("файлов"))) }
+            if dirs > 0 { parts.append(plural(dirs, tr("папка"), tr("папки"), tr("папок"))) }
+            return "[" + parts.joined(separator: tr(" и ")) + tr(" помельче") + "]"
         }
         return name
     }

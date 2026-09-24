@@ -59,7 +59,7 @@ struct PieView: View {
 
                     if slices.isEmpty {
                         VStack {
-                            Text("Папка пустая")
+                            Text(tr("Папка пустая"))
                                 .foregroundColor(.secondary)
                                 .font(.system(size: 13))
                         }
@@ -154,7 +154,7 @@ struct PieView: View {
                 }
 
                 // Подсказка
-                Text("Клик по сектору или строке открывает папку. Дерево слева — то же самое, полосками.")
+                Text(tr("Клик по сектору или строке открывает папку. Дерево слева — то же самое, полосками."))
                     .font(.system(size: 12))
                     .foregroundColor(.secondary)
                     .padding(.horizontal, 8)
@@ -206,12 +206,12 @@ struct PieView: View {
     private func subtitle(for slice: AppStore.PieSlice) -> String {
         guard let node = slice.node else {
             let count = Int64(slice.restCount)
-            return plural(count, "элемент", "элемента", "элементов") + " помельче"
+            return plural(count, tr(" элемент"), tr(" элемента"), tr(" элементов")) + tr(" помельче")
         }
         if node.kind == .dir {
             var parts: [String] = []
-            if node.files > 0 { parts.append(plural(node.files, "файл", "файла", "файлов")) }
-            if node.dirs > 0 { parts.append(plural(node.dirs, "папка", "папки", "папок")) }
+            if node.files > 0 { parts.append(plural(node.files, tr("файл"), tr("файла"), tr("файлов"))) }
+            if node.dirs > 0 { parts.append(plural(node.dirs, tr("папка"), tr("папки"), tr("папок"))) }
             var result = parts.joined(separator: ", ")
             if node.cloud > 0 {
                 result += " · ☁ \(fmtBytes(node.cloud))"
@@ -220,7 +220,7 @@ struct PieView: View {
         } else {
             let ext = extOf(node.name)
             let gIdx = groupIndex(forExt: ext)
-            return fileGroups[gIdx].title
+            return tr(fileGroups[gIdx].title)
         }
     }
 

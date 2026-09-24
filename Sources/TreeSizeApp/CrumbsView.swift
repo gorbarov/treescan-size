@@ -18,7 +18,7 @@ struct CrumbsView: View {
                     store.select(parent, expand: true)
                 }
             }) {
-                Text("↑ Вверх")
+                Text(tr("↑ Вверх"))
                     .font(.system(size: 12))
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
@@ -33,7 +33,7 @@ struct CrumbsView: View {
 
             if let node = node {
                 ForEach(chain(for: node), id: \.id) { ancestor in
-                    Text("›")
+                    Text(tr("›"))
                         .foregroundColor(Color.faintColor)
                         .font(.system(size: 13))
                         .padding(.horizontal, 1)

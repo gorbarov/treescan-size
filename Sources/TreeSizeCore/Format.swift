@@ -3,8 +3,10 @@ import Foundation
 
 /// Форматирование байтов - как fmt() в эталоне.
 public func fmtBytes(_ b: Int64) -> String {
-    if b < 1024 { return "\(b) Б" }
-    let units = ["КБ", "МБ", "ГБ", "ТБ", "ПБ"]
+    if b < 1024 { return "\(b) \(L10n.isRussian ? "Б" : "B")" }
+    let ruUnits = ["КБ", "МБ", "ГБ", "ТБ", "ПБ"]
+    let enUnits = ["KB", "MB", "GB", "TB", "PB"]
+    let units = L10n.isRussian ? ruUnits : enUnits
     var val = Double(b)
     var i = -1
     repeat {
@@ -19,7 +21,8 @@ public func fmtBytes(_ b: Int64) -> String {
     } else {
         s = String(format: "%.2f", val)
     }
-    return s.replacingOccurrences(of: ".", with: ",") + " " + units[i]
+    let sep = L10n.isRussian ? "," : "."
+    return s.replacingOccurrences(of: ".", with: sep) + " " + units[i]
 }
 
 /// Форматирование доли в проценты - как pctTxt() в эталоне.
@@ -31,7 +34,13 @@ public func fmtPct(_ x: Double) -> String {
     } else {
         s = String(format: "%.1f", p)
     }
-    return s.replacingOccurrences(of: ".", with: ",") + " %"
+    let sep = L10n.isRussian ? "," : "."
+    let formatted = s.replacingOccurrences(of: ".", with: sep)
+    if L10n.isRussian {
+        return formatted + " %"
+    } else {
+        return formatted + "%"
+    }
 }
 
 /// Форматирование даты из unix-секунд - как dateTxt() в эталоне.
@@ -39,12 +48,32 @@ public func fmtDate(_ unix: Int64) -> String {
     if unix == 0 { return "\u{2014}" }
     let date = Date(timeIntervalSince1970: Double(unix))
     let df = DateFormatter()
-    df.dateFormat = "dd.MM.yyyy"
+    df.dateFormat = L10n.isRussian ? "dd.MM.yyyy" : "yyyy-MM-dd"
     return df.string(from: date)
 }
 
 /// Русское склонение с разделителем тысяч (U+00A0) - как plural() в эталоне.
+/// В английском/китайском — формы через tr(), 1 → one, иначе → many.
 public func plural(_ n: Int64, _ one: String, _ few: String, _ many: String) -> String {
+    let ns = NumberFormatter()
+    ns.numberStyle = .decimal
+    if L10n.lang == "zh" {
+        ns.locale = Locale(identifier: "zh-CN")
+    } else if !L10n.isRussian {
+        ns.locale = Locale(identifier: "en-US")
+    } else {
+        ns.locale = Locale(identifier: "ru-RU")
+    }
+    let numStr = ns.string(from: NSNumber(value: n)) ?? "\(n)"
+    if L10n.lang == "zh" {
+        // Китайский: единая форма
+        return numStr + " " + tr(many)
+    } else if !L10n.isRussian {
+        // Английский: one для 1, иначе many
+        let word = n == 1 ? tr(one) : tr(many)
+        return numStr + " " + word
+    }
+    // Русский
     let m10 = n % 10
     let m100 = n % 100
     let word: String
@@ -55,9 +84,19 @@ public func plural(_ n: Int64, _ one: String, _ few: String, _ many: String) -> 
     } else {
         word = many
     }
+    return numStr + " " + word
+}
+
+/// Форматирование целого числа с разделителями тысяч.
+public func fmtCount(_ n: Int64) -> String {
     let ns = NumberFormatter()
     ns.numberStyle = .decimal
-    ns.locale = Locale(identifier: "ru-RU")
-    let numStr = ns.string(from: NSNumber(value: n)) ?? "\(n)"
-    return numStr + " " + word
+    if L10n.lang == "zh" {
+        ns.locale = Locale(identifier: "zh-CN")
+    } else if !L10n.isRussian {
+        ns.locale = Locale(identifier: "en-US")
+    } else {
+        ns.locale = Locale(identifier: "ru-RU")
+    }
+    return ns.string(from: NSNumber(value: n)) ?? "\(n)"
 }

@@ -18,12 +18,12 @@ public struct TreeSizeUIApp: App {
         .commands {
             // «Открыть…» ⌘O
             CommandGroup(after: .newItem) {
-                Button("Открыть…") {
+                Button(tr("Открыть…")) {
                     store.showPlaces = true
                 }
                 .keyboardShortcut("o", modifiers: .command)
 
-                Button("Пересканировать") {
+                Button(tr("Пересканировать")) {
                     store.rescan()
                 }
                 .keyboardShortcut("r", modifiers: .command)

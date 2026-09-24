@@ -121,6 +121,7 @@ if htmlOut != nil && templatePath == nil {
 let options = ScanOptions(oneFS: oneFS, minShare: minShare, dupMin: dupMin, timeout: timeout)
 
 if modelCheck {
+    L10n.forceLang("ru")
     let data = scanRoot(absRoot, options: options)
     let result = ScanResult(data: data)
     print("root: \(URL(fileURLWithPath: result.tree.name).lastPathComponent)")

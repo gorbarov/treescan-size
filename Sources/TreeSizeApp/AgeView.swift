@@ -20,7 +20,7 @@ struct AgeView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Подпись (как #ageNote в эталоне)
-            Text("Распределение по дате последнего изменения файла, по всему скану. Старое и большое — первые кандидаты в архив.")
+            Text(tr("Распределение по дате последнего изменения файла, по всему скану. Старое и большое — первые кандидаты в архив."))
                 .font(.system(size: 13))
                 .foregroundColor(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -52,7 +52,7 @@ struct AgeView: View {
         let totalPct = totalSize > 0 ? Double(bucket.size) / Double(totalSize) : 0.0
 
         return HStack(spacing: 14) {
-            Text(bucket.label)
+            Text(tr(bucket.label))
                 .font(.system(size: 13))
                 .fixedSize()
                 .frame(minWidth: 90, alignment: .leading)
@@ -73,7 +73,7 @@ struct AgeView: View {
                 .fixedSize()
                 .frame(minWidth: 70, alignment: .trailing)
 
-            Text("\(fmtPct(totalPct)) · \(plural(bucket.count, "файл", "файла", "файлов"))")
+            Text("\(fmtPct(totalPct)) · \(plural(bucket.count, tr("файл"), tr("файла"), tr("файлов")))")
                 .font(.system(size: 12))
                 .foregroundColor(.secondary)
                 .fixedSize()

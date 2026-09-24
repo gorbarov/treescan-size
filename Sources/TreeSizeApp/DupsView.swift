@@ -27,16 +27,16 @@ struct DupsView: View {
         VStack(spacing: 0) {
             // Подпись (как #dupNote в эталоне)
             if let dupMin = store.result?.dupMin {
-                let groupsNote = plural(Int64(filteredDups.count), "группа", "группы", "групп")
+                let groupsNote = plural(Int64(filteredDups.count), tr("группа"), tr("группы"), tr("групп"))
                 if filteredDups.count < allDups.count {
-                    Text("Файлы от \(fmtBytes(dupMin)) с одинаковым размером и расширением. Содержимое не сверялось, чтобы не скачивать облачные файлы, поэтому **это кандидаты, а не доказанные дубли**. Если все окажутся копиями, освободится до **\(fmtBytes(wasteSize))** (\(groupsNote), из \(nf(Int64(allDups.count))) по всему скану).")
+                    Text(tr("Файлы от ") + "\(fmtBytes(dupMin))" + tr(" с одинаковым размером и расширением. Содержимое не сверялось, чтобы не скачивать облачные файлы, поэтому **это кандидаты, а не доказанные дубли**. Если все окажутся копиями, освободится до **") + "\(fmtBytes(wasteSize))" + tr("** (") + groupsNote + tr(", из ") + nf(Int64(allDups.count)) + tr(" по всему скану)."))
                         .font(.system(size: 13))
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 14)
                         .padding(.vertical, 10)
                         .background(Color.panelBg)
                 } else {
-                    Text("Файлы от \(fmtBytes(dupMin)) с одинаковым размером и расширением. Содержимое не сверялось, чтобы не скачивать облачные файлы, поэтому **это кандидаты, а не доказанные дубли**. Если все окажутся копиями, освободится до **\(fmtBytes(wasteSize))** (\(groupsNote)).")
+                    Text(tr("Файлы от ") + "\(fmtBytes(dupMin))" + tr(" с одинаковым размером и расширением. Содержимое не сверялось, чтобы не скачивать облачные файлы, поэтому **это кандидаты, а не доказанные дубли**. Если все окажутся копиями, освободится до **") + "\(fmtBytes(wasteSize))" + tr("** (") + groupsNote + tr(")."))
                         .font(.system(size: 13))
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 14)
@@ -51,7 +51,7 @@ struct DupsView: View {
             ScrollView(.vertical) {
                 VStack(spacing: 0) {
                     if filteredDups.isEmpty {
-                        Text("Кандидатов в дубли не нашлось.")
+                        Text(tr("Кандидатов в дубли не нашлось."))
                             .font(.system(size: 13))
                             .foregroundColor(.secondary)
                             .padding(.horizontal, 14)
@@ -80,7 +80,7 @@ struct DupsView: View {
                 Text(fmtBytes(group.size))
                     .font(.system(size: 13, weight: .bold).monospacedDigit())
 
-                Text("× \(group.paths.count) — лишних \(fmtBytes(waste))")
+                Text("× \(group.paths.count) " + tr("— лишних ") + "\(fmtBytes(waste))")
                     .font(.system(size: 13))
                     .foregroundColor(.secondary)
             }
@@ -115,12 +115,7 @@ struct DupsView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    // MARK: - Помощники
-
     private func nf(_ n: Int64) -> String {
-        let f = NumberFormatter()
-        f.numberStyle = .decimal
-        f.locale = Locale(identifier: "ru-RU")
-        return f.string(from: NSNumber(value: n)) ?? "\(n)"
+        fmtCount(n)
     }
 }

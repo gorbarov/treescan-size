@@ -232,7 +232,7 @@ public final class AppStore: ObservableObject {
                 let v = value(k)
                 return v < threshold || k.kind == .rest || slices.count >= 8
             }.count
-            slices.append(PieSlice(node: nil, title: "Прочее", value: otherValue, colorIndex: nil, restCount: restCount))
+            slices.append(PieSlice(node: nil, title: tr("Прочее"), value: otherValue, colorIndex: nil, restCount: restCount))
         }
 
         return slices

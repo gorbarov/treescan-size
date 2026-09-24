@@ -52,7 +52,7 @@ struct DetailsView: View {
             if viewDir != nil {
                 if rows.isEmpty {
                     VStack {
-                        Text("Пусто")
+                        Text(tr("Пусто"))
                             .foregroundColor(.secondary)
                             .font(.system(size: 13))
                     }
@@ -73,7 +73,7 @@ struct DetailsView: View {
 
     private var tableView: some View {
         Table(rows, selection: $selection, sortOrder: $sortOrder) {
-            TableColumn("Имя", value: \.name) { row in
+            TableColumn(tr("Имя"), value: \.name) { row in
                 HStack(spacing: 4) {
                     iconView(for: row)
                         .frame(width: 16, alignment: .center)
@@ -87,21 +87,21 @@ struct DetailsView: View {
             }
             .width(min: 110, ideal: 140)
 
-            TableColumn("Размер", value: \.size) { row in
+            TableColumn(tr("Размер"), value: \.size) { row in
                 Text(fmtBytes(row.size))
                     .font(.system(.body).monospacedDigit())
                     .frame(maxWidth: .infinity, alignment: .trailing)
             }
             .width(76)
 
-            TableColumn("На диске", value: \.alloc) { row in
+            TableColumn(tr("На диске"), value: \.alloc) { row in
                 Text(fmtBytes(row.alloc))
                     .font(.system(.body).monospacedDigit())
                     .frame(maxWidth: .infinity, alignment: .trailing)
             }
             .width(76)
 
-            TableColumn("Только в облаке", value: \.cloud) { row in
+            TableColumn(tr("Только в облаке"), value: \.cloud) { row in
                 if row.cloud > 0 {
                     Text(fmtBytes(row.cloud))
                         .foregroundColor(.cloudColor)
@@ -111,14 +111,14 @@ struct DetailsView: View {
             }
             .width(64)
 
-            TableColumn("Файлов", value: \.files) { row in
+            TableColumn(tr("Файлов"), value: \.files) { row in
                 Text(formatCount(row.files))
                     .font(.system(.body).monospacedDigit())
                     .frame(maxWidth: .infinity, alignment: .trailing)
             }
             .width(52)
 
-            TableColumn("Папок", value: \.dirs) { row in
+            TableColumn(tr("Папок"), value: \.dirs) { row in
                 // у файлов пусто, как в эталоне: n.t === 1 ? '' : NF.format(n.d)
                 if !row.isFile {
                     Text(formatCount(row.dirs))
@@ -128,12 +128,12 @@ struct DetailsView: View {
             }
             .width(46)
 
-            TableColumn("% от родителя", value: \.pctForSort) { row in
+            TableColumn(tr("% от родителя"), value: \.pctForSort) { row in
                 percentBar(pct: row.pct)
             }
             .width(118)
 
-            TableColumn("Изменено", value: \.mtime) { row in
+            TableColumn(tr("Изменено"), value: \.mtime) { row in
                 Text(fmtDate(row.mtime))
                     .font(.system(.body).monospacedDigit())
                     .frame(maxWidth: .infinity, alignment: .trailing)
@@ -222,12 +222,8 @@ struct DetailsView: View {
 
     // MARK: - Помощники
 
-    /// Форматирование счётчика с разделителями тысяч (как NF.format в эталоне)
     private func formatCount(_ n: Int64) -> String {
-        let nf = NumberFormatter()
-        nf.numberStyle = .decimal
-        nf.locale = Locale(identifier: "ru-RU")
-        return nf.string(from: NSNumber(value: n)) ?? "\(n)"
+        fmtCount(n)
     }
 }
 
