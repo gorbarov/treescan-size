@@ -551,3 +551,65 @@ Git-коммит не сделан из-за сандахбокных огран
 **Файлы:**
 - Изменён: `Sources/TreeSizeCore/Scanner.swift`
 - Изменён: `Sources/TreeSizeApp/TopView.swift`
+
+## Задание 10. Контекстное меню, корзина, «не синхронизировать», поповер «Открыть…»
+
+### Что сделано
+
+1. **Sources/TreeSizeCore/Model.swift** — добавлен `Node.findDescendant(by:)` — рекурсивный поиск узла по полному пути (для топа и дублей, где узла в дереве может не быть).
+
+2. **Sources/TreeSizeApp/NodeMenu.swift** — новый файл, одно меню `NodeMenu` (UI-SPEC раздел 9, как `openMenu()` в эталоне):
+   - заголовок — имя и размер (у папки ещё число файлов);
+   - «Показать в Finder» (`NSWorkspace.activateFileViewerSelecting`) и «Скопировать путь» (`NSPasteboard`);
+   - разделитель;
+   - только не для корня: для Dropbox — «Не синхронизировать с Dropbox» / «Снова синхронизировать с Dropbox» (если `selfIgnored`), либо неактивная «Не синхронизируется: исключена папка «X»»; «Переместить в корзину…» (неактивно для защищённых путей через `isActionAllowed`).
+   - Два инициализатора: `init(node:)` (дерево, детали, легенда) и `init(path:)` (топ, дубли) — узел ищется через `findDescendant`, если не нашёлся — меню работает по пути с размером из top/dups.
+   - Для сводок (`.rest`) меню пустое (`EmptyView`).
+
+3. **Корзина** (`doTrash`):
+   - подтверждение `NSAlert` с текстом эталона (путь, размер `what`, пояснение про Dropbox), кнопки «В корзину» / «Отмена»;
+   - сразу `store.removeLocal(node)` (задание 03), `objectWillChange`, затем `Task.detached { moveToTrash(path) }` из `FileActions.swift` (задание 02); при ошибке — откат `undo()` и `NSAlert` с ошибкой.
+
+4. **«Не синхронизировать»** (`doIgnore`):
+   - подтверждение `NSAlert` по тексту эталона;
+   - `setDropboxIgnored(path, on)` из `FileActions.swift` (задание 02);
+   - при успехе — `selfIgnored = on`, `ign = size` (или сумма детей при снятии), у предков `ign` корректируется, `objectWillChange`.
+
+5. **Sources/TreeSizeApp/PlacesView.swift** — новый файл, поповер «Открыть…» (UI-SPEC раздел 11, как `renderPlaces()`):
+   - заголовок «Что просканировать»;
+   - диски: 💽, имя, «свободно X из Y», полоса занятости (красная при > 90 %);
+   - разделитель, папки: 📁, имя и путь серым с `~`;
+   - текущий корень подсвечен (фон `treeSelectionBg`);
+   - кнопка «Выбрать папку в Finder…» — `NSOpenPanel` (только папки);
+   - поле пути «или путь: ~/Movies, /Volumes/Диск» и кнопка «Сканировать»;
+   - клик по месту — закрыть поповер и `scan(path:)`.
+   - Места — `listPlaces()` из `Places.swift`.
+
+6. **Контекстные меню по местам**:
+   - `TreeView.swift` — `.contextMenu { NodeMenu(node: node, store: store) }` на строке дерева;
+   - `DetailsView.swift` — `.contextMenu(forSelectionType: Int.self)` с `NodeMenu` (заменил старый сниппет «Показать в Finder / Скопировать»);
+   - `PieView.swift` — `.contextMenu` на строке легенды и на кольце (по выбранному сектору);
+   - `TopView.swift` — `.contextMenu(forSelectionType:)` на таблице + контекстное меню в ячейке имени файла (`NodeMenu(path:)`);
+   - `DupsView.swift` — `.contextMenu { NodeMenu(path: path) }` на каждом пути дубля.
+
+7. **ContentView.swift** — на кнопке «📂 Открыть…» добавлен `.popover(isPresented: $store.showPlaces)` с `PlacesView`. ⌘O уже открывает поповер через `.commands` (задание 04).
+
+8. **Snapshot.swift + main.swift** — режим `--places`: `snapshotPlaces(args:)` рисует `PlacesView` в NSHostingView размером 460×520 отдельным снимком вместо окна; `--snapshot ... --places`. Проверка `tools/check_task.sh 10p --places`.
+
+### Сколько раз не собиралось
+
+- **1 раз**: в `NodeMenu` optional-выражения `node?.kind == .rest ?? false` — Swift не давал сравнивать с `??`. Исправлено через `if let n = node { n.kind == .rest } else { false }`. Дальше сборки с первого раза.
+
+### Вывод проверки
+
+```
+ЗАДАНИЕ 03: OK
+ЗАДАНИЕ 10: снимок готов, его смотрит приёмщик
+ЗАДАНИЕ 10p: снимок готов, его смотрит приёмщик
+```
+
+### Созданные/изменённые файлы
+
+- **Созданы**: `Sources/TreeSizeApp/NodeMenu.swift`, `Sources/TreeSizeApp/PlacesView.swift`
+- **Изменены**: `Sources/TreeSizeApp/TreeView.swift`, `Sources/TreeSizeApp/DetailsView.swift`, `Sources/TreeSizeApp/PieView.swift`, `Sources/TreeSizeApp/TopView.swift`, `Sources/TreeSizeApp/DupsView.swift`, `Sources/TreeSizeApp/ContentView.swift`, `Sources/TreeSizeApp/Snapshot.swift`, `Sources/TreeSizeApp/main.swift`, `Sources/TreeSizeCore/Model.swift`
+- **Коммит**: `919d72e`
