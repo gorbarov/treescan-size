@@ -33,7 +33,9 @@ struct DetailsView: View {
                 pct: pct,
                 mtime: node.mtime,
                 isDir: node.kind == .dir,
+                isFile: node.kind == .file,
                 name: node.name,
+                displayName: node.displayName,
                 ext: extOf(node.name),
                 kind: node.kind
             )
@@ -57,11 +59,12 @@ struct DetailsView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     tableView
+                        .background(Color.panelBg)
                 }
             }
         }
         .background(Color.panelBg)
-        .onChange(of: viewDir?.id) { oldId, newId in
+        .onChange(of: viewDir?.id) { _, _ in
             selection = []
         }
     }
@@ -74,26 +77,28 @@ struct DetailsView: View {
                 HStack(spacing: 4) {
                     iconView(for: row)
                         .frame(width: 16, alignment: .center)
-                    Text(row.name)
+                    Text(row.displayName)
                         .fontWeight(row.isDir ? .bold : .regular)
+                        .foregroundColor(row.kind == .rest ? .secondary : .primary)
                         .lineLimit(1)
                         .truncationMode(.tail)
                 }
             }
+            .width(min: 120, ideal: 170)
 
             TableColumn("Размер", value: \.size) { row in
                 Text(fmtBytes(row.size))
                     .font(.system(.body).monospacedDigit())
                     .frame(maxWidth: .infinity, alignment: .trailing)
             }
-            .width(90)
+            .width(76)
 
             TableColumn("На диске", value: \.alloc) { row in
                 Text(fmtBytes(row.alloc))
                     .font(.system(.body).monospacedDigit())
                     .frame(maxWidth: .infinity, alignment: .trailing)
             }
-            .width(90)
+            .width(76)
 
             TableColumn("Только в облаке", value: \.cloud) { row in
                 if row.cloud > 0 {
@@ -102,38 +107,37 @@ struct DetailsView: View {
                         .font(.system(.body).monospacedDigit())
                         .frame(maxWidth: .infinity, alignment: .trailing)
                 }
-                // 0 → пусто (как в эталоне)
             }
-            .width(110)
+            .width(64)
 
             TableColumn("Файлов", value: \.files) { row in
                 Text(formatCount(row.files))
                     .font(.system(.body).monospacedDigit())
                     .frame(maxWidth: .infinity, alignment: .trailing)
             }
-            .width(70)
+            .width(52)
 
             TableColumn("Папок", value: \.dirs) { row in
-                // у файлов пусто (как в эталоне: n.t === 1 ? '' : NF.format(n.d))
-                if row.isDir {
+                // у файлов пусто, как в эталоне: n.t === 1 ? '' : NF.format(n.d)
+                if !row.isFile {
                     Text(formatCount(row.dirs))
                         .font(.system(.body).monospacedDigit())
                         .frame(maxWidth: .infinity, alignment: .trailing)
                 }
             }
-            .width(70)
+            .width(46)
 
             TableColumn("% от родителя", value: \.pctForSort) { row in
                 percentBar(pct: row.pct)
             }
-            .width(150)
+            .width(118)
 
             TableColumn("Изменено", value: \.mtime) { row in
                 Text(fmtDate(row.mtime))
                     .font(.system(.body).monospacedDigit())
                     .frame(maxWidth: .infinity, alignment: .trailing)
             }
-            .width(100)
+            .width(76)
         }
         .tableStyle(.inset)
         .contextMenu(forSelectionType: Int.self) { ids in
@@ -216,20 +220,20 @@ struct DetailsView: View {
             .frame(width: 16, height: 12)
     }
 
-    // MARK: - Полоска процента (как pbar в эталоне)
+    // MARK: - Полоска процента (как pbar в эталоне: <span class="pbar"><i style="width:...%"></i></span><span>%</span>)
 
     private func percentBar(pct: Double) -> some View {
         HStack(spacing: 4) {
             ZStack(alignment: .leading) {
-                // Фон: #e6eaf0 (светлая), #2a3039 (тёмная)
+                // Фон 60×12
                 RoundedRectangle(cornerRadius: 3)
                     .fill(Color(hex: "#e6eaf0"))
-                    .frame(width: 90, height: 14)
+                    .frame(width: 60, height: 12)
 
-                // Заливка: #2a78d6
+                // Синяя заливка #2a78d6
                 RoundedRectangle(cornerRadius: 3)
                     .fill(Color(hex: "#2a78d6"))
-                    .frame(width: max(0, 90 * pct), height: 14)
+                    .frame(width: max(0, 60 * pct), height: 12)
             }
 
             Text(fmtPct(pct))
@@ -265,7 +269,9 @@ struct DetailsRow: Identifiable {
     let pct: Double
     let mtime: Int64
     let isDir: Bool
+    let isFile: Bool
     let name: String
+    let displayName: String
     let ext: String
     let kind: NodeKind
 
