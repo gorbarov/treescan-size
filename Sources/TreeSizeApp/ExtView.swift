@@ -1,6 +1,25 @@
 // Расширения — UI-SPEC раздел 8, как renderExt() в template.html
+// Полоса-стопка: GeometryReader с пропорциональными сегментами
+// Список групп: LazyVGrid с .adaptive(minimum: 190)
+// Таблица: Table с ширинами 120/130/76/118/56/70
 import SwiftUI
 import TreeSizeCore
+
+struct ExtGroupInfo: Identifiable {
+    let id: Int
+    let color: Color
+    let title: String
+    let size: Int64
+}
+
+/// Обёртка ExtStat для Identifiable
+struct ExtRow: Identifiable {
+    let id: Int
+    let ext: String
+    let size: Int64
+    let count: Int64
+    let cloud: Int64
+}
 
 struct ExtView: View {
     @EnvironmentObject var store: AppStore
@@ -13,18 +32,24 @@ struct ExtView: View {
         stats.reduce(0) { $0 + $1.size }
     }
 
-    // Индексы групп с ненулевым размером, отсортированные по убыванию
-    private var activeGroupIndices: [Int] {
-        (0..<fileGroups.count).filter { groupSizeSum($0) > 0 }
-            .sorted { groupSizeSum($0) > groupSizeSum($1) }
+    /// Группы с ненулевым размером, отсортированные по убыванию
+    private var groups: [ExtGroupInfo] {
+        var byIdx: [Int: Int64] = [:]
+        for s in stats {
+            let g = groupIndex(forExt: s.ext)
+            byIdx[g, default: 0] += s.size
+        }
+        return byIdx
+            .filter { $0.value > 0 }
+            .sorted { $0.value > $1.value }
+            .map { ExtGroupInfo(id: $0.key, color: Color(hex: fileGroups[$0.key].colorHex), title: fileGroups[$0.key].title, size: $0.value) }
     }
 
-    private func groupSizeSum(_ idx: Int) -> Int64 {
-        stats.reduce(0) { groupIndex(forExt: $1.ext) == idx ? $0 + $1.size : $0 }
-    }
-
-    private func groupCloudSum(_ idx: Int) -> Int64 {
-        stats.reduce(0) { groupIndex(forExt: $1.ext) == idx ? $0 + $1.cloud : $0 }
+    /// Строки таблицы (до 300)
+    private var rows: [ExtRow] {
+        stats.prefix(300).enumerated().map { (i, s) in
+            ExtRow(id: i, ext: s.ext, size: s.size, count: s.count, cloud: s.cloud)
+        }
     }
 
     var body: some View {
@@ -41,155 +66,130 @@ struct ExtView: View {
             Divider()
 
             if !stats.isEmpty {
-                // Полоса-стопка (как .stack в эталоне)
+                // Полоса-стопка (как .stack в эталоне: пропорционально размеру, зазор 2, скругление 5)
                 stackBar
 
-                // Список групп (как .glist в эталоне)
-                groupList
+                // Список групп (как .glist в эталоне: flex-wrap)
+                groupGrid
 
                 Divider()
 
-                // Таблица расширений
+                // Таблица расширений (до 300)
                 extTable
             }
         }
         .background(Color.panelBg)
     }
 
-    // MARK: - Полоса-стопка
+    // MARK: - Полоса-стопка (GeometryReader, пропорции)
 
     private var stackBar: some View {
-        HStack(spacing: 2) {
-            ForEach(activeGroupIndices, id: \.self) { i in
-                Rectangle()
-                    .fill(Color(hex: fileGroups[i].colorHex))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 22)
+        let total = max(totalSize, 1) as Int64
+        return GeometryReader { g in
+            let gaps = CGFloat(max(0, groups.count - 1)) * 2
+            HStack(spacing: 2) {
+                ForEach(groups) { gr in
+                    Rectangle()
+                        .fill(gr.color)
+                        .frame(width: max(2, (g.size.width - gaps) * CGFloat(gr.size) / CGFloat(total)))
+                }
             }
         }
         .frame(height: 22)
+        .clipShape(RoundedRectangle(cornerRadius: 5))
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
     }
 
-    // MARK: - Список групп
+    // MARK: - Список групп (LazyVGrid, .adaptive(minimum: 190), переносится)
 
-    private var groupList: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 16) {
-                ForEach(activeGroupIndices, id: \.self) { i in
-                    let sz = groupSizeSum(i)
-                    HStack(spacing: 5) {
-                        RoundedRectangle(cornerRadius: 3)
-                            .fill(Color(hex: fileGroups[i].colorHex))
-                            .frame(width: 10, height: 10)
-                        Text(fileGroups[i].title)
-                            .font(.system(size: 12))
-                        Text(fmtBytes(sz))
-                            .fontWeight(.bold)
-                            .font(.system(size: 12).monospacedDigit())
-                        Text(fmtPct(Double(sz) / Double(totalSize)))
-                            .font(.system(size: 12))
-                            .foregroundColor(.secondary)
-                    }
+    private var groupGrid: some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 190), alignment: .leading)], alignment: .leading, spacing: 4) {
+            ForEach(groups) { gr in
+                HStack(spacing: 5) {
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(gr.color)
+                        .frame(width: 10, height: 10)
+                    Text(gr.title)
+                        .font(.system(size: 12))
+                    Text(fmtBytes(gr.size))
+                        .fontWeight(.bold)
+                        .font(.system(size: 12).monospacedDigit())
+                    Text(fmtPct(Double(gr.size) / Double(max(totalSize, 1))))
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
                 }
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 4)
         }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 4)
     }
 
-    // MARK: - Таблица расширений (до 300)
+    // MARK: - Таблица расширений (Table, до 300, с ширинами колонок)
 
     private var extTable: some View {
-        let total = max(totalSize, 1)
-        let rows = Array(stats.prefix(300))
-
-        return ScrollView(.vertical) {
-            VStack(spacing: 0) {
-                // Шапка
-                HStack(spacing: 0) {
-                    Text("Расширение")
-                        .frame(minWidth: 120, alignment: .leading)
-                        .padding(.leading, 8)
-                    Text("Тип")
-                        .frame(width: 100, alignment: .leading)
-                    Text("Размер")
-                        .frame(width: 80, alignment: .trailing)
-                    Text("Доля")
-                        .frame(width: 140, alignment: .leading)
-                    Text("Файлов")
-                        .frame(width: 60, alignment: .trailing)
-                    Text("Только в облаке")
-                        .frame(width: 80, alignment: .trailing)
-                }
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(.secondary)
-                .padding(.vertical, 6)
-                .background(Color.panel2Bg)
-
-                Divider()
-
-                ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
-                    extRow(row: row, total: total)
-                    Divider()
+        Table(rows) {
+            TableColumn("Расширение") { row in
+                let g = fileGroups[groupIndex(forExt: row.ext)]
+                HStack(spacing: 4) {
+                    RoundedRectangle(cornerRadius: 1)
+                        .fill(Color(hex: g.colorHex))
+                        .frame(width: 11, height: 14)
+                    Text(row.ext.isEmpty ? "(без расширения)" : "." + row.ext)
+                        .fontWeight(.bold)
+                        .font(.system(size: 13))
                 }
             }
-        }
-    }
+            .width(120)
 
-    @ViewBuilder
-    private func extRow(row: ExtStat, total: Int64) -> some View {
-        let g = fileGroups[groupIndex(forExt: row.ext)]
-        let pct = Double(row.size) / Double(total)
-
-        HStack(spacing: 0) {
-            HStack(spacing: 4) {
-                RoundedRectangle(cornerRadius: 1)
-                    .fill(Color(hex: g.colorHex))
-                    .frame(width: 11, height: 14)
-                Text(row.ext.isEmpty ? "(без расширения)" : "." + row.ext)
-                    .fontWeight(.bold)
-                    .font(.system(size: 13))
-            }
-            .frame(minWidth: 120, alignment: .leading)
-            .padding(.leading, 8)
-
-            Text(g.title)
-                .frame(width: 100, alignment: .leading)
-                .foregroundColor(.secondary)
-
-            Text(fmtBytes(row.size))
-                .font(.system(.body).monospacedDigit())
-                .frame(width: 80, alignment: .trailing)
-
-            // Доля с полоской
-            HStack(spacing: 4) {
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(Color(hex: "#e6eaf0"))
-                        .frame(width: 60, height: 12)
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(Color(hex: "#2a78d6"))
-                        .frame(width: max(0, 60 * pct), height: 12)
-                }
-                Text(fmtPct(pct))
-                    .font(.system(.caption).monospacedDigit())
+            TableColumn("Тип") { row in
+                Text(fileGroups[groupIndex(forExt: row.ext)].title)
                     .foregroundColor(.secondary)
+                    .lineLimit(1)
             }
-            .frame(width: 140, alignment: .leading)
+            .width(130)
 
-            Text(formatCount(row.count))
-                .font(.system(.body).monospacedDigit())
-                .frame(width: 60, alignment: .trailing)
+            TableColumn("Размер") { row in
+                Text(fmtBytes(row.size))
+                    .font(.system(.body).monospacedDigit())
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+            .width(76)
 
-            Text(row.cloud > 0 ? fmtBytes(row.cloud) : "")
-                .font(.system(.body).monospacedDigit())
-                .foregroundColor(.cloudColor)
-                .frame(width: 80, alignment: .trailing)
+            TableColumn("Доля") { row in
+                let pct = Double(row.size) / Double(max(totalSize, 1))
+                HStack(spacing: 4) {
+                    ZStack(alignment: .leading) {
+                        RoundedRectangle(cornerRadius: 3)
+                            .fill(Color(hex: "#e6eaf0"))
+                            .frame(width: 60, height: 12)
+                        RoundedRectangle(cornerRadius: 3)
+                            .fill(Color(hex: "#2a78d6"))
+                            .frame(width: max(0, 60 * pct), height: 12)
+                    }
+                    Text(fmtPct(pct))
+                        .font(.system(.caption).monospacedDigit())
+                        .foregroundColor(.secondary)
+                }
+            }
+            .width(118)
+
+            TableColumn("Файлов") { row in
+                Text(formatCount(row.count))
+                    .font(.system(.body).monospacedDigit())
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+            .width(56)
+
+            TableColumn("Только в облаке") { row in
+                Text(row.cloud > 0 ? fmtBytes(row.cloud) : "")
+                    .font(.system(.body).monospacedDigit())
+                    .foregroundColor(.cloudColor)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+            .width(70)
         }
-        .padding(.vertical, 4)
-        .background(Color.panelBg)
+        .tableStyle(.inset)
     }
 
     // MARK: - Помощники

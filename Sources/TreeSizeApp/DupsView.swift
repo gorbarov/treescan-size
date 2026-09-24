@@ -1,4 +1,5 @@
 // Дубли — UI-SPEC раздел 8, как renderDup() в template.html
+// Всё прижато к левому краю; склонение «групп» через plural()
 import SwiftUI
 import TreeSizeCore
 
@@ -26,15 +27,16 @@ struct DupsView: View {
         VStack(spacing: 0) {
             // Подпись (как #dupNote в эталоне)
             if let dupMin = store.result?.dupMin {
+                let groupsNote = plural(Int64(filteredDups.count), "группа", "группы", "групп")
                 if filteredDups.count < allDups.count {
-                    Text("Файлы от \(fmtBytes(dupMin)) с одинаковым размером и расширением. Содержимое не сверялось, чтобы не скачивать облачные файлы, поэтому **это кандидаты, а не доказанные дубли**. Если все окажутся копиями, освободится до **\(fmtBytes(wasteSize))** (\(formatCount(Int64(filteredDups.count))) групп, из \(formatCount(Int64(allDups.count))) по всему скану).")
+                    Text("Файлы от \(fmtBytes(dupMin)) с одинаковым размером и расширением. Содержимое не сверялось, чтобы не скачивать облачные файлы, поэтому **это кандидаты, а не доказанные дубли**. Если все окажутся копиями, освободится до **\(fmtBytes(wasteSize))** (\(groupsNote), из \(nf(Int64(allDups.count))) по всему скану).")
                         .font(.system(size: 13))
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 14)
                         .padding(.vertical, 10)
                         .background(Color.panelBg)
                 } else {
-                    Text("Файлы от \(fmtBytes(dupMin)) с одинаковым размером и расширением. Содержимое не сверялось, чтобы не скачивать облачные файлы, поэтому **это кандидаты, а не доказанные дубли**. Если все окажутся копиями, освободится до **\(fmtBytes(wasteSize))** (\(formatCount(Int64(filteredDups.count))) групп).")
+                    Text("Файлы от \(fmtBytes(dupMin)) с одинаковым размером и расширением. Содержимое не сверялось, чтобы не скачивать облачные файлы, поэтому **это кандидаты, а не доказанные дубли**. Если все окажутся копиями, освободится до **\(fmtBytes(wasteSize))** (\(groupsNote)).")
                         .font(.system(size: 13))
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 14)
@@ -45,7 +47,7 @@ struct DupsView: View {
 
             Divider()
 
-            // Список групп дублей (как #dup в эталоне)
+            // Список групп дублей
             ScrollView(.vertical) {
                 VStack(spacing: 0) {
                     if filteredDups.isEmpty {
@@ -62,12 +64,13 @@ struct DupsView: View {
                         }
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .background(Color.panelBg)
     }
 
-    // MARK: - Одна группа дублей (как .dup в эталоне)
+    // MARK: - Одна группа дублей (всё прижато к левому краю)
 
     private func dupGroupView(group: DupGroup) -> some View {
         let waste = group.size * Int64(group.paths.count - 1)
@@ -106,14 +109,15 @@ struct DupsView: View {
             .padding(.bottom, 8)
         }
         .padding(.horizontal, 14)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: - Помощники
 
-    private func formatCount(_ n: Int64) -> String {
-        let nf = NumberFormatter()
-        nf.numberStyle = .decimal
-        nf.locale = Locale(identifier: "ru-RU")
-        return nf.string(from: NSNumber(value: n)) ?? "\(n)"
+    private func nf(_ n: Int64) -> String {
+        let f = NumberFormatter()
+        f.numberStyle = .decimal
+        f.locale = Locale(identifier: "ru-RU")
+        return f.string(from: NSNumber(value: n)) ?? "\(n)"
     }
 }

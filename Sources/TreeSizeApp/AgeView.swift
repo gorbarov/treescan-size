@@ -33,8 +33,6 @@ struct AgeView: View {
             if !buckets.isEmpty {
                 ScrollView(.vertical) {
                     VStack(spacing: 0) {
-                        // Возрастные строки (как .age в эталоне: grid-template-columns: auto 1fr auto auto)
-                        // Это HStack с полосой, размером и подписью
                         ForEach(buckets, id: \.label) { bucket in
                             ageRow(bucket: bucket)
                             Divider()
@@ -42,6 +40,7 @@ struct AgeView: View {
                     }
                     .padding(.horizontal, 18)
                     .padding(.vertical, 16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
         }
@@ -52,15 +51,12 @@ struct AgeView: View {
         let pct = maxSize > 0 ? Double(bucket.size) / Double(maxSize) : 0.0
         let totalPct = totalSize > 0 ? Double(bucket.size) / Double(totalSize) : 0.0
 
-        // Каждая строка: label | полоса | размер | подпись
         return HStack(spacing: 14) {
-            // Название (auto width)
             Text(bucket.label)
                 .font(.system(size: 13))
                 .fixedSize()
                 .frame(minWidth: 90, alignment: .leading)
 
-            // Полоса (1fr) — как .b в эталоне: height 22, bg, overflow:hidden
             ZStack(alignment: .leading) {
                 RoundedRectangle(cornerRadius: 4)
                     .fill(Color(hex: "#e6eaf0"))
@@ -72,13 +68,11 @@ struct AgeView: View {
             }
             .frame(maxWidth: .infinity)
 
-            // Размер жирным (auto)
             Text(fmtBytes(bucket.size))
                 .font(.system(size: 13, weight: .semibold).monospacedDigit())
                 .fixedSize()
                 .frame(minWidth: 70, alignment: .trailing)
 
-            // Подпись серым
             Text("\(fmtPct(totalPct)) · \(plural(bucket.count, "файл", "файла", "файлов"))")
                 .font(.system(size: 12))
                 .foregroundColor(.secondary)
@@ -86,5 +80,6 @@ struct AgeView: View {
                 .frame(minWidth: 120, alignment: .leading)
         }
         .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
