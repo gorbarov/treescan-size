@@ -28,6 +28,7 @@ var dupMin: Int64 = 5 * 1024 * 1024
 var timeout = 10.0
 var oneFS = true
 var modelCheck = false
+var actionsCheck: String?
 
 var args = Array(CommandLine.arguments.dropFirst())
 var i = 0
@@ -47,6 +48,7 @@ while i < args.count {
     case "--timeout": timeout = Double(nextValue(a)) ?? timeout
     case "--all-fs": oneFS = false
     case "--model-check": modelCheck = true; folder = nextValue(a)
+    case "--actions-check": actionsCheck = nextValue(a)
     default:
         if a.hasPrefix("--") { fail("неизвестный флаг: \(a)") }
         if folder == nil { folder = a } else { fail("лишний аргумент: \(a)") }
@@ -54,7 +56,58 @@ while i < args.count {
     i += 1
 }
 
-guard let folderArg = folder else { fail("укажи папку: tscan <папка> --json out.json") }
+guard let folderArg = folder else {
+    // --actions-check не требует аргумента folder
+    if let acRoot = actionsCheck {
+        let home = NSHomeDirectory()
+
+        // protected-тест — те же пути, что и в эталоне
+        let protectedPaths = [
+            "/",
+            "/Users",
+            home,
+            home + "/Library",
+            home + "/Downloads",
+            "/Applications",
+            "/Applications/Foo.app",
+            "/System/Volumes/Data/Users",
+            "/System/Volumes/Data/Users/x/Downloads/y",
+            "/Volumes/X",
+            "/Volumes/X/a",
+            "/System/Library",
+            "/tmp/ts-fixture/media",
+        ]
+        for p in protectedPaths {
+            let result = isProtected(p)
+            var display = p
+            if p == home { display = "~" }
+            else if p.hasPrefix(home + "/") { display = "~" + p.dropFirst(home.count) }
+            print("protected \(display) = \(result)")
+        }
+
+        // allowed-тест
+        let allowedPaths = [
+            acRoot,
+            acRoot + "/media",
+            acRoot + "/media/film.mov",
+            acRoot + "/../etc/passwd",
+            acRoot + "2/x",
+            acRoot + "/nope.txt",
+        ]
+        for p in allowedPaths {
+            let result = isActionAllowed(path: p, root: acRoot)
+            print("allowed \(p) = \(result)")
+        }
+
+        // places
+        let places = listPlaces()
+        print("places_at_least_2 = \(places.count >= 2)")
+
+        exit(0)
+    }
+    fail("укажи папку: tscan <папка> --json out.json")
+}
+
 let root = (folderArg as NSString).expandingTildeInPath
 var isDir: ObjCBool = false
 guard FileManager.default.fileExists(atPath: root, isDirectory: &isDir), isDir.boolValue else {
