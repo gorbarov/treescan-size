@@ -6,7 +6,13 @@
 # Отдельный конфиг Claude Code в .agent-home (без входа CEO и без его CLAUDE.md),
 # ключ — CODING_LITE_KEY из ~/.image_gen_keys.env, лог и стоимость — в docs/runs/.
 set -e
-cd "$(dirname "$0")/.."
+# zsh читает скрипт по ходу выполнения: правка файла во время прогона запускала второй прогон (24.09.2026).
+# Поэтому работаем с копией из /tmp.
+if [ -z "$TS_RUNNER_COPY" ]; then
+  export TS_PROJECT="$(cd "$(dirname "$0")/.." && pwd)" TS_RUNNER_COPY=1
+  C=$(mktemp /tmp/ts-runner.XXXXXX); cp "$0" "$C"; exec zsh "$C" "$@"
+fi
+cd "$TS_PROJECT"
 MODEL=${1:?модель}; TASK=${2:?файл задания}
 RESUME=()
 if [ "$TASK" = "--resume" ]; then

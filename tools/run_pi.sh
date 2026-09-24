@@ -4,7 +4,13 @@
 #   tools/run_pi.sh <модель> --resume <лог.jsonl> "уточнение"
 # Конфиг Pi — в .pi-home (провайдер coding-lite, песочница pi-sandbox), сторож — tools/pi-guard.ts.
 set -e
-cd "$(dirname "$0")/.."
+# zsh читает скрипт по ходу выполнения: правка файла во время прогона запускала второй прогон (24.09.2026).
+# Поэтому работаем с копией из /tmp.
+if [ -z "$TS_RUNNER_COPY" ]; then
+  export TS_PROJECT="$(cd "$(dirname "$0")/.." && pwd)" TS_RUNNER_COPY=1
+  C=$(mktemp /tmp/ts-runner.XXXXXX); cp "$0" "$C"; exec zsh "$C" "$@"
+fi
+cd "$TS_PROJECT"
 MODEL=${1:?модель}; TASK=${2:?файл задания}
 source ~/.image_gen_keys.env
 [ -n "$CODING_LITE_KEY" ] || { echo "нет CODING_LITE_KEY" >&2; exit 1; }

@@ -4,3 +4,5 @@ build/
 .DS_Store
 .agent-home/
 .pi-home/
+docs/runs/*.jsonl
+docs/runs/*.stderr
