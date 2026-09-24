@@ -312,8 +312,7 @@ struct ContentView: View {
             case .pie:
                 PieView()
             case .details:
-                Text("Детали — задание 07")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                DetailsView()
             case .ext:
                 Text("Расширения — задание 08")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
