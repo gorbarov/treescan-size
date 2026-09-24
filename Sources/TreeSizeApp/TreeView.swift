@@ -17,7 +17,7 @@ struct TreeView: View {
                         let (node, depth) = rows[i]
                         TreeRowView(node: node, depth: depth, isSelected: node.id == store.selected?.id)
                             .id(node.id)
-                            // Двойной клик — раскрыть/свернуть (как двойной клик в эталоне)
+                            // Двойной клик — раскрыть/свернуть (как в эталоне)
                             .onTapGesture(count: 2) {
                                 if node.kind == .dir && (node.children?.isEmpty == false) {
                                     store.toggle(node)
@@ -133,7 +133,6 @@ struct TreeRowView: View {
             if isSelected {
                 Color.treeSelectionBg
                     .overlay(
-                        // Синяя полоска 2pt слева
                         Rectangle()
                             .fill(Color.treeSelectionAccent)
                             .frame(width: 2),
@@ -141,7 +140,7 @@ struct TreeRowView: View {
                     )
             }
 
-            // Полоска (::before) — позиционируется в ZStack
+            // Полоска (::before)
             barView
 
             // Содержимое строки
@@ -163,26 +162,19 @@ struct TreeRowView: View {
                 // Иконка папки/файла/сводки
                 iconView
 
-                // Размер жирным (моноширинные цифры, мин 62pt)
+                // Размер: системный шрифт, жирный, .monospacedDigit() — как .sz в эталоне
                 Text(fmtBytes(store.value(node)))
                     .fontWeight(.bold)
-                    .font(.system(.body, design: .monospaced).monospacedDigit())
+                    .font(.system(size: 13).monospacedDigit())
                     .frame(minWidth: 62, alignment: .leading)
                     .lineLimit(1)
 
-                // Имя
+                // Имя — с зачёркиванием и серым, если selfIgnored
                 Text(displayName)
                     .lineLimit(1)
                     .truncationMode(.tail)
                     .foregroundColor(textColor)
-
-                // ⊘ не синхр. (серым)
-                if node.selfIgnored {
-                    Text(" ⊘ не синхр.")
-                        .font(.system(size: 12))
-                        .foregroundColor(.secondary)
-                        .lineLimit(1)
-                }
+                    .strikethrough(node.selfIgnored, color: .secondary)
 
                 // ☁ (фиолетовым, если cloud >= size/2 в режиме Размер)
                 if showCloud {
@@ -193,6 +185,15 @@ struct TreeRowView: View {
                 }
 
                 Spacer(minLength: 4)
+
+                // ⊘ не синхр. — серым, прямо перед колонкой процентов (как в эталоне)
+                if node.selfIgnored {
+                    Text("⊘ не синхр.")
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                        .padding(.trailing, 4)
+                }
 
                 // Процент от родителя (58pt, серым)
                 if node.parent != nil {
@@ -225,22 +226,32 @@ struct TreeRowView: View {
 
     @ViewBuilder
     private var barShape: some View {
-        switch node.kind {
-        case .dir:
-            RoundedRectangle(cornerRadius: 4)
-                .fill(LinearGradient(colors: [.treeDirBarStart, .treeDirBarEnd],
-                                      startPoint: .leading, endPoint: .trailing))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 4)
-                        .stroke(Color.treeDirBarBorder, lineWidth: 1)
-                )
-        case .file:
-            RoundedRectangle(cornerRadius: 4)
-                .fill(LinearGradient(colors: [.treeFileBarStart, .treeFileBarEnd],
-                                      startPoint: .leading, endPoint: .trailing))
-        case .rest:
+        if node.selfIgnored {
+            // selfIgnored — серая штриховка (как .row.ignored::before в эталоне)
             RoundedRectangle(cornerRadius: 4)
                 .fill(Color.treeAggBar)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 4)
+                        .stroke(Color.secondary.opacity(0.3), lineWidth: 1)
+                )
+        } else {
+            switch node.kind {
+            case .dir:
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(LinearGradient(colors: [.treeDirBarStart, .treeDirBarEnd],
+                                          startPoint: .leading, endPoint: .trailing))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 4)
+                            .stroke(Color.treeDirBarBorder, lineWidth: 1)
+                    )
+            case .file:
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(LinearGradient(colors: [.treeFileBarStart, .treeFileBarEnd],
+                                          startPoint: .leading, endPoint: .trailing))
+            case .rest:
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color.treeAggBar)
+            }
         }
     }
 
@@ -258,25 +269,26 @@ struct TreeRowView: View {
         }
     }
 
-    /// Папка: жёлтый прямоугольник 16×12 с «ушком» (как .ic в эталоне)
+    /// Папка: жёлтый прямоугольник 16×12 скругление 2 + «ушко» 7×3 слева сверху
     private var folderIcon: some View {
-        VStack(spacing: 0) {
+        ZStack(alignment: .topLeading) {
             // Ушко 7×3
             RoundedRectangle(cornerRadius: 2)
                 .fill(Color.treeFolderColor)
                 .frame(width: 7, height: 3)
-            // Сама папка 16×12
+            // Тело папки 16×12
             RoundedRectangle(cornerRadius: 2)
                 .fill(Color.treeFolderColor)
-                .frame(width: 16, height: 13)
+                .frame(width: 16, height: 12)
+                .offset(y: 2)
         }
         .frame(width: 16, height: 16)
         .padding(.trailing, 4)
     }
 
-    /// Файл: прямоугольник 11×14 цвета группы (как .ic.f в эталоне)
+    /// Файл: прямоугольник 11×14 цвета группы, скругление справа сверху
     private var fileIcon: some View {
-        RoundedRectangle(cornerRadius: 1)
+        TopRightRoundedRect(radius: 1)
             .fill(Color(hex: fileColorHex))
             .frame(width: 11, height: 14)
             .padding(.horizontal, 4)
@@ -297,6 +309,25 @@ struct TreeRowView: View {
             return .secondary
         }
         return .primary
+    }
+}
+
+// MARK: - RoundedCorner Shape (скругление только указанных углов, AppKit-совместимый)
+
+struct TopRightRoundedRect: Shape {
+    var radius: CGFloat = 1
+
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        let w = rect.width, h = rect.height, r = min(radius, min(w, h))
+        p.move(to: CGPoint(x: 0, y: 0))
+        p.addLine(to: CGPoint(x: w - r, y: 0))
+        p.addArc(center: CGPoint(x: w - r, y: r), radius: r,
+                 startAngle: .degrees(-90), endAngle: .degrees(0), clockwise: false)
+        p.addLine(to: CGPoint(x: w, y: h))
+        p.addLine(to: CGPoint(x: 0, y: h))
+        p.closeSubpath()
+        return p
     }
 }
 

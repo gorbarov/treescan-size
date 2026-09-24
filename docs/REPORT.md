@@ -228,3 +228,37 @@ Swift: 12.87 с, Python-эталон: 11.78 с на этом же реально
 
 ### Комментарии
 - Тёмная тема работает через `NSColor(name:dynamicProvider:)`, как требовано в задании. `--dark` задаёт `window.appearance = .darkAqua`, и `dynamicProvider` определяет тему по `appearance.name`
+
+### Доработка по приёмке
+
+#### Что исправлено
+
+1. **`--select <путь>` раскрывает папку**: `AppStore.select(_:expand:)` получил параметр `expand: Bool = false`. При `expand: true` узел раскрывается дополнительно к предкам. В `Snapshot.swift` вызов изменён на `store.select(node, expand: true)`.
+
+2. **Фоны панелей для тёмной темы**:
+   - Добавлены `Colors.panelBg` (`#ffffff` / `#1a1d23`) — фон дерева и правой панели.
+   - Добавлены `Colors.panel2Bg` (`#f7f9fb` / `#1f232a`) — фон строки сведений и статуса.
+   - Добавлены `Colors.windowBg` (`#eef1f5` / `#121418`) — фон окна между панелями.
+   - В `ContentView.swift` фоны заданы явно: `.background(Color.panelBg)` на панелях, `.background(Color.panel2Bg)` на infoBar/statusBar, `.background(Color.windowBg)` на mainSplit и корне.
+
+3. **selfIgnored (папка ignored)**:
+   - Имя зачёркнуто `.strikethrough(node.selfIgnored, color: .secondary)` и серое `.foregroundColor(.secondary)`.
+   - «⊘ не синхр.» перенесён прямо перед колонкой процентов (после Spacer и облачка), как в эталоне (`.row .ig` — справа, перед `.pc`).
+   - Полоска для selfIgnored — серая заливка (`Color.treeAggBar`) вместо жёлтого градиента, как `.row.ignored::before` в эталоне.
+
+4. **Размер на полоске**: шрифт изменён с `.system(.body, design: .monospaced)` на `.system(size: 13).monospacedDigit()` — системный шрифт, жирный, c моноширинными цифрами, как `.sz` в эталоне.
+
+5. **Иконки**:
+   - Папка: `ZStack(alignment: .topLeading)` с ушком 7×3 и телом 16×12, скругление 2, offset, как `.ic` + `.ic::before`.
+   - Файл: `TopRightRoundedRect` (кастомный Shape) — прямоугольник 11×14 со скруглением только правого верхнего угла, цвета группы, как `.ic.f`.
+
+#### Сколько раз не собиралось
+- **1 раз**: после правок ContentView.swift сломалась структура (пропала закрывающая `}` body). Переписал файл целиком — собралось.
+
+#### Проверка
+```
+ЗАДАНИЕ 05: снимок готов, его смотрит приёмщик
+ЗАДАНИЕ 05b: снимок готов, его смотрит приёмщик
+ЗАДАНИЕ 05d: снимок готов, его смотрит приёмщик
+ЗАДАНИЕ 03: OK
+```

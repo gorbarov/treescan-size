@@ -157,12 +157,17 @@ public final class AppStore: ObservableObject {
 
     // MARK: - Выделение
 
-    public func select(_ n: Node) {
+    /// Выделить узел, раскрыв всех предков.
+    /// - Parameter expand: если true и узел — папка с детьми, раскрыть и её.
+    public func select(_ n: Node, expand: Bool = false) {
         selected = n
         var p: Node? = n.parent
         while let ancestor = p {
             expanded.insert(ancestor.id)
             p = ancestor.parent
+        }
+        if expand, n.kind == .dir, let kids = n.children, !kids.isEmpty {
+            expanded.insert(n.id)
         }
     }
 

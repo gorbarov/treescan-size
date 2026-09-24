@@ -10,15 +10,15 @@ struct ContentView: View {
         ZStack {
             VStack(spacing: 0) {
                 toolbar
-                    .background(Color(nsColor: .windowBackgroundColor))
                 Divider()
                 infoBar
-                    .background(Color(nsColor: .controlBackgroundColor))
+                    .background(Color.panel2Bg)
                 Divider()
                 mainSplit
+                    .background(Color.windowBg)
                 Divider()
                 statusBar
-                    .background(Color(nsColor: .controlBackgroundColor))
+                    .background(Color.panel2Bg)
             }
 
             // Оверлей скана с прогрессом
@@ -26,6 +26,7 @@ struct ContentView: View {
                 scanOverlay
             }
         }
+        .background(Color.windowBg)
     }
 
     // MARK: - Панель инструментов
@@ -98,8 +99,7 @@ struct ContentView: View {
     /// Имя для отображения: у корня — последний сегмент пути, у остальных — displayName
     private func displayName(for node: Node) -> String {
         if node.parent == nil {
-            // Корень: последний сегмент пути
-            let path = node.name  // это root-путь
+            let path = node.name
             return (path as NSString).lastPathComponent
         }
         return node.displayName
@@ -114,10 +114,8 @@ struct ContentView: View {
     private var infoBar: some View {
         Group {
             if let sel = store.selected {
-                // Как renderInfo в эталоне: display:flex, gap:4px 22px, padding:8px 16px, align-items:baseline
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 22) {
-                        // Имя жирным — первый элемент без подписи
                         Text(displayName(for: sel))
                             .fontWeight(.bold)
                             .lineLimit(1)
@@ -125,13 +123,9 @@ struct ContentView: View {
                             .frame(maxWidth: 40, alignment: .leading)
                             .fixedSize()
 
-                        // Размер
                         infoItem(label: "Размер", value: fmtBytes(store.value(sel)))
-
-                        // На диске
                         infoItem(label: "На диске", value: fmtBytes(sel.alloc))
 
-                        // Доля в родителе (не у корня)
                         if let parent = sel.parent {
                             let pct = store.value(parent) > 0
                                 ? Double(store.value(sel)) / Double(store.value(parent))
@@ -139,36 +133,28 @@ struct ContentView: View {
                             infoItem(label: "Доля в родителе", value: fmtPct(pct))
                         }
 
-                        // Только в облаке (всегда, фиолетовым)
                         if sel.cloud > 0 {
                             infoItem(label: "Только в облаке", value: fmtBytes(sel.cloud), color: .purple)
                         }
 
-                        // Dropbox-поля: только если корень в Dropbox и ign > 0
                         if isDropbox && sel.ign > 0 {
                             infoItem(label: "Не синхронизируется", value: fmtBytes(sel.ign))
                             let inQuota = sel.size - sel.ign
                             infoItem(label: "В квоте Dropbox", value: fmtBytes(inQuota))
                         }
 
-                        // Файлов
                         infoItem(label: "Файлов", value: "\(sel.files)")
-
-                        // Папок
                         infoItem(label: "Папок", value: "\(sel.dirs)")
-
-                        // Последнее изменение
                         infoItem(label: "Последнее изменение", value: fmtDate(sel.mtime))
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
                 }
-                .frame(height: 54) // фикс. высота как в шаблоне
+                .frame(height: 54)
             }
         }
     }
 
-    /// Элемент строки сведений: подпись серым 13px, значение жирным
     private func infoItem(label: String, value: String, color: Color? = nil) -> some View {
         HStack(spacing: 5) {
             Text(label)
@@ -185,12 +171,11 @@ struct ContentView: View {
 
     private var mainSplit: some View {
         HSplitView {
-            // Левая панель — дерево (задание 05)
             TreeView()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color.panelBg)
                 .frame(minWidth: 380, idealWidth: 610)
 
-            // Правая панель — вкладки (заглушки)
             TabView {
                 Text("Диаграмма — задание 06")
                     .tabItem { Text("Диаграмма") }
@@ -212,23 +197,23 @@ struct ContentView: View {
                     .tag(AppStore.Tab.dups)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color.panelBg)
             .frame(minWidth: 440, idealWidth: 670)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.windowBg)
     }
 
     // MARK: - Строка состояния
 
     private var statusBar: some View {
         HStack(spacing: 16) {
-            // Путь выделенного
             Text(store.selected?.path ?? "")
                 .foregroundColor(.primary)
                 .lineLimit(1)
                 .truncationMode(.head)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            // Справа: «Скан … · … с · нет доступа: N»
             if let result = store.result {
                 let meta = "Скан \(result.scanned) · \(String(format: "%.1f", result.took)) с"
                     + (result.errors > 0 ? " · нет доступа: \(result.errors)" : "")

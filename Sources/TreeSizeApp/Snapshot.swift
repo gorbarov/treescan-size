@@ -42,7 +42,7 @@ func takeSnapshot(args: [String]) {
         if let tree = store.result?.tree {
             // Ищем узел по пути
             if let node = findNode(by: selectPath, in: tree) {
-                store.select(node)
+                store.select(node, expand: true)
             }
         }
     }

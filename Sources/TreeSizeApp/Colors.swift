@@ -102,4 +102,15 @@ extension Color {
 
     // --- Hover ---
     static let treeHover = Color.dynamicColor(lightHex: "#eef4fc", darkHex: "#222833")
+
+    // MARK: - Фоны панелей (UI-SPEC раздел 4, template.html CSS)
+
+    /// Фон панели (дерево, правая панель) — #ffffff / #1a1d23
+    static let panelBg = Color.dynamicColor(lightHex: "#ffffff", darkHex: "#1a1d23")
+
+    /// Фон второй панели (строка сведений, плашки) — #f7f9fb / #1f232a
+    static let panel2Bg = Color.dynamicColor(lightHex: "#f7f9fb", darkHex: "#1f232a")
+
+    /// Фон окна между панелями (разделитель) — #eef1f5 / #121418
+    static let windowBg = Color.dynamicColor(lightHex: "#eef1f5", darkHex: "#121418")
 }
