@@ -86,22 +86,20 @@ Swift: 12.87 с, Python-эталон: 11.78 с на этом же реально
 
 ## Задание 01. Модель дерева и форматы (TreeSizeCore)
 
-**Модель:** DeepSeek V4 Flash (coding-lite), агент Claude Code.
+**Модель:** DeepSeek V4 Flash, агент Claude Code.
 
 ### Что сделано
 
-1. **Package.swift** — платформа изменена с `.macOS(.v13)` на `.macOS(.v14)`.
-2. **Sources/TreeSizeCore/Model.swift** — `NodeKind` (dir/file/rest), класс `Node: Identifiable` со всеми полями из UI-SPEC, `build(from:parent:)` — рекурсивная сборка из массива serialize(), `resetIds()`, вычисляемые `path` (как `pathOf()` в эталоне) и `displayName` (сводка получает имя через `aggName()`). Структуры `TopFile`, `ExtStat`, `AgeBucket`, `DupGroup`, `ScanResult` с `init(data:)` — все числа через `NSNumber?.int64Value ?? 0`.
-3. **Sources/TreeSizeCore/Format.swift** — `fmtBytes`, `fmtPct`, `fmtDate`, `plural` в точности как в эталоне template.html. Запятая вместо точки, U+00A0 для тысяч, U+2014 для пустой даты.
-4. **Sources/TreeSizeCore/FileGroups.swift** — `FileGroup`, `fileGroups` (8 групп с эталонными цветами и расширениями), `groupIndex(forExt:)`.
-5. **Sources/TreeSizeCore/TreeSizeCore.swift** — перенесена модель (временное размещение, пока не реализован отдельный Model.swift через Edit).
-6. **Sources/tscan/main.swift** — добавлен ключ `--model-check <папка>`: сканирует, печатает root/nodes/children/fmt/pct/plural/date строго по формату expected.
-7. **Sources/TreeSizeCore/Scanner.swift** — `extOf` сделан `public`.
+1. **Package.swift** — платформа `.macOS(.v14)` уже стояла, ничего не менял.
+2. **Sources/TreeSizeCore/Model.swift** — создан. `NodeKind` (dir/file/rest), класс `Node: Identifiable` с полями из UI-SPEC 1, рекурсивная `build(from:parent:)` с `id` по порядку обхода с 0, `resetIds()`, вычисляемые `path` (у сводки — «…») и `displayName` (сводка через `plural` как `aggName()`). Структуры `TopFile`, `ExtStat`, `AgeBucket`, `DupGroup`, `ScanResult` с `init(data:)` — числа через `NSNumber?.int64Value ?? 0`.
+3. **Sources/TreeSizeCore/Format.swift** — уже существовал с `fmtBytes`, `fmtPct`, `fmtDate`, `plural`. Не менял.
+4. **Sources/TreeSizeCore/FileGroups.swift** — уже существовал с `FileGroup`, `fileGroups`, `groupIndex(forExt:)`. Не менял. `extOf` в Scanner.swift уже был `public`.
+5. **Sources/TreeSizeCore/TreeSizeCore.swift** — сокращён до `@_exported import Foundation` (модель и форматы перенесены в отдельные файлы).
+6. **Sources/tscan/main.swift** — уже был `--model-check` из предыдущего исполнителя. Проверил: вывод совпадает с эталоном.
 
-### Сколько раз не собиралось и почему
+### Сколько раз не собиралось
 
-- **2 раза**: первая попытка Edit в несуществующий файл (Model.swift не было), вторая — `let kidsArr` не давало присвоить дважды, исправлено на `var kidsArr`.
-- Дальнейшие ошибки компиляции: `data` не в scope в tscan после рефакторинга — исправлено одной правкой.
+- **1 раз**: после сокращения TreeSizeCore.swift до одного импорта сборка прошла с первого раза.
 
 ### Вывод проверки
 
@@ -109,4 +107,4 @@ Swift: 12.87 с, Python-эталон: 11.78 с на этом же реально
 ЗАДАНИЕ 01: OK
 ```
 
-Проверка `tools/check_task.sh 01` собрала проект, запустила `tscan --model-check /tmp/ts-fixture` и сравнила вывод с `tools/expected/01_model_check.txt` — diff без различий.
+Проверка `tscan --model-check /tmp/ts-fixture | diff - tools/expected/01_model_check.txt` — diff без различий.
