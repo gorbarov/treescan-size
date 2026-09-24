@@ -8,7 +8,7 @@ agent: claude-code
 
 # TreeSize.app
 
-Мак-приложение «чем забит диск» на основе [reference](reference/README.md): сканер и действия на Swift, интерфейс — тот же HTML-отчёт в окне приложения. Строится «ради спортивного интереса» (CEO, 24.09.2026) силами дешёвых агентов по готовому плану.
+Мак-приложение «чем забит диск» на основе [reference](reference/README.md): сканер, действия и интерфейс на Swift (SwiftUI), HTML-отчёт — эталон дизайна. Спецификация интерфейса — [docs/UI-SPEC.md](docs/UI-SPEC.md). Строится «ради спортивного интереса» (CEO, 24.09.2026) силами дешёвых агентов по готовому плану.
 
 - ТЗ — [docs/SPEC.md](docs/SPEC.md)
 - План по этапам с проверками — [docs/PLAN.md](docs/PLAN.md)
@@ -28,7 +28,6 @@ python3 tools/compare.py /tmp/ts-fixture  # Swift против эталона н
 |---|---|---|---|
 | 0 | ТЗ, план, фикстура, сравнение, мост в шаблоне | Claude (Opus) | готово 24.09.2026 |
 | 1 | Сканер на Swift, `tscan` | агент на Sonnet | готово 24.09.2026: совпадает с эталоном на фикстуре, `~/Downloads` и всём Dropbox; 12,9 с против 11,8 с у Python |
-| 2 | Окно, WKWebView, мост | DeepSeek через OpenCode или Sonnet — решает CEO | ждёт решения |
-| 3 | .app, иконка, подпись | — | ждёт этапа 2 |
+| 2 | Нативный интерфейс на SwiftUI, задания 01–11 ([PLAN](docs/PLAN.md)) | DeepSeek V4 Flash (coding-lite), приёмка — Claude | в работе с 24.09.2026 |
 
 Сборка идёт без Xcode, только на Command Line Tools (Swift 6.2). Папки `.build/` и `build/` исключены из синхронизации Dropbox.

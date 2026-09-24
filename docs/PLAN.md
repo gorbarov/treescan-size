@@ -96,107 +96,29 @@ python3 tools/compare.py ~/Downloads
 - **На `~/Downloads`** тоже должно быть `OK`. Если папка поменялась между двумя запусками, повторить.
 - **Скорость:** `time .build/release/tscan ~/Library/CloudStorage/Dropbox --json /tmp/d.json` должен уложиться в полтора времени эталона (эталон — около 14 с).
 
-## Этап 2. Окно приложения с WKWebView и мостом
+## Этап 2 (с 24.09.2026): нативный интерфейс — задания для дешёвых моделей
 
-Файлы в `Sources/TreeSizeApp/`:
+Прежний план этапов 2–3 (WKWebView + мост) отменён: CEO выбрал полностью нативный интерфейс. Что строим — [UI-SPEC.md](UI-SPEC.md). Задания — `docs/tasks/NN_*.md`, общий пролог — `docs/tasks/_preamble.md`.
 
-- `main.swift`:
-  ```swift
-  import AppKit
-  let app = NSApplication.shared
-  let delegate = AppDelegate()
-  app.delegate = delegate
-  app.setActivationPolicy(.regular)
-  app.run()
-  ```
+**Как запускается исполнитель:** `tools/run_executor.sh <модель> docs/tasks/NN_*.md`:
+- Claude Code в режиме `-p --bare` с отдельным конфигом `.agent-home`, модель из coding-lite через `your-gateway.example`, ключ `CODING_LITE_KEY`;
+- песочница `tools/executor-settings.json`: запись только в проект и `/tmp/ts-*`; `rm`/`mv`/`xattr`/`osascript`/`open`/`curl` запрещены; правка `tools/`, заданий и спецификаций запрещена;
+- лог — `docs/runs/*.jsonl`, стоимость — `tools/run_cost.py`.
 
-- `AppDelegate.swift` — окно, меню, загрузка отчёта:
-  - Окно 1280×820, минимум 800×500, `setFrameAutosaveName("TreeSizeMain")`, заголовок `TreeSize — <имя корня>` (для `/System/Volumes/Data` — «Macintosh HD»).
-  - Меню собрать кодом (`NSMenu`):
-    - меню приложения: «О программе», «Выйти» ⌘Q;
-    - «Файл»: «Открыть…» ⌘O → JS `document.getElementById('openBtn').click()`; «Пересканировать» ⌘R → JS `runScan(null)`; «Закрыть» ⌘W;
-    - «Правка»: стандартные `cut:`/`copy:`/`paste:`/`selectAll:` с `target = nil`, иначе ⌘C/⌘V в поле пути не заработают.
-  - Шаблон: `Bundle.main.url(forResource: "template", withExtension: "html")`. Если не нашёлся (запуск через `swift run`) — переменная окружения `TREESIZE_TEMPLATE`, затем `reference/template.html` от текущей папки.
-  - Отчёт писать в `~/Library/Caches/TreeSize/report.html` с `data["api"] = "app"` и открывать через `webView.loadFileURL(url, allowingReadAccessTo: папка)`. **Не** `loadHTMLString`: после скана страница делает `location.reload()` и должна перечитать файл.
-  - Что сканировать при запуске:
-    1. `UserDefaults` ключ `lastRoot`;
-    2. иначе `~/Library/CloudStorage/Dropbox`, если есть;
-    3. иначе домашняя папка.
-  - Пока идёт первый скан, показать страницу-заглушку (`loadHTMLString`): «Сканирую <путь>…» и счётчик. Счётчик обновлять таймером раз в 0,5 с через `evaluateJavaScript` из `scanner.nfiles`/`bytes`/`cur`.
-  - Скан — в `DispatchQueue.global(qos: .userInitiated)`, загрузка страницы — на главном потоке.
+**Приёмка (Claude):** `tools/check_task.sh NN` сам, снимки окна смотрю глазами, выборочно код. Если не прошло — повторный запуск с уточнением или другая модель, код за исполнителя не пишу.
 
-- `Bridge.swift` — `final class Bridge: NSObject, WKScriptMessageHandlerWithReply`:
-  - Регистрация: `config.userContentController.addScriptMessageHandler(bridge, contentWorld: .page, name: "treesize")`.
-  - `userContentController(_:didReceive:replyHandler:)`: `message.body` → `[String: Any]`, взять `action` и `path`. Ответ: `replyHandler(["ok": true, "error": NSNull(), ...], nil)` или `["ok": false, "error": "текст"]`.
-  - Долгие действия (`scan`, `rescan`) выполнять в фоне и звать `replyHandler` на главном потоке, когда файл отчёта перезаписан. Параллельный второй скан отклонять: «скан уже идёт».
-  - Действия:
-    - `reveal` → `NSWorkspace.shared.activateFileViewerSelecting([url])`;
-    - `trash` → `FileManager.default.trashItem(at:resultingItemURL:)`;
-    - `ignore` → `setxattr(path, "com.apple.fileprovider.ignore#P", "1", 1, 0, XATTR_NOFOLLOW)`;
-    - `unignore` → `removexattr` для обоих имён атрибута;
-    - `copy` → `NSPasteboard.general` (сначала `clearContents()`, потом `setString`);
-    - `choose` → `NSOpenPanel`: `canChooseDirectories = true`, `canChooseFiles = false`, `beginSheetModal(for: window)`;
-    - `places` → как `places()` в эталоне: том данных `/System/Volumes/Data` под именем «Macintosh HD», смонтированные тома из `/Volumes` кроме ссылки на `/`, типовые папки, всё из `~/Library/CloudStorage`. Объём и свободное место — `URLResourceValues.volumeTotalCapacity` / `volumeAvailableCapacity`.
-  - Проверки пути и `protected()` — перенести из `serve()` эталона в `Sources/TreeSizeCore/FileActions.swift`.
+| № | Задание | Проверка |
+|---|---|---|
+| 01 | Модель дерева и форматы | вывод = `tools/expected/01_model_check.txt` |
+| 02 | Действия над файлами, места | вывод = `tools/expected/02_actions_check.txt` |
+| 03 | AppStore и самопроверка без окна | факты = `tools/expected/03_selftest.json` |
+| 04 | Окно, каркас, скан с прогрессом, режим снимка | снимок |
+| 05 | Дерево с полосками, двойной клик, клавиши | снимки, светлый и тёмный |
+| 06 | Строка сведений, плашки, строка состояния | снимок |
+| 07 | Круговая диаграмма и хлебные крошки | снимки |
+| 08 | Таблица «Детали» | снимок |
+| 09 | Расширения, возраст, топ, дубли | 4 снимка |
+| 10 | Контекстное меню, корзина, «не синхр.», «Открыть…» | снимок; корзину проверяет CEO |
+| 11 | TreeSize.app, иконка, подпись | `make_app.sh`, `codesign -v`, самопроверка из .app |
 
-- `UIDelegate` (можно в `AppDelegate`): `WKUIDelegate` с `runJavaScriptAlertPanelWithMessage` и `runJavaScriptConfirmPanelWithMessage` через `NSAlert`. **Без него `alert()` и `confirm()` в WKWebView молча не работают**, и корзина никогда не спросит подтверждение.
-
-- Самопроверка — запуск с аргументом `--selftest <папка>`:
-  1. просканировать папку;
-  2. загрузить отчёт;
-  3. дождаться `didFinish`;
-  4. выполнить JS `JSON.stringify({nodes: NODES.length, bridge: !!BRIDGE, api: API, places: null})`, затем `apiJ({action:'places'}).then(j => j.places.length)`;
-  5. вывести результат в stdout и выйти с кодом 0. Если за 60 с не уложился — выйти с кодом 1.
-
-### Проверка этапа 2
-
-```bash
-swift build -c release
-.build/release/TreeSizeApp --selftest /tmp/ts-fixture
-```
-
-Ожидается JSON с `nodes > 20`, `bridge: true`, `api: "app"` и число мест ≥ 2.
-
-## Этап 3. Сборка .app и иконка
-
-- `scripts/make_icon.swift` — рисует PNG 1024×1024 средствами AppKit (`NSImage` + `NSBezierPath`):
-  - фон — скруглённый квадрат, почти белый;
-  - три квадрата как в логотипе отчёта: высокий синий `#2a78d6` слева, справа сверху жёлтый `#eda100`, под ним оранжевый `#eb6834`.
-
-  Затем `sips` режет картинку в набор размеров `AppIcon.iconset` (16, 32, 64, 128, 256, 512, 1024 и @2x), `iconutil -c icns` собирает `AppIcon.icns`.
-- `scripts/make_app.sh`:
-  ```bash
-  set -e
-  cd "$(dirname "$0")/.."
-  swift build -c release --product TreeSizeApp
-  APP=build/TreeSize.app
-  rm -rf "$APP"; mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-  cp .build/release/TreeSizeApp "$APP/Contents/MacOS/TreeSize"
-  cp reference/template.html "$APP/Contents/Resources/template.html"
-  cp build/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
-  # Info.plist: CFBundleIdentifier ru.gorbarov.treesize, CFBundleName/DisplayName TreeSize,
-  # CFBundleExecutable TreeSize, CFBundlePackageType APPL, CFBundleIconFile AppIcon,
-  # CFBundleShortVersionString 0.1, CFBundleVersion 1, LSMinimumSystemVersion 13.0,
-  # NSHighResolutionCapable true, NSHumanReadableCopyright "TreeBars authors"
-  codesign --force --deep -s - "$APP"
-  echo "Готово: $APP"
-  ```
-  Info.plist писать через `cat <<EOF`, а не через `defaults write`.
-
-### Проверка этапа 3
-
-- `scripts/make_app.sh` отрабатывает без ошибок.
-- `build/TreeSize.app/Contents/MacOS/TreeSize --selftest /tmp/ts-fixture` даёт тот же результат, что на этапе 2.
-- `codesign -v build/TreeSize.app` молчит (подпись в порядке).
-- **В `/Applications` не копировать** — это делает CEO.
-
-## Этап 4. Отчёт исполнителя
-
-Файл `docs/REPORT.md` (с frontmatter):
-- что сделано по этапам;
-- на какой модели;
-- где спотыкался;
-- что проверено и чем;
-- что осталось.
-
-Ничего не приукрашивать.
+Статус и расход по заданиям — в [REPORT.md](REPORT.md).

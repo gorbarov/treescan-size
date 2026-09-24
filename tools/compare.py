@@ -73,7 +73,7 @@ def main():
         subprocess.run([sys.executable, str(PY_REF), a.folder, "--no-open", "--dump-json", py_json,
                         "-o", str(tmp / "py.html")], check=True, capture_output=True)
     if not a.swift_json:
-        subprocess.run(["swift", "run", "-c", "release", "tscan", a.folder, "--json", sw_json],
+        subprocess.run(["swift", "run", "-c", "release", "--scratch-path", "/tmp/ts-build", "tscan", a.folder, "--json", sw_json],
                        cwd=PROJECT, check=True)
     py = normalize(json.loads(Path(py_json).read_text()))
     sw = normalize(json.loads(Path(sw_json).read_text()))
