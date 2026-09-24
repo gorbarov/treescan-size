@@ -24,9 +24,13 @@ Finder can't tell you which folders ate your disk. Disk analyzers for the Mac sh
 - **Private:** no network access, no analytics, no accounts. See [PRIVACY.md](PRIVACY.md).
 - Light and dark themes. **9 languages:** English, 简体中文, 日本語, 한국어, Deutsch, Español, Français, Português, Русский.
 
-| Top files | Duplicates | Dark theme |
+| Folder chart | Top files | Duplicates |
 |---|---|---|
-| <img src="docs/screenshots/tree-videos-en.png" alt="Top files"> | <img src="docs/screenshots/duplicates-en.png" alt="Duplicate candidates"> | <img src="docs/screenshots/details-dark-en.png" alt="Details, dark theme"> |
+| <img src="docs/screenshots/tree-videos-en.png" alt="Chart of a selected folder"> | <img src="docs/screenshots/top-en.png" alt="Top files in a folder"> | <img src="docs/screenshots/duplicates-en.png" alt="Duplicate candidates"> |
+
+| Dark theme | Size vs On disk, explained in the app |
+|---|---|
+| <img src="docs/screenshots/details-dark-en.png" alt="Details, dark theme"> | <img src="docs/screenshots/mode-help-en.png" width="360" alt="Size vs On disk help"> |
 
 ## Install
 
