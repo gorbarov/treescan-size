@@ -29,14 +29,14 @@ struct DupsView: View {
             if let dupMin = store.result?.dupMin {
                 let groupsNote = plural(Int64(filteredDups.count), tr("группа"), tr("группы"), tr("групп"))
                 if filteredDups.count < allDups.count {
-                    Text(tr("Файлы от ") + "\(fmtBytes(dupMin))" + tr(" с одинаковым размером и расширением. Содержимое не сверялось, чтобы не скачивать облачные файлы, поэтому **это кандидаты, а не доказанные дубли**. Если все окажутся копиями, освободится до **") + "\(fmtBytes(wasteSize))" + tr("** (") + groupsNote + tr(", из ") + nf(Int64(allDups.count)) + tr(" по всему скану)."))
+                    mdText(tr("Файлы от ") + "\(fmtBytes(dupMin))" + tr(" с одинаковым размером и расширением. Содержимое не сверялось, чтобы не скачивать облачные файлы, поэтому **это кандидаты, а не доказанные дубли**. Если все окажутся копиями, освободится до **") + "\(fmtBytes(wasteSize))" + tr("** (") + groupsNote + tr(", из ") + nf(Int64(allDups.count)) + tr(" по всему скану)."))
                         .font(.system(size: 13))
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 14)
                         .padding(.vertical, 10)
                         .background(Color.panelBg)
                 } else {
-                    Text(tr("Файлы от ") + "\(fmtBytes(dupMin))" + tr(" с одинаковым размером и расширением. Содержимое не сверялось, чтобы не скачивать облачные файлы, поэтому **это кандидаты, а не доказанные дубли**. Если все окажутся копиями, освободится до **") + "\(fmtBytes(wasteSize))" + tr("** (") + groupsNote + tr(")."))
+                    mdText(tr("Файлы от ") + "\(fmtBytes(dupMin))" + tr(" с одинаковым размером и расширением. Содержимое не сверялось, чтобы не скачивать облачные файлы, поэтому **это кандидаты, а не доказанные дубли**. Если все окажутся копиями, освободится до **") + "\(fmtBytes(wasteSize))" + tr("** (") + groupsNote + tr(")."))
                         .font(.system(size: 13))
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 14)
