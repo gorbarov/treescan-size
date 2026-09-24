@@ -103,6 +103,68 @@ func takeSnapshot(args: [String]) {
     exit(0)
 }
 
+/// Режим снимка Places (поповер мест) — размер 460×520
+@MainActor
+func snapshotPlaces(args: [String]) {
+    guard let snapIdx = args.firstIndex(of: "--snapshot"), snapIdx + 1 < args.count else {
+        fputs("--snapshot <png> обязателен\n", stderr)
+        exit(1)
+    }
+    guard let rootIdx = args.firstIndex(of: "--root"), rootIdx + 1 < args.count else {
+        fputs("--root <папка> обязателен\n", stderr)
+        exit(1)
+    }
+
+    let pngPath = args[snapIdx + 1]
+    let rootPath = args[rootIdx + 1]
+    let isDark = args.contains("--dark")
+
+    // Синхронный скан для заполнения store
+    let options = ScanOptions()
+    let data = scanRoot(rootPath, options: options)
+
+    let store = AppStore()
+    store.result = ScanResult(data: data)
+
+    // Создаём PlacesView
+    let placesView = PlacesView().environmentObject(store)
+    let hostingView = NSHostingView(rootView: AnyView(placesView))
+    hostingView.frame = NSRect(x: 0, y: 0, width: 460, height: 520)
+
+    let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 460, height: 520),
+                          styleMask: [.titled, .closable, .miniaturizable, .resizable],
+                          backing: .buffered,
+                          defer: false)
+    window.contentView = hostingView
+    window.setFrameOrigin(NSPoint(x: -10000, y: -10000))
+    window.appearance = NSAppearance(named: isDark ? .darkAqua : .aqua)
+    window.orderFront(nil)
+
+    // Даём время на отрисовку
+    RunLoop.main.run(until: Date(timeIntervalSinceNow: 1.0))
+
+    guard let rep = hostingView.bitmapImageRepForCachingDisplay(in: hostingView.bounds) else {
+        fputs("Ошибка: bitmapImageRepForCachingDisplay вернул nil\n", stderr)
+        exit(1)
+    }
+    hostingView.cacheDisplay(in: hostingView.bounds, to: rep)
+
+    guard let data = rep.representation(using: .png, properties: [:]) else {
+        fputs("Ошибка: не удалось создать PNG\n", stderr)
+        exit(1)
+    }
+
+    do {
+        try data.write(to: URL(fileURLWithPath: pngPath))
+        fputs("Снимок Places сохранён: \(pngPath)\n", stdout)
+    } catch {
+        fputs("Ошибка записи PNG: \(error.localizedDescription)\n", stderr)
+        exit(1)
+    }
+
+    exit(0)
+}
+
 /// Найти узел в дереве по полному пути (рекурсивный обход)
 func findNode(by path: String, in node: Node) -> Node? {
     if node.path == path { return node }

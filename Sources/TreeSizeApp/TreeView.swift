@@ -27,6 +27,10 @@ struct TreeView: View {
                             .onTapGesture(count: 1) {
                                 store.select(node)
                             }
+                            // Контекстное меню — UI-SPEC раздел 9
+                            .contextMenu {
+                                NodeMenu(node: node, store: store)
+                            }
                     }
                 }
                 .padding(.vertical, 4)

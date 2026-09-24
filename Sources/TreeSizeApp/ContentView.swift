@@ -57,6 +57,10 @@ struct ContentView: View {
                 store.showPlaces = true
             }
             .buttonStyle(.borderless)
+            .popover(isPresented: $store.showPlaces, arrowEdge: .bottom) {
+                PlacesView()
+                    .environmentObject(store)
+            }
 
             Button("⟳ Пересканировать") {
                 store.rescan()

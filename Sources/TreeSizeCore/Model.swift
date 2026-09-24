@@ -116,6 +116,16 @@ public final class Node: Identifiable {
         return pp + sep + n
     }
 
+    /// Найти потомка по пути (рекурсивно). Если не нашёлся — nil.
+    public func findDescendant(by path: String) -> Node? {
+        guard let children = children else { return nil }
+        for child in children {
+            if child.path == path { return child }
+            if let found = child.findDescendant(by: path) { return found }
+        }
+        return nil
+    }
+
     /// Имя для отображения: у сводки — «[N файлов и M папок помельче]», у остальных — name
     public var displayName: String {
         if kind == .rest {

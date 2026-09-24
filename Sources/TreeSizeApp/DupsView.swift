@@ -104,6 +104,9 @@ struct DupsView: View {
                     }
                     .buttonStyle(.plain)
                 }
+                .contextMenu {
+                    NodeMenu(path: path, store: store)
+                }
             }
             .padding(.leading, 18)
             .padding(.bottom, 8)

@@ -8,6 +8,7 @@ struct PieView: View {
     @EnvironmentObject var store: AppStore
 
     @State private var hoveredIndex: Int? = nil
+    @State private var selectedAngle: Int? = nil
 
     private var slices: [AppStore.PieSlice] {
         guard let dir = store.viewDir else { return [] }
@@ -67,6 +68,11 @@ struct PieView: View {
                         // Кольцо + легенда (как .piebox в эталоне: display:flex; gap:28px; padding:18px 22px; align-items:flex-start)
                         HStack(alignment: .top, spacing: 28) {
                             ringView(side: side)
+                            .contextMenu {
+                                if let a = selectedAngle, a < slices.count, let n = slices[a].node {
+                                    NodeMenu(node: n, store: store)
+                                }
+                            }
 
                             legendView
                                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -139,6 +145,11 @@ struct PieView: View {
                         }
                         .onTapGesture {
                             handleClick(index: i)
+                        }
+                        .contextMenu {
+                            if let n = sl.node {
+                                NodeMenu(node: n, store: store)
+                            }
                         }
                 }
 

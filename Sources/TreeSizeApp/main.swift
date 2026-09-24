@@ -22,7 +22,11 @@ if args.contains("--selftest") {
 if args.contains("--snapshot") {
     NSApplication.shared.setActivationPolicy(.accessory)
     Task { @MainActor in
-        takeSnapshot(args: args)
+        if args.contains("--places") {
+            snapshotPlaces(args: args)
+        } else {
+            takeSnapshot(args: args)
+        }
     }
     RunLoop.current.run()
 } else {

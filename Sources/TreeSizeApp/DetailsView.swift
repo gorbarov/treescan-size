@@ -142,36 +142,13 @@ struct DetailsView: View {
         .tableStyle(.inset)
         .contextMenu(forSelectionType: Int.self) { ids in
             if let id = ids.first, let row = rows.first(where: { $0.id == id }) {
-                contextMenuItems(for: row)
+                NodeMenu(node: row.node, store: store)
             }
         } primaryAction: { ids in
             guard let id = ids.first, let row = rows.first(where: { $0.id == id }) else { return }
             if row.isDir {
                 store.select(row.node, expand: true)
             }
-        }
-    }
-
-    // MARK: - Контекстное меню (раздел 9 — строка деталей)
-
-    @ViewBuilder
-    private func contextMenuItems(for row: DetailsRow) -> some View {
-        let path = row.node.path
-        let title: String = path.split(separator: "/").last.map(String.init) ?? row.name
-
-        Text(title)
-        Text(fmtBytes(store.value(row.node)))
-            .foregroundColor(.secondary)
-
-        Divider()
-
-        Button("Показать в Finder") {
-            NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
-        }
-
-        Button("Скопировать путь") {
-            NSPasteboard.general.clearContents()
-            NSPasteboard.general.setString(path, forType: .string)
         }
     }
 

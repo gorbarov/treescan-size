@@ -23,6 +23,8 @@ struct TopView: View {
         store.result?.top.count ?? 0
     }
 
+    @State private var topSelection: Set<Int> = []
+
     /// Все файлы в порядке result.top (уже по убыванию размера), ничего не пересортировывать
     private var rows: [TopRow] {
         filteredTop.enumerated().map { (i, top) in
@@ -74,7 +76,7 @@ struct TopView: View {
     // MARK: - Table как в Деталях, ширина колонок: # 28, Файл гибкая, Размер 76, На диске 76, Изменён 80
 
     private var tableView: some View {
-        Table(rows) {
+        Table(rows, selection: $topSelection) {
             TableColumn("#") { row in
                 Text("\(row.index + 1)")
                     .font(.system(.body).monospacedDigit())
@@ -124,6 +126,11 @@ struct TopView: View {
             .width(24)
         }
         .tableStyle(.inset)
+        .contextMenu(forSelectionType: Int.self) { ids in
+            if let id = ids.first, let row = rows.first(where: { $0.id == id }) {
+                NodeMenu(path: row.top.path, store: store)
+            }
+        }
     }
 
     // MARK: - Ячейка имени файла
@@ -167,6 +174,9 @@ struct TopView: View {
                     .lineLimit(1)
                     .truncationMode(.tail)
             }
+        }
+        .contextMenu {
+            NodeMenu(path: top.path, store: store)
         }
     }
 
