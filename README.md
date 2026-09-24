@@ -26,6 +26,16 @@ tools/make_fixture.sh /tmp/ts-fixture     # тестовая папка с не�
 python3 tools/compare.py /tmp/ts-fixture  # Swift против эталона на Python
 ```
 
+## Пауза 24.09.2026, 21:05
+
+Остановлено по просьбе CEO посреди задания 10 (Pi, DeepSeek V4 Flash). Незаконченная работа закоммичена («Задание 10: незаконченная работа…»). Продолжить:
+
+```bash
+tools/run_pi.sh deepseek/deepseek-v4-flash --resume "$(cat docs/runs/PAUSED_10.txt)" "Продолжай задание 10 с того места, где остановился. Сначала git status и tools/check_task.sh 03."
+```
+
+Дальше по плану: приёмка 10 → живая проверка кликов в запущенном приложении → задание 11 (.app и иконка).
+
 ## Статус
 
 | Этап | Что | Исполнитель | Статус |
