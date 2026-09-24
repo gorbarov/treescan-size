@@ -648,3 +648,46 @@ Git-коммит не сделан из-за сандахбокных огран
 **Созданные/изменённые файлы:**
 - Изменены: `Sources/TreeSizeCore/FileActions.swift`, `Sources/TreeSizeCore/Places.swift`, `Sources/TreeSizeApp/NodeMenu.swift`, `Sources/TreeSizeApp/PlacesView.swift`, `Sources/TreeSizeApp/Snapshot.swift`, `Sources/TreeSizeApp/SelfTest.swift`
 - **Коммит**: `ab0ce53` — «Задание 10: безопасность корзины, места»
+
+## Задание 11. Сборка TreeSize.app и иконка
+
+### Что сделано
+
+1. **scripts/make_icon.swift** — рисует PNG 1024×1024 через AppKit (NSImage + NSBezierPath):
+   - почти белый (`#f7f7f7`) скруглённый квадрат 944×944 (отступ 40 pt, радиус 180);
+   - логотип из трёх квадратов, как в template.html `.logo`:
+     - синий `#2a78d6` — высокая колонка слева (9×14=126 pt × 196 pt);
+     - жёлтый `#eda100` — верхний правый (5×14=70 pt);
+     - оранжевый `#eb6834` — нижний правый (70 pt);
+   - через `sips -z` ресайзит в 10 PNG (16¹…1024²), `iconutil -c icns` собирает `build/AppIcon.icns`.
+
+2. **scripts/make_app.sh** — три шага:
+   - `swift build -c release --scratch-path /tmp/ts-build --product TreeSizeApp`;
+   - `mkdir -p` + `cp -f` — пересобирает поверх без `rm`;
+   - Info.plist через `cat <<EOF` с CFBundleIdentifier `ru.gorbarov.treesize`, CFBundleName/DisplayName TreeSize, CFBundleExecutable TreeSize, CFBundlePackageType APPL, CFBundleIconFile AppIcon, CFBundleShortVersionString 0.1, CFBundleVersion 1, LSMinimumSystemVersion 14.0, NSHighResolutionCapable true;
+   - `codesign --force --deep -s -`.
+
+### Сколько раз не собиралось
+
+- **make_icon.swift**: 1 раз — Swift 6 не даёт `guard` на `Void` (lockFocus раньше возвращал Bool). Убрал проверку, собралось.
+- **make_app.sh**: 0 раз.
+
+### Проверка
+
+```
+$ tools/check_task.sh 11
+Build complete! (0.08s)
+Снимок сохранён: /tmp/ts-build/snap_11.png
+-rw-r--r--@ 1 gorbarov  wheel  21560 Sep 25 01:16 /tmp/ts-build/snap_11.png
+ЗАДАНИЕ 11: снимок готов, его смотрит приёмщик
+```
+
+Дополнительно:
+- `codesign -v build/TreeSize.app` — без ошибок (код 0).
+- `build/TreeSize.app/Contents/MacOS/TreeSize --root /tmp/ts-fixture --selftest` — JSON совпадает с `tools/check_task.sh 03` (проверено прямым diff с `tools/expected/03_selftest.json` через Python-скрипт, `OK`).
+
+### Созданные файлы
+
+- `scripts/make_icon.swift` — рисование PNG/icns
+- `scripts/make_app.sh` — сборка .app
+
