@@ -837,3 +837,48 @@ $ tools/check_task.sh 03
 - `Sources/TreeSizeApp/ContentView.swift` — Dropbox и Stuck на `mdText`
 - `Sources/TreeSizeApp/DupsView.swift` — обе подписи дублей на `mdText`
 - `Sources/TreeSizeApp/TopView.swift` — подпись топа на `mdText`
+
+## Задание 16. Пояснение к переключателю «Размер / На диске»
+
+**Модель:** Sonnet, агент Claude Code.
+
+### Что сделано
+
+1. **Подсказки при наведении** (`.help(...)`) добавлены на обе половинки переключателя режимов в `ContentView.swift`:
+   - «Размер» → `"Сколько весят файлы. По нему считают квоту Dropbox и iCloud."`
+   - «На диске» → `"Сколько места файлы реально занимают на этом маке."`
+
+2. **Кнопка ⓘ** справа от переключателя с `.popover(isPresented: $showModeHelp)` → `ModeHelpView`:
+   - Ширина 360, отступ 16, `VStack(alignment: .leading, spacing: 10)`
+   - Заголовок жирным, абзацы через `mdText(tr(...))` с разметкой `**`
+   - Две строки про «только в облаке» и разреженные файлы
+   - Мелкий серый абзац внизу
+   - `ModeHelpView` определён в `ContentView.swift` как отдельная структура
+
+3. **Переводы** — добавлены 10 новых ключей во все 8 языковых словарей (`L10n_en/zh/ja/ko/de/es/fr/pt`).
+
+4. **mdEscape** — в `TreeSizeUIApp.swift` добавлена `func mdEscape(_ s: String) -> String`, которая экранирует `\`, `*`, `_`, `` ` ``, `[`, `]` обратной косой чертой. В `TopView.swift` `view.name` обёрнут в `mdEscape(view.name)` во всех местах внутри `mdText(...)`.
+
+5. **Snapshot mode `--mode-help`** — новый режим снимка, рисует `ModeHelpView` в окне 400×360, отдельным снимком как `--places`.
+
+### Сколько раз не собиралось
+- **0 раз**: сборка с первой попытки.
+
+### Вывод проверки
+Проверка `tools/check_task.sh 03`:
+```
+ЗАДАНИЕ 03: OK
+```
+
+Снимки:
+- `TREEBARS_LANG=en ... --mode-help` → `/tmp/ts-build/snap_16en.png` (18 204 байт)
+- `TREEBARS_LANG=ru ... --mode-help` → `/tmp/ts-build/snap_16ru.png` (19 384 байт)
+- `TREEBARS_LANG=zh ... --mode-help` → `/tmp/ts-build/snap_16zh.png` (25 109 байт)
+
+### Созданные/изменённые файлы
+- **Изменён**: `Sources/TreeSizeApp/ContentView.swift` — подсказки `.help(...)` на кнопках режима, кнопка ⓘ, `@State showModeHelp`, `ModeHelpView`
+- **Изменён**: `Sources/TreeSizeApp/TreeSizeUIApp.swift` — `mdEscape(_:)` функция
+- **Изменён**: `Sources/TreeSizeApp/TopView.swift` — `mdEscape(view.name)` в mdText
+- **Изменён**: `Sources/TreeSizeApp/Snapshot.swift` — `snapshotModeHelp()`
+- **Изменён**: `Sources/TreeSizeApp/main.swift` — обработка `--mode-help`
+- **Изменены**: `Sources/TreeSizeCore/L10n_en.swift`, `L10n_zh.swift`, `L10n_ja.swift`, `L10n_ko.swift`, `L10n_de.swift`, `L10n_es.swift`, `L10n_fr.swift`, `L10n_pt.swift` — 10 новых ключей в каждом

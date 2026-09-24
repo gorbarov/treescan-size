@@ -1,0 +1,504 @@
+{
+"root": "Users/alex/Library/CloudStorage/Dropbox",
+"ignored": [
+"Projects/mobile-app/node_modules"
+],
+"files": [
+[
+"Archive/Photos 2019 (1).zip",
+4404019200
+],
+[
+"Archive/Photos 2019.zip",
+4404019200
+],
+[
+"Archive/old-laptop-backup.zip",
+9663676416
+],
+[
+"Design/Brand book.psd",
+2202009600
+],
+[
+"Design/Landing/landing-v12.fig",
+335544320
+],
+[
+"Design/Landing/landing-v13.fig",
+346030080
+],
+[
+"Documents/Budget.xlsx",
+2097152
+],
+[
+"Documents/Contracts/lease.pdf",
+3145728
+],
+[
+"Documents/Notes.md",
+40960
+],
+[
+"Documents/Taxes/2025 return.pdf",
+6291456
+],
+[
+"Installers/Docker.dmg",
+943718400
+],
+[
+"Installers/Xcode_16.xip",
+7516192768
+],
+[
+"Music/Mixes/set-2025-05.wav",
+1677721600
+],
+[
+"Music/Mixes/set-2025-07.wav",
+1572864000
+],
+[
+"Photos/2024/Trip Japan/DSC101.ARW",
+50331648
+],
+[
+"Photos/2024/Trip Japan/DSC102.ARW",
+50331648
+],
+[
+"Photos/2024/Trip Japan/DSC103.ARW",
+50331648
+],
+[
+"Photos/2024/Trip Japan/DSC104.ARW",
+50331648
+],
+[
+"Photos/2024/Trip Japan/DSC105.ARW",
+50331648
+],
+[
+"Photos/2024/Trip Japan/DSC106.ARW",
+50331648
+],
+[
+"Photos/2024/Trip Japan/DSC107.ARW",
+50331648
+],
+[
+"Photos/2024/Trip Japan/DSC108.ARW",
+50331648
+],
+[
+"Photos/2024/Trip Japan/DSC109.ARW",
+50331648
+],
+[
+"Photos/2024/Trip Japan/DSC110.ARW",
+50331648
+],
+[
+"Photos/2024/Trip Japan/DSC111.ARW",
+50331648
+],
+[
+"Photos/2024/Trip Japan/DSC112.ARW",
+50331648
+],
+[
+"Photos/2024/Trip Japan/DSC113.ARW",
+50331648
+],
+[
+"Photos/2024/Trip Japan/DSC114.ARW",
+50331648
+],
+[
+"Photos/2024/Trip Japan/DSC115.ARW",
+50331648
+],
+[
+"Photos/2024/Trip Japan/DSC116.ARW",
+50331648
+],
+[
+"Photos/2024/Trip Japan/DSC117.ARW",
+50331648
+],
+[
+"Photos/2024/Trip Japan/DSC118.ARW",
+50331648
+],
+[
+"Photos/2024/Trip Japan/DSC119.ARW",
+50331648
+],
+[
+"Photos/2024/Trip Japan/DSC120.ARW",
+50331648
+],
+[
+"Photos/2024/Trip Japan/DSC121.ARW",
+50331648
+],
+[
+"Photos/2024/Trip Japan/DSC122.ARW",
+50331648
+],
+[
+"Photos/2024/Trip Japan/DSC123.ARW",
+50331648
+],
+[
+"Photos/2024/Trip Japan/DSC124.ARW",
+50331648
+],
+[
+"Photos/2024/Trip Japan/DSC125.ARW",
+50331648
+],
+[
+"Photos/2024/Trip Japan/DSC126.ARW",
+50331648
+],
+[
+"Photos/2024/Trip Japan/DSC127.ARW",
+50331648
+],
+[
+"Photos/2024/Trip Japan/DSC128.ARW",
+50331648
+],
+[
+"Photos/2024/Trip Japan/DSC129.ARW",
+50331648
+],
+[
+"Photos/2024/Trip Japan/DSC130.ARW",
+50331648
+],
+[
+"Photos/2024/Trip Japan/DSC131.ARW",
+50331648
+],
+[
+"Photos/2024/Trip Japan/DSC132.ARW",
+50331648
+],
+[
+"Photos/2024/Trip Japan/DSC133.ARW",
+50331648
+],
+[
+"Photos/2024/Trip Japan/DSC134.ARW",
+50331648
+],
+[
+"Photos/2024/Trip Japan/DSC135.ARW",
+50331648
+],
+[
+"Photos/2024/Trip Japan/DSC136.ARW",
+50331648
+],
+[
+"Photos/2024/Trip Japan/DSC137.ARW",
+50331648
+],
+[
+"Photos/2024/Trip Japan/DSC138.ARW",
+50331648
+],
+[
+"Photos/2024/Trip Japan/DSC139.ARW",
+50331648
+],
+[
+"Photos/2024/Trip Japan/DSC140.ARW",
+50331648
+],
+[
+"Photos/2025/IMG_4001.HEIC",
+3145728
+],
+[
+"Photos/2025/IMG_4002.HEIC",
+4194304
+],
+[
+"Photos/2025/IMG_4003.HEIC",
+5242880
+],
+[
+"Photos/2025/IMG_4004.HEIC",
+6291456
+],
+[
+"Photos/2025/IMG_4005.HEIC",
+2097152
+],
+[
+"Photos/2025/IMG_4006.HEIC",
+3145728
+],
+[
+"Photos/2025/IMG_4007.HEIC",
+4194304
+],
+[
+"Photos/2025/IMG_4008.HEIC",
+5242880
+],
+[
+"Photos/2025/IMG_4009.HEIC",
+6291456
+],
+[
+"Photos/2025/IMG_4010.HEIC",
+2097152
+],
+[
+"Photos/2025/IMG_4011.HEIC",
+3145728
+],
+[
+"Photos/2025/IMG_4012.HEIC",
+4194304
+],
+[
+"Photos/2025/IMG_4013.HEIC",
+5242880
+],
+[
+"Photos/2025/IMG_4014.HEIC",
+6291456
+],
+[
+"Photos/2025/IMG_4015.HEIC",
+2097152
+],
+[
+"Photos/2025/IMG_4016.HEIC",
+3145728
+],
+[
+"Photos/2025/IMG_4017.HEIC",
+4194304
+],
+[
+"Photos/2025/IMG_4018.HEIC",
+5242880
+],
+[
+"Photos/2025/IMG_4019.HEIC",
+6291456
+],
+[
+"Photos/2025/IMG_4020.HEIC",
+2097152
+],
+[
+"Photos/2025/IMG_4021.HEIC",
+3145728
+],
+[
+"Photos/2025/IMG_4022.HEIC",
+4194304
+],
+[
+"Photos/2025/IMG_4023.HEIC",
+5242880
+],
+[
+"Photos/2025/IMG_4024.HEIC",
+6291456
+],
+[
+"Photos/2025/IMG_4025.HEIC",
+2097152
+],
+[
+"Photos/2025/IMG_4026.HEIC",
+3145728
+],
+[
+"Photos/2025/IMG_4027.HEIC",
+4194304
+],
+[
+"Photos/2025/IMG_4028.HEIC",
+5242880
+],
+[
+"Photos/2025/IMG_4029.HEIC",
+6291456
+],
+[
+"Photos/2025/IMG_4030.HEIC",
+2097152
+],
+[
+"Photos/2025/IMG_4031.HEIC",
+3145728
+],
+[
+"Photos/2025/IMG_4032.HEIC",
+4194304
+],
+[
+"Photos/2025/IMG_4033.HEIC",
+5242880
+],
+[
+"Photos/2025/IMG_4034.HEIC",
+6291456
+],
+[
+"Photos/2025/IMG_4035.HEIC",
+2097152
+],
+[
+"Photos/2025/IMG_4036.HEIC",
+3145728
+],
+[
+"Photos/2025/IMG_4037.HEIC",
+4194304
+],
+[
+"Photos/2025/IMG_4038.HEIC",
+5242880
+],
+[
+"Photos/2025/IMG_4039.HEIC",
+6291456
+],
+[
+"Photos/2025/IMG_4040.HEIC",
+2097152
+],
+[
+"Photos/2025/IMG_4041.HEIC",
+3145728
+],
+[
+"Photos/2025/IMG_4042.HEIC",
+4194304
+],
+[
+"Photos/2025/IMG_4043.HEIC",
+5242880
+],
+[
+"Photos/2025/IMG_4044.HEIC",
+6291456
+],
+[
+"Photos/2025/IMG_4045.HEIC",
+2097152
+],
+[
+"Photos/2025/IMG_4046.HEIC",
+3145728
+],
+[
+"Photos/2025/IMG_4047.HEIC",
+4194304
+],
+[
+"Photos/2025/IMG_4048.HEIC",
+5242880
+],
+[
+"Photos/2025/IMG_4049.HEIC",
+6291456
+],
+[
+"Photos/2025/IMG_4050.HEIC",
+2097152
+],
+[
+"Photos/2025/IMG_4051.HEIC",
+3145728
+],
+[
+"Photos/2025/IMG_4052.HEIC",
+4194304
+],
+[
+"Photos/2025/IMG_4053.HEIC",
+5242880
+],
+[
+"Photos/2025/IMG_4054.HEIC",
+6291456
+],
+[
+"Photos/2025/IMG_4055.HEIC",
+2097152
+],
+[
+"Photos/2025/IMG_4056.HEIC",
+3145728
+],
+[
+"Photos/2025/IMG_4057.HEIC",
+4194304
+],
+[
+"Photos/2025/IMG_4058.HEIC",
+5242880
+],
+[
+"Photos/2025/IMG_4059.HEIC",
+6291456
+],
+[
+"Photos/2025/IMG_4060.HEIC",
+2097152
+],
+[
+"Projects/mobile-app/ios/Pods/Firebase.framework",
+734003200
+],
+[
+"Projects/mobile-app/node_modules/.cache/babel.bin",
+943718400
+],
+[
+"Projects/mobile-app/node_modules/react-native/sdks/hermes.tar",
+1468006400
+],
+[
+"Projects/mobile-app/src/App.tsx",
+20480
+],
+[
+"Projects/website/.next/cache/webpack.pack",
+681574400
+],
+[
+"Projects/website/public/video/hero.mp4",
+398458880
+],
+[
+"Videos/Drone/iceland-4k.mp4",
+7516192768
+],
+[
+"Videos/Screen recordings/demo-call.mov",
+2516582400
+],
+[
+"Videos/Wedding 2024/ceremony.mov",
+19327352832
+],
+[
+"Videos/Wedding 2024/reception.mov",
+11811160064
+]
+]
+}
