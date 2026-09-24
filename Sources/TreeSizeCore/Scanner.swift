@@ -308,7 +308,10 @@ public final class Scanner {
     }
 
     /// Итоги скана для сборки отчёта (Report.swift).
-    public func topResult() -> [(size: Int64, path: String, alloc: Int64, cloud: Int64, mtime: Int64)] { top }
+    /// Сортировка как в эталоне: sorted(sc.top, reverse=True) — по убыванию размера, при равном — по убыванию пути.
+    public func topResult() -> [(size: Int64, path: String, alloc: Int64, cloud: Int64, mtime: Int64)] {
+        top.sorted { $0.size > $1.size || ($0.size == $1.size && $0.path > $1.path) }
+    }
     public func extResult() -> [(ext: String, size: Int64, count: Int64, cloud: Int64)] {
         ext.map { (ext: $0.key, size: $0.value.size, count: $0.value.count, cloud: $0.value.cloud) }
     }

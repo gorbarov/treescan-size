@@ -30,16 +30,15 @@ struct TopView: View {
         }
     }
 
-    /// Путь viewDir + "/", или пустая строка для корня
+    /// Путь viewDir + "/" (для корня — сам корень + "/", как pathOf в эталоне)
     private var viewPrefix: String {
-        guard let dir = store.viewDir, dir.parent != nil else { return "" }
+        guard let dir = store.viewDir else { return "" }
         return dir.path.hasSuffix("/") ? dir.path : dir.path + "/"
     }
 
     /// Количество символов для обрезки пути (как `cut` в эталоне)
     private var cutLen: Int {
-        let prefix = viewPrefix
-        return prefix.isEmpty ? 0 : prefix.count
+        viewPrefix.count
     }
 
     var body: some View {
@@ -135,15 +134,15 @@ struct TopView: View {
         let slashIdx = path.lastIndex(of: "/") ?? path.startIndex
         let fileName = slashIdx < path.endIndex ? String(path[path.index(after: slashIdx)...]) : path
 
-        // Путь относительно viewDir — как p.slice(cut, slash) в эталоне
+        // Путь относительно viewDir — как p.slice(cut, slash) || '.' в эталоне
         let relPath: String = {
             let cut = cutLen
-            guard cut > 0, cut < path.count else { return "." }
-            let fromCut = String(path.dropFirst(cut))
-            if let lastSlash = fromCut.lastIndex(of: "/") {
-                return String(fromCut[..<lastSlash])
+            guard cut < path.count else { return "." }
+            let sub = path[path.index(path.startIndex, offsetBy: cut)...]
+            if let slash = sub.lastIndex(of: "/") {
+                return String(sub[..<slash])
             }
-            return fromCut.isEmpty ? "." : fromCut
+            return "."
         }()
 
         VStack(alignment: .leading, spacing: 0) {
