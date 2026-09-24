@@ -3,7 +3,7 @@ import Foundation
 public enum L10n {
     /// Словари: код языка → (русская строка → перевод). Каждый язык — в своём файле L10n_<код>.swift,
     /// который добавляет себя в этот словарь, например: extension L10n { static let en: [String: String] = [...] }
-    public static let tables: [String: [String: String]] = ["en": en, "zh": zh]
+    public static let tables: [String: [String: String]] = ["en": en, "zh": zh, "ja": ja, "de": de, "es": es, "fr": fr, "pt": pt, "ko": ko]
 
     /// Язык: переменная окружения TREEBARS_LANG (ru/en/zh/…) важнее системы — для тестов и снимков.
     /// Можно переопределить принудительно (например, `L10n.lang = "ru"` в --selftest).
