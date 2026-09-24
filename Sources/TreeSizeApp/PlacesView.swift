@@ -116,7 +116,7 @@ struct PlacesView: View {
         .contentShape(Rectangle())
     }
 
-    /// Строка диска: 💽, имя, «свободно X из Y», полоса занятости (как .dbar{grid-column:2/4} в эталоне)
+    /// Строка диска: 💽, имя, «свободно X из Y», полоса занятости на всю ширину
     private func diskRow(_ place: Place, isCurrent: Bool) -> some View {
         let total = place.total ?? 1
         let used = total - (place.free ?? 0)
@@ -136,15 +136,16 @@ struct PlacesView: View {
                     .foregroundColor(.secondary)
             }
 
-            ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(Color.panelBg)
-                    .frame(height: 8)
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(pct > 0.9 ? Color.red : Color.accentLinkColor)
-                    .frame(width: max(0, 300 * pct), height: 8)
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color.panelBg)
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(pct > 0.9 ? Color(hex: "#d03b3b") : Color.accentLinkColor)
+                        .frame(width: geo.size.width * pct)
+                }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(height: 8)
         }
     }
 

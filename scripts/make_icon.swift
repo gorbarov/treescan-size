@@ -18,12 +18,12 @@ bgPath.fill()
 
 // Логотип из трёх квадратов — как template.html .logo
 // CSS grid: 9px + gap(2px) + 5px → маштаб 14×
-let sc: CGFloat = 14
+let sc: CGFloat = 36  // 16×36=576 → ~56% от 1024
 let c1w: CGFloat = 9 * sc      // синий — высокий
 let c2w: CGFloat = 5 * sc      // жёлтый / оранжевый
 let gap: CGFloat = 2 * sc
-let totalW = c1w + gap + c2w   // ≈ 224
-let totalH = c1w + gap + c2w   // ≈ 224
+let totalW = c1w + gap + c2w   // 576 = 56% от 1024
+let totalH = c1w + gap + c2w   // 576
 let ox = (CGFloat(size) - totalW) / 2
 let oy = (CGFloat(size) - totalH) / 2
 let cr: CGFloat = 2 * sc       // скругление
