@@ -720,3 +720,43 @@ $ tools/check_task.sh 10p --places
 $ tools/check_task.sh 03
 ЗАДАНИЕ 03: OK
 ```
+
+## Задание 13. Имя приложения — одна константа
+
+**Модель:** Sonnet, агент Claude Code.
+
+### Что сделано
+
+1. **Sources/TreeSizeCore/AppInfo.swift** — создан `public enum AppInfo` с тремя константами: `name = "TreeBars"`, `bundleID = "io.github.gorbarov.treebars"`, `version = "0.1.0"`.
+
+2. **Sources/TreeSizeApp/ContentView.swift** — хардкод `Text("TreeBars")` заменён на `Text(AppInfo.name)`.
+
+3. **Sources/TreeSizeApp/TreeSizeUIApp.swift** — `.windowTitle(AppInfo.name)` не добавлен (не поддерживается в этой версии SwiftUI, macOS 14.0). Заголовок окна определяется из Info.plist (`CFBundleDisplayName`).
+
+4. **scripts/make_app.sh** — полностью переписан: `APP_NAME`, `BUNDLE_ID`, `VERSION` читаются из `Sources/TreeSizeCore/AppInfo.swift` через `grep` + `sed`. Info.plist строится из этих переменных. Исполняемый файл — `$APP_NAME`, `.app` — `build/$APP_NAME.app`. Добавлен `NSHumanReadableCopyright = MIT License`. Старый `build/TreeSize.app` не удалён (rm запрещён).
+
+5. **Поиск `grep -rn '"TreeSize' Sources/TreeSizeApp`** — не дал результатов (все видимые упоминания уже были `"TreeBars"` из предыдущей правки). `AppInfo.name` используется везде, где был хардкод «TreeBars».
+
+6. **Пути и ключи с «TreeSize»** — в проекте нет кэша и ключей UserDefaults с «TreeSize». UserDefaults-ключи: `mode.dbx`, `mode.disk`, `lastRoot`, `banner`. Кэш не используется.
+
+### Сколько раз не собиралось
+
+- **1 раз**: `.windowTitle(AppInfo.name)` не поддерживается в `.macOS(.v14)` с `swift-tools-version 5.9`. Убран — заголовок окна определяется из Info.plist.
+
+### Вывод проверки
+
+```
+ЗАДАНИЕ 03: OK
+ЗАДАНИЕ 07: снимок готов, его смотрит приёмщик
+ЗАДАНИЕ 13: снимок готов, его смотрит приёмщик
+```
+
+`codesign -v build/TreeBars.app` — без вывода (код 0).
+`build/TreeBars.app/Contents/MacOS/TreeBars --root /tmp/ts-fixture --selftest` — JSON совпадает с эталоном 03.
+
+### Созданные/изменённые файлы
+
+- **Создан**: `Sources/TreeSizeCore/AppInfo.swift`
+- **Изменён**: `Sources/TreeSizeApp/ContentView.swift` — `Text(AppInfo.name)` вместо `Text("TreeBars")`
+- **Изменён**: `Sources/TreeSizeApp/TreeSizeUIApp.swift` — убрана попытка `.windowTitle` (не поддерживается)
+- **Изменён**: `scripts/make_app.sh` — динамические переменные из AppInfo.swift, `build/$APP_NAME.app`, `NSHumanReadableCopyright`
