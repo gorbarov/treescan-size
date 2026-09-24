@@ -1,9 +1,13 @@
 #!/bin/zsh
-# make_app.sh — сборка TreeBars.app, Info.plist, иконка, подпись
+# make_app.sh — сборка .app, Info.plist, иконка, подпись
 set -e
 cd "$(dirname "$0")/.."
 B=build
 T=/tmp/ts-build
+
+APP_NAME=$(grep 'static let name' Sources/TreeSizeCore/AppInfo.swift | sed 's/.*"\(.*\)".*/\1/')
+BUNDLE_ID=$(grep 'static let bundleID' Sources/TreeSizeCore/AppInfo.swift | sed 's/.*"\(.*\)".*/\1/')
+VERSION=$(grep 'static let version' Sources/TreeSizeCore/AppInfo.swift | sed 's/.*"\(.*\)".*/\1/')
 
 echo "=== Шаг 1: иконка ==="
 swift scripts/make_icon.swift 2>&1 | tail -1
@@ -12,45 +16,48 @@ echo "=== Шаг 2: сборка бинарника ==="
 swift build -c release --disable-sandbox --scratch-path "$T" --product TreeSizeApp 2>&1 | tail -3
 
 echo "=== Шаг 3: собираем .app ==="
-mkdir -p "$B/TreeBars.app/Contents/MacOS"
-mkdir -p "$B/TreeBars.app/Contents/Resources"
+APP_DIR="$B/$APP_NAME.app"
+mkdir -p "$APP_DIR/Contents/MacOS"
+mkdir -p "$APP_DIR/Contents/Resources"
 
-cp -f "$T/release/TreeSizeApp" "$B/TreeBars.app/Contents/MacOS/TreeBars"
-cp -f "$B/AppIcon.icns" "$B/TreeBars.app/Contents/Resources/AppIcon.icns"
+cp -f "$T/release/TreeSizeApp" "$APP_DIR/Contents/MacOS/$APP_NAME"
+cp -f "$B/AppIcon.icns" "$APP_DIR/Contents/Resources/AppIcon.icns"
 
-cat <<EOF > "$B/TreeBars.app/Contents/Info.plist"
+cat <<EOF > "$APP_DIR/Contents/Info.plist"
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
 	<key>CFBundleIdentifier</key>
-	<string>io.github.gorbarov.treebars</string>
+	<string>$BUNDLE_ID</string>
 	<key>CFBundleName</key>
-	<string>TreeBars</string>
+	<string>$APP_NAME</string>
 	<key>CFBundleDisplayName</key>
-	<string>TreeBars</string>
+	<string>$APP_NAME</string>
 	<key>CFBundleExecutable</key>
-	<string>TreeBars</string>
+	<string>$APP_NAME</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleIconFile</key>
 	<string>AppIcon</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.1.0</string>
+	<string>$VERSION</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>14.0</string>
 	<key>NSHighResolutionCapable</key>
 	<true/>
+	<key>NSHumanReadableCopyright</key>
+	<string>MIT License</string>
 </dict>
 </plist>
 EOF
 
 echo "=== Шаг 4: подпись ==="
-codesign --force --deep -s - "$B/TreeBars.app"
+codesign --force --deep -s - "$APP_DIR"
 
-echo "=== Готово: $B/TreeBars.app ==="
-ls -la "$B/TreeBars.app/Contents/MacOS/TreeBars"
-ls -la "$B/TreeBars.app/Contents/Resources/AppIcon.icns"
-ls -la "$B/TreeBars.app/Contents/Info.plist"
+echo "=== Готово: $APP_DIR ==="
+ls -la "$APP_DIR/Contents/MacOS/$APP_NAME"
+ls -la "$APP_DIR/Contents/Resources/AppIcon.icns"
+ls -la "$APP_DIR/Contents/Info.plist"

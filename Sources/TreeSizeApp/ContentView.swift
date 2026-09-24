@@ -2,6 +2,7 @@
 // HSplitView, строка состояния, оверлей скана
 import SwiftUI
 import TreeSizeCore
+// MARK: - ContentView
 
 /// Главный экран приложения
 struct ContentView: View {
@@ -39,7 +40,7 @@ struct ContentView: View {
             logo
 
             HStack(spacing: 0) {
-                Text("TreeBars")
+                Text(AppInfo.name)
                     .fontWeight(.bold)
                     .font(.system(size: 15))
                 Text(" для мака")
