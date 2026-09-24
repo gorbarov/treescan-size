@@ -314,17 +314,13 @@ struct ContentView: View {
             case .details:
                 DetailsView()
             case .ext:
-                Text("Расширения — задание 08")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                ExtView()
             case .age:
-                Text("Возраст файлов — задание 08")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                AgeView()
             case .top:
-                Text("Топ файлов — задание 08")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                TopView()
             case .dups:
-                Text("Дубли — задание 08")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                DupsView()
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

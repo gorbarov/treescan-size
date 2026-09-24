@@ -84,7 +84,7 @@ struct DetailsView: View {
                         .truncationMode(.tail)
                 }
             }
-            .width(min: 120, ideal: 170)
+            .width(min: 110, ideal: 140)
 
             TableColumn("Размер", value: \.size) { row in
                 Text(fmtBytes(row.size))
