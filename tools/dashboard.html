@@ -45,10 +45,20 @@ main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,380px);gap:16px;p
 .ev .ago{color:var(--muted);font-size:11px;text-align:right}
 .ev.new{animation:flash 1.5s}
 @keyframes flash{from{background:#2a78d633}}
-.snaps{display:grid;gap:10px}
-.snaps a{display:block;border:1px solid var(--line);border-radius:8px;overflow:hidden}
-.snaps img{width:100%;display:block}
-.snaps small{display:block;padding:4px 8px;color:var(--muted);font-size:11px}
+.snaps{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;max-height:78vh;overflow:auto}
+.snaps figure{margin:0;border:1px solid var(--line);border-radius:8px;overflow:hidden;cursor:zoom-in;background:var(--chip)}
+.snaps figure:hover{border-color:var(--accent)}
+.snaps img{width:100%;display:block;aspect-ratio:1280/820;object-fit:cover;object-position:top left}
+.snaps figcaption{padding:4px 8px;color:var(--muted);font-size:11px;display:flex;justify-content:space-between}
+.gtabs{display:flex;gap:6px;margin-bottom:10px}
+.gtabs button{border:1px solid var(--line);background:var(--chip);color:var(--text);border-radius:8px;padding:3px 10px;cursor:pointer;font:inherit;font-size:12px}
+.gtabs button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.lb{position:fixed;inset:0;background:rgba(10,12,16,.88);display:none;z-index:50;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+.lb.on{display:flex}
+.lb img{max-width:100%;max-height:calc(100vh - 90px);border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,.5);background:#fff}
+.lb .cap{color:#e6eaf0;margin-top:10px;font-size:13px;display:flex;gap:14px;align-items:center}
+.lb button{background:rgba(255,255,255,.12);color:#fff;border:0;border-radius:8px;padding:6px 12px;cursor:pointer;font:inherit}
+.lb button:hover{background:rgba(255,255,255,.25)}
 table{width:100%;border-collapse:collapse;font-size:12.5px}
 th,td{padding:5px 6px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
 th{color:var(--muted);font-weight:500}
@@ -69,8 +79,11 @@ td.r,th.r{text-align:right;font-variant-numeric:tabular-nums}
     <section class="card" id="live"></section>
     <section class="card"><h2>Все прогоны</h2><div style="overflow:auto"><table id="runs"></table></div></section>
   </div>
-  <aside class="card"><h2>Снимки окна приложения</h2><div class="snaps" id="snaps"><div class="empty">появятся с задания 04</div></div></aside>
+  <aside class="card"><h2>Снимки окна</h2>
+    <div class="gtabs"><button id="gApp" class="on">Приложение</button><button id="gRef">Эталон (HTML-макет)</button></div>
+    <div class="snaps" id="snaps"><div class="empty">появятся с задания 04</div></div></aside>
 </main>
+<div class="lb" id="lb"><img id="lbImg" alt=""><div class="cap"><button id="lbPrev">← назад</button><span id="lbCap"></span><button id="lbNext">вперёд →</button><button id="lbClose">закрыть · Esc</button></div></div>
 <script>
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
@@ -107,8 +120,27 @@ async function tick(){
   }
   $('#runs').innerHTML = '<tr><th>старт</th><th>задание</th><th>оболочка</th><th>модель</th><th>итог</th><th class="r">ходов</th><th class="r">вход</th><th class="r">выход</th><th class="r">₽</th></tr>' +
     d.runs.slice().reverse().map(r => `<tr><td>${r.started}</td><td>${esc(r.title)}</td><td>${esc(r.harness)}</td><td class="muted">${esc(r.model)}</td><td>${esc(r.status)}</td><td class="r">${r.turns}</td><td class="r">${num(r.tin)}</td><td class="r">${num(r.tout)}</td><td class="r">${r.rub.toFixed(2).replace('.', ',')}</td></tr>`).join('');
-  if (d.snaps.length) $('#snaps').innerHTML = d.snaps.map(s => `<a href="/snap/${s}" target="_blank"><img src="/snap/${s}?t=${Date.now() >> 14}" alt=""><small>${esc(s)}</small></a>`).join('');
+  GAL.app = d.snaps.map(x => ({src: '/snap/' + x.file, name: x.name, time: x.time}));
+  GAL.ref = d.refs.map(f => ({src: '/ref/' + f, name: f.replace('.png', ''), time: 'эталон'}));
+  renderGallery();
 }
+const GAL = {app: [], ref: [], mode: 'app', shown: ''};
+let lbIdx = -1;
+function renderGallery(){
+  const items = GAL[GAL.mode], key = GAL.mode + items.map(i => i.src).join();
+  if (key === GAL.shown) return;               // не перерисовывать без изменений — картинки не мигают
+  GAL.shown = key;
+  $('#snaps').innerHTML = items.length ? items.map((it, i) => `<figure data-i="${i}"><img loading="lazy" src="${it.src}" alt=""><figcaption><span>${esc(it.name)}</span><span>${esc(it.time)}</span></figcaption></figure>`).join('')
+    : '<div class="empty">появятся с задания 04</div>';
+}
+function openLb(i){ const items = GAL[GAL.mode]; if (!items.length) return; lbIdx = (i + items.length) % items.length; const it = items[lbIdx];
+  $('#lbImg').src = it.src; $('#lbCap').textContent = `${it.name} · ${it.time} · ${lbIdx + 1} из ${items.length}`; $('#lb').classList.add('on'); }
+const closeLb = () => { $('#lb').classList.remove('on'); lbIdx = -1; };
+$('#snaps').addEventListener('click', e => { const f = e.target.closest('figure'); if (f) openLb(+f.dataset.i); });
+$('#lbPrev').onclick = () => openLb(lbIdx - 1); $('#lbNext').onclick = () => openLb(lbIdx + 1); $('#lbClose').onclick = closeLb;
+$('#lb').addEventListener('click', e => { if (e.target.id === 'lb') closeLb(); });
+addEventListener('keydown', e => { if (lbIdx < 0) return; if (e.key === 'Escape') closeLb(); if (e.key === 'ArrowLeft') openLb(lbIdx - 1); if (e.key === 'ArrowRight') openLb(lbIdx + 1); });
+for (const [id, m] of [['gApp', 'app'], ['gRef', 'ref']]) $('#' + id).onclick = () => { GAL.mode = m; $('#gApp').classList.toggle('on', m === 'app'); $('#gRef').classList.toggle('on', m === 'ref'); renderGallery(); };
 tick(); setInterval(tick, 2000);
 </script>
 </body>

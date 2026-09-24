@@ -16,6 +16,8 @@ PROJECT = Path(__file__).resolve().parent.parent
 RUNS = PROJECT / "docs/runs"
 BOARD = PROJECT / "docs/board.json"
 SNAPS = Path("/tmp/ts-build")
+ARCHIVE = Path("/tmp/ts-snaps")          # история снимков: исполнитель перезаписывает файлы в /tmp/ts-build
+REF = PROJECT / "docs/ref"               # эталонные снимки HTML-макета
 PORT = int(os.environ.get("PORT", 8777))
 PRICE = {"deepseek/deepseek-v4-flash": (2.5, 15), "deepseek/deepseek-v4.1-flash": (7, 15),
          "qwen/qwen3.8-flash": (7, 15), "z-ai/glm-5.3-flash": (13, 42)}
@@ -179,9 +181,21 @@ def collect():
     for t in board["tasks"]:
         if t["id"] in live:
             t["status"] = "в работе"
-    snaps = sorted((os.path.basename(p) for p in glob.glob(str(SNAPS / "*.png"))),
-                   key=lambda n: -os.path.getmtime(SNAPS / n))[:8]
-    return {"runs": runs, "board": board, "snaps": snaps, "now": time.strftime("%H:%M:%S"),
+    ARCHIVE.mkdir(exist_ok=True)
+    for p in glob.glob(str(SNAPS / "*.png")):
+        mt = int(os.path.getmtime(p))
+        dst = ARCHIVE / f"{Path(p).stem}__{mt}.png"
+        if not dst.exists() and time.time() - mt > 2:      # дождаться, пока файл допишется
+            try:
+                dst.write_bytes(Path(p).read_bytes())
+            except OSError:
+                pass
+    snaps = []
+    for p in sorted(glob.glob(str(ARCHIVE / "*.png")), key=os.path.getmtime, reverse=True)[:60]:
+        stem, _, mt = Path(p).stem.rpartition("__")
+        snaps.append({"file": os.path.basename(p), "name": stem, "time": time.strftime("%H:%M", time.localtime(int(mt or 0)))})
+    refs = sorted(os.path.basename(p) for p in glob.glob(str(REF / "*.png")))
+    return {"runs": runs, "board": board, "snaps": snaps, "refs": refs, "now": time.strftime("%H:%M:%S"),
             "total_rub": round(sum(r["rub"] for r in runs), 2)}
 
 
@@ -204,9 +218,11 @@ class H(BaseHTTPRequestHandler):
             return self.send(200, PAGE.read_bytes(), "text/html; charset=utf-8")
         if self.path == "/api/state":
             return self.send(200, json.dumps(collect(), ensure_ascii=False).encode(), "application/json; charset=utf-8")
-        m = re.match(r"^/snap/([\w.-]+\.png)$", self.path.split("?")[0])
-        if m and (SNAPS / m.group(1)).is_file():
-            return self.send(200, (SNAPS / m.group(1)).read_bytes(), "image/png")
+        m = re.match(r"^/(snap|ref)/([\w.-]+\.png)$", self.path.split("?")[0])
+        if m:
+            f = (ARCHIVE if m.group(1) == "snap" else REF) / m.group(2)
+            if f.is_file():
+                return self.send(200, f.read_bytes(), "image/png")
         self.send(404, b"", "text/plain")
 
 
