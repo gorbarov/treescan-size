@@ -760,3 +760,54 @@ $ tools/check_task.sh 03
 - **Изменён**: `Sources/TreeSizeApp/ContentView.swift` — `Text(AppInfo.name)` вместо `Text("TreeBars")`
 - **Изменён**: `Sources/TreeSizeApp/TreeSizeUIApp.swift` — убрана попытка `.windowTitle` (не поддерживается)
 - **Изменён**: `scripts/make_app.sh` — динамические переменные из AppInfo.swift, `build/$APP_NAME.app`, `NSHumanReadableCopyright`
+
+## Задание 14. Английский и китайский интерфейс
+
+**Модель:** Sonnet, агент Claude Code.
+
+### Что сделано
+
+1. **Sources/TreeSizeCore/L10n.swift** — создан скелет локализации: `L10n.lang` определяется из `TREEBARS_LANG` (приоритет) или из `Locale.preferredLanguages`; `tr()` переводит русскую строку в язык интерфейса; `L10n.forceLang()` для принудительного задания языка.
+
+2. **Sources/TreeSizeCore/L10n_en.swift** — английский словарь (124 строки с ключами): общие строки, плашки, подписи, вкладки, заголовки колонок, меню, возрастные корзины, группы файлов, множественные формы.
+
+3. **Sources/TreeSizeCore/L10n_zh.swift** — китайский словарь (упрощённый, 124 строки, те же ключи): естественный для macOS интерфейс (大小、磁盘占用、仅云端、文件、文件夹、最近修改).
+
+4. **Sources/TreeSizeCore/Format.swift** — обновлён:
+   - `fmtBytes`: единицы `B, KB, MB, GB, TB, PB` для en/zh; точка вместо запятой в числах.
+   - `fmtPct`: точка вместо запятой, без пробела (`6.7%`) для en/zh.
+   - `fmtDate`: формат `yyyy-MM-dd` для en/zh.
+   - `plural`: английская форма (one для 1, иначе many) и китайская (единая с `个文件`).
+   - Добавлена `fmtCount(n)` — форматирование чисел с разделителями тысяч для локали.
+
+5. **`tr()` обёртки** — во всех 13 view-файлах TreeSizeApp русские строки обёрнуты в `tr(...)`. Конкретно: кнопки, вкладки, заголовки, подписи, подсказки, меню, алерты, поповер, надписи скана.
+
+6. **Принудительный русский в тестах** — `L10n.forceLang("ru")` в начале `--selftest`, `--uitest`, `--model-check`, `--actions-check` — старые проверки (01-03) не ломаются.
+
+7. **Группы файлов и возраст** — через `tr()` при отображении.
+
+### Сколько раз не собиралось
+
+- **3 раза**: 
+  - ViewBuilder-контекст: `if-else` в `Text()` внутри `@ViewBuilder` вызывал ошибку `type '()' cannot conform to 'View'`. Исправлено обёрткой в `Group { }` или вычислением строки заранее.
+  - Опечатка `String(store.progress.files)` → `String` не нужно (число и так String-совместимо). Исправлено.
+  - Дважды из-за неправильной конструкции `let` в `@ViewBuilder` — нужно оборачивать в `{ ... }()` для ленивых вычислений.
+
+### Вывод проверки
+
+```
+ЗАДАНИЕ 01: OK
+ЗАДАНИЕ 02: OK
+ЗАДАНИЕ 03: OK
+ЗАДАНИЕ 14ru: снимок готов, его смотрит приёмщик
+ЗАДАНИЕ 14en: снимок готов, его смотрит приёмщик
+ЗАДАНИЕ 14zh: снимок готов, его смотрит приёмщик
+```
+
+`L10n_en.swift` и `L10n_zh.swift` — по 124 строки с кавычками (одинаковое число ключей).
+
+### Созданные/изменённые файлы
+
+- **Созданы**: `Sources/TreeSizeCore/L10n.swift`, `Sources/TreeSizeCore/L10n_en.swift`, `Sources/TreeSizeCore/L10n_zh.swift`
+- **Изменены**: `Sources/TreeSizeCore/Format.swift` (fmtBytes, fmtPct, fmtDate, plural, fmtCount для локалей), `Sources/TreeSizeCore/Model.swift` (plural через tr), `Sources/TreeSizeApp/ContentView.swift` (tr во всех строках), `Sources/TreeSizeApp/AgeView.swift`, `Sources/TreeSizeApp/CrumbsView.swift`, `Sources/TreeSizeApp/DetailsView.swift`, `Sources/TreeSizeApp/ExtView.swift`, `Sources/TreeSizeApp/TopView.swift`, `Sources/TreeSizeApp/DupsView.swift`, `Sources/TreeSizeApp/PieView.swift`, `Sources/TreeSizeApp/PlacesView.swift`, `Sources/TreeSizeApp/TreeView.swift`, `Sources/TreeSizeApp/TreeSizeUIApp.swift`, `Sources/TreeSizeApp/NodeMenu.swift`, `Sources/TreeSizeApp/SelfTest.swift`, `Sources/TreeSizeApp/UITest.swift`, `Sources/TreeSizeApp/AppStore.swift`, `Sources/tscan/main.swift`
+- **Коммит**: `bdeb85f` — «Задание 14: английский и китайский интерфейс»
