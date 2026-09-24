@@ -39,7 +39,7 @@ struct ContentView: View {
             logo
 
             HStack(spacing: 0) {
-                Text("TreeSize")
+                Text("TreeBars")
                     .fontWeight(.bold)
                     .font(.system(size: 15))
                 Text(" для мака")

@@ -1,5 +1,5 @@
 #!/bin/zsh
-# make_app.sh — сборка TreeSize.app, Info.plist, иконка, подпись
+# make_app.sh — сборка TreeBars.app, Info.plist, иконка, подпись
 set -e
 cd "$(dirname "$0")/.."
 B=build
@@ -12,31 +12,31 @@ echo "=== Шаг 2: сборка бинарника ==="
 swift build -c release --disable-sandbox --scratch-path "$T" --product TreeSizeApp 2>&1 | tail -3
 
 echo "=== Шаг 3: собираем .app ==="
-mkdir -p "$B/TreeSize.app/Contents/MacOS"
-mkdir -p "$B/TreeSize.app/Contents/Resources"
+mkdir -p "$B/TreeBars.app/Contents/MacOS"
+mkdir -p "$B/TreeBars.app/Contents/Resources"
 
-cp -f "$T/release/TreeSizeApp" "$B/TreeSize.app/Contents/MacOS/TreeSize"
-cp -f "$B/AppIcon.icns" "$B/TreeSize.app/Contents/Resources/AppIcon.icns"
+cp -f "$T/release/TreeSizeApp" "$B/TreeBars.app/Contents/MacOS/TreeBars"
+cp -f "$B/AppIcon.icns" "$B/TreeBars.app/Contents/Resources/AppIcon.icns"
 
-cat <<EOF > "$B/TreeSize.app/Contents/Info.plist"
+cat <<EOF > "$B/TreeBars.app/Contents/Info.plist"
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
 	<key>CFBundleIdentifier</key>
-	<string>ru.gorbarov.treesize</string>
+	<string>io.github.gorbarov.treebars</string>
 	<key>CFBundleName</key>
-	<string>TreeSize</string>
+	<string>TreeBars</string>
 	<key>CFBundleDisplayName</key>
-	<string>TreeSize</string>
+	<string>TreeBars</string>
 	<key>CFBundleExecutable</key>
-	<string>TreeSize</string>
+	<string>TreeBars</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleIconFile</key>
 	<string>AppIcon</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.1</string>
+	<string>0.1.0</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
 	<key>LSMinimumSystemVersion</key>
@@ -48,9 +48,9 @@ cat <<EOF > "$B/TreeSize.app/Contents/Info.plist"
 EOF
 
 echo "=== Шаг 4: подпись ==="
-codesign --force --deep -s - "$B/TreeSize.app"
+codesign --force --deep -s - "$B/TreeBars.app"
 
-echo "=== Готово: $B/TreeSize.app ==="
-ls -la "$B/TreeSize.app/Contents/MacOS/TreeSize"
-ls -la "$B/TreeSize.app/Contents/Resources/AppIcon.icns"
-ls -la "$B/TreeSize.app/Contents/Info.plist"
+echo "=== Готово: $B/TreeBars.app ==="
+ls -la "$B/TreeBars.app/Contents/MacOS/TreeBars"
+ls -la "$B/TreeBars.app/Contents/Resources/AppIcon.icns"
+ls -la "$B/TreeBars.app/Contents/Info.plist"
