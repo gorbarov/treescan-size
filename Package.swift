@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "TreeSize",
-    platforms: [.macOS(.v13)],
+    platforms: [.macOS(.v14)],
     products: [
         .executable(name: "tscan", targets: ["tscan"]),
         .executable(name: "TreeSizeApp", targets: ["TreeSizeApp"]),

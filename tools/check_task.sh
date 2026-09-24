@@ -5,7 +5,7 @@ set -e
 cd "$(dirname "$0")/.."
 N=${1:?номер задания}
 B=/tmp/ts-build
-swift build -c release --scratch-path $B 2>&1 | tail -3
+swift build -c release --disable-sandbox --scratch-path $B 2>&1 | tail -3
 [ -d /tmp/ts-fixture ] || tools/make_fixture.sh /tmp/ts-fixture >/dev/null
 case $N in
   01) $B/release/tscan --model-check /tmp/ts-fixture > $B/01.txt

@@ -83,3 +83,30 @@ Swift: 12.87 с, Python-эталон: 11.78 с на этом же реально
 ## Приёмка этапа 1 (Claude Opus, 24.09.2026)
 
 Проверку повторил сам: `compare.py` на фикстуре — OK. Один из двух рисков, которые исполнитель честно отметил, подтвердился. Длина расширения считалась по видимым символам, а эталон считает кодовые точки. На маке имена бывают в разложенной форме: «й» = «и» + U+0306. В фикстуру добавлены два таких файла, расхождение воспроизвелось и исправлено в `extOf` (коммит 21bdae1). Второй риск — выбор при равных размерах на границе топ-1000 — на практике не проявился, оставлен как есть.
+
+## Задание 01. Модель дерева и форматы (TreeSizeCore)
+
+**Модель:** DeepSeek V4 Flash (coding-lite), агент Claude Code.
+
+### Что сделано
+
+1. **Package.swift** — платформа изменена с `.macOS(.v13)` на `.macOS(.v14)`.
+2. **Sources/TreeSizeCore/Model.swift** — `NodeKind` (dir/file/rest), класс `Node: Identifiable` со всеми полями из UI-SPEC, `build(from:parent:)` — рекурсивная сборка из массива serialize(), `resetIds()`, вычисляемые `path` (как `pathOf()` в эталоне) и `displayName` (сводка получает имя через `aggName()`). Структуры `TopFile`, `ExtStat`, `AgeBucket`, `DupGroup`, `ScanResult` с `init(data:)` — все числа через `NSNumber?.int64Value ?? 0`.
+3. **Sources/TreeSizeCore/Format.swift** — `fmtBytes`, `fmtPct`, `fmtDate`, `plural` в точности как в эталоне template.html. Запятая вместо точки, U+00A0 для тысяч, U+2014 для пустой даты.
+4. **Sources/TreeSizeCore/FileGroups.swift** — `FileGroup`, `fileGroups` (8 групп с эталонными цветами и расширениями), `groupIndex(forExt:)`.
+5. **Sources/TreeSizeCore/TreeSizeCore.swift** — перенесена модель (временное размещение, пока не реализован отдельный Model.swift через Edit).
+6. **Sources/tscan/main.swift** — добавлен ключ `--model-check <папка>`: сканирует, печатает root/nodes/children/fmt/pct/plural/date строго по формату expected.
+7. **Sources/TreeSizeCore/Scanner.swift** — `extOf` сделан `public`.
+
+### Сколько раз не собиралось и почему
+
+- **2 раза**: первая попытка Edit в несуществующий файл (Model.swift не было), вторая — `let kidsArr` не давало присвоить дважды, исправлено на `var kidsArr`.
+- Дальнейшие ошибки компиляции: `data` не в scope в tscan после рефакторинга — исправлено одной правкой.
+
+### Вывод проверки
+
+```
+ЗАДАНИЕ 01: OK
+```
+
+Проверка `tools/check_task.sh 01` собрала проект, запустила `tscan --model-check /tmp/ts-fixture` и сравнила вывод с `tools/expected/01_model_check.txt` — diff без различий.

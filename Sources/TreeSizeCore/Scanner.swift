@@ -325,7 +325,7 @@ public final class Scanner {
 }
 
 /// Извлечение расширения — как в эталоне: точка не первая и не последняя, само расширение не длиннее 12 символов.
-func extOf(_ name: String) -> String {
+public func extOf(_ name: String) -> String {
     // считаем кодовые точки, как len() в Python: у «й» в разложенной форме их две
     let scalars = Array(name.unicodeScalars)
     guard let dot = scalars.lastIndex(of: ".") else { return "" }

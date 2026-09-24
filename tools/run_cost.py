@@ -11,11 +11,23 @@ PRICE = {  # вход, выход
 total = 0.0
 for path in sys.argv[1:]:
     models, res = set(), None
+    pi = {"in": 0, "out": 0, "turns": 0, "t0": None, "t1": None, "ended": False}
     for line in open(path, encoding="utf-8"):
         try: e = json.loads(line)
         except ValueError: continue
         if e.get("type") == "assistant": models.add(e["message"].get("model"))
         if e.get("type") == "result": res = e
+        # формат Pi: итоговые сообщения ассистента приходят в message_end
+        if e.get("type") == "message_end" and e.get("message", {}).get("role") == "assistant":
+            m = e["message"]; u = m.get("usage") or {}
+            models.add(m.get("model")); pi["turns"] += 1
+            pi["in"] += u.get("input", 0) + u.get("cacheRead", 0) + u.get("cacheWrite", 0); pi["out"] += u.get("output", 0)
+            ts = m.get("timestamp"); pi["t0"] = pi["t0"] or ts; pi["t1"] = ts or pi["t1"]
+        if e.get("type") == "agent_settled": pi["ended"] = True
+    if not res and pi["turns"]:
+        res = {"subtype": "success" if pi["ended"] else "оборван", "num_turns": pi["turns"],
+               "duration_ms": (pi["t1"] - pi["t0"]) if pi["t0"] and pi["t1"] else 0,
+               "usage": {"input_tokens": pi["in"], "output_tokens": pi["out"]}}
     if not res:
         print(f"{path}: нет итоговой записи (прогон оборван?)"); continue
     u = res.get("usage", {})
