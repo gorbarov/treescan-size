@@ -26,15 +26,7 @@ tools/make_fixture.sh /tmp/ts-fixture     # тестовая папка с не�
 python3 tools/compare.py /tmp/ts-fixture  # Swift против эталона на Python
 ```
 
-## Пауза 24.09.2026, 21:05
-
-Остановлено по просьбе CEO посреди задания 10 (Pi, DeepSeek V4 Flash). Незаконченная работа закоммичена («Задание 10: незаконченная работа…»). Продолжить:
-
-```bash
-tools/run_pi.sh deepseek/deepseek-v4-flash --resume "$(cat docs/runs/PAUSED_10.txt)" "Продолжай задание 10 с того места, где остановился. Сначала git status и tools/check_task.sh 03."
-```
-
-Дальше по плану: приёмка 10 → живая проверка кликов в запущенном приложении → задание 11 (.app и иконка).
+**Состояние и что дальше — [docs/STATE.md](docs/STATE.md)** (читать первым). Заключение — [docs/FINDINGS.md](docs/FINDINGS.md), запуск — [docs/LAUNCH.md](docs/LAUNCH.md), статья — [docs/ARTICLE_habr.md](docs/ARTICLE_habr.md).
 
 ## Статус
 
@@ -42,6 +34,7 @@ tools/run_pi.sh deepseek/deepseek-v4-flash --resume "$(cat docs/runs/PAUSED_10.t
 |---|---|---|---|
 | 0 | ТЗ, план, фикстура, сравнение, мост в шаблоне | Claude (Opus) | готово 24.09.2026 |
 | 1 | Сканер на Swift, `tscan` | агент на Sonnet | готово 24.09.2026: совпадает с эталоном на фикстуре, `~/Downloads` и всём Dropbox; 12,9 с против 11,8 с у Python |
-| 2 | Нативный интерфейс на SwiftUI, задания 01–11 ([PLAN](docs/PLAN.md)) | DeepSeek V4 Flash (coding-lite), приёмка — Claude | в работе с 24.09.2026 |
+| 2 | Нативный интерфейс на SwiftUI, задания 01–13 ([PLAN](docs/PLAN.md), [board](docs/board.json)) | DeepSeek V4 Flash (Claude Code и Pi), приёмка — Claude | готово 25.09.2026; 10u частично |
+| 3 | Языки (14: en+zh, дальше ja/de/es/fr/pt/ko), README для мира, публикация, запуск | Pi + Claude | в работе |
 
 Сборка идёт без Xcode, только на Command Line Tools (Swift 6.2). Папки `.build/` и `build/` исключены из синхронизации Dropbox.
