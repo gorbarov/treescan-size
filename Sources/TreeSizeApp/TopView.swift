@@ -51,11 +51,7 @@ struct TopView: View {
                     let n1 = nf(Int64(filteredTop.count))
                     let n2 = nf(Int64(allCount))
                     Group {
-                        if L10n.isRussian {
-                            mdText("**\(n1)** из \(n2)\(tr(" крупнейших файлов скана лежат в «"))\(mdEscape(view.name))\(tr("»."))")
-                        } else {
-                            mdText("**\(n1)** \(tr(" крупнейших файлов скана лежат в «"))\(n2)\(tr("»."))")
-                        }
+                        mdText("**\(n1)**\(tr(" из "))\(n2)\(tr(" крупнейших файлов скана лежат в «"))\(mdEscape(view.name))\(tr("»."))")
                     }
                     .font(.system(size: 13))
                     .frame(maxWidth: .infinity, alignment: .leading)
