@@ -27,8 +27,8 @@ func takeSnapshot(args: [String]) {
     let store = AppStore()
     store.result = ScanResult(data: data)
 
-    // Режим по умолчанию для этого корня (без UserDefaults)
-    store.setDefaultMode(for: rootPath)
+    // Режим: загружаем из UserDefaults, иначе по умолчанию
+    store.loadMode(for: rootPath)
 
     // Выделить корень, раскрыть его
     if let tree = store.result?.tree {
@@ -73,9 +73,7 @@ func takeSnapshot(args: [String]) {
     window.contentView = hostingView
     window.setFrameOrigin(NSPoint(x: -10000, y: -10000))
 
-    if isDark {
-        window.appearance = NSAppearance(named: .darkAqua)
-    }
+    window.appearance = NSAppearance(named: isDark ? .darkAqua : .aqua)
 
     window.orderFront(nil)
 

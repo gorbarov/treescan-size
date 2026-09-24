@@ -6,7 +6,9 @@ public final class AppStore: ObservableObject {
     @Published public var result: ScanResult? = nil
     @Published public var selected: Node? = nil
     @Published public var expanded: Set<Int> = []
-    @Published public var mode: SizeMode = .size
+    @Published public var mode: SizeMode = .size {
+        didSet { if oldValue != mode { saveMode() } }
+    }
     @Published public var tab: Tab = .details
     @Published public var isScanning: Bool = false
     @Published public var progress: (files: Int64, bytes: Int64, cur: String) = (0, 0, "")
@@ -33,9 +35,23 @@ public final class AppStore: ObservableObject {
 
     // MARK: - Режим
 
-    /// Установить режим по правилу: Dropbox → .size, иначе .alloc
-    public func setDefaultMode(for rootPath: String) {
-        mode = rootPath.contains("/CloudStorage/Dropbox") ? .size : .alloc
+    /// Загрузить режим из UserDefaults (отдельно для dbx/disk), иначе по умолчанию
+    public func loadMode(for rootPath: String) {
+        let isDBX = rootPath.contains("/CloudStorage/Dropbox")
+        let key = "mode." + (isDBX ? "dbx" : "disk")
+        if let saved = UserDefaults.standard.string(forKey: key), let m = SizeMode(rawValue: saved) {
+            mode = m
+        } else {
+            mode = isDBX ? .size : .alloc
+        }
+    }
+
+    /// Сохранить текущий режим в UserDefaults
+    public func saveMode() {
+        let root = result?.root ?? ""
+        let isDBX = root.contains("/CloudStorage/Dropbox")
+        let key = "mode." + (isDBX ? "dbx" : "disk")
+        UserDefaults.standard.set(mode.rawValue, forKey: key)
     }
 
     // MARK: - Скан
@@ -57,7 +73,7 @@ public final class AppStore: ObservableObject {
             await MainActor.run {
                 guard let store = weakSelf else { return }
                 store.result = ScanResult(data: data)
-                store.setDefaultMode(for: path)
+                store.loadMode(for: path)
                 store.isScanning = false
                 store.progress = (scanner.nfiles, scanner.bytes, scanner.cur)
                 if let tree = store.result?.tree {

@@ -1,8 +1,9 @@
-// Каркас ContentView — UI-SPEC раздел 4
+// Главный экран: UI-SPEC раздел 4 — панель инструментов, плашки, строка сведений,
+// HSplitView, строка состояния, оверлей скана
 import SwiftUI
 import TreeSizeCore
 
-/// Главный экран: панель инструментов, сведения, HSplitView, строка состояния, оверлей скана
+/// Главный экран приложения
 struct ContentView: View {
     @EnvironmentObject var store: AppStore
 
@@ -10,6 +11,7 @@ struct ContentView: View {
         ZStack {
             VStack(spacing: 0) {
                 toolbar
+                banners
                 Divider()
                 infoBar
                     .background(Color.panel2Bg)
@@ -21,7 +23,6 @@ struct ContentView: View {
                     .background(Color.panel2Bg)
             }
 
-            // Оверлей скана с прогрессом
             if store.isScanning {
                 scanOverlay
             }
@@ -29,14 +30,12 @@ struct ContentView: View {
         .background(Color.windowBg)
     }
 
-    // MARK: - Панель инструментов
+    // MARK: - Панель инструментов (как .top в эталоне)
 
     private var toolbar: some View {
         HStack(spacing: 14) {
-            // Логотип из трёх квадратов
             logo
 
-            // «TreeSize для мака»
             HStack(spacing: 0) {
                 Text("TreeSize")
                     .fontWeight(.bold)
@@ -54,7 +53,6 @@ struct ContentView: View {
                 .truncationMode(.middle)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            // Кнопки
             Button("📂 Открыть…") {
                 store.showPlaces = true
             }
@@ -65,7 +63,7 @@ struct ContentView: View {
             }
             .buttonStyle(.borderless)
 
-            // Сегмент Размер | На диске — как в макете
+            // Сегмент Размер | На диске
             Picker("", selection: $store.mode) {
                 Text("Размер").tag(AppStore.SizeMode.size)
                 Text("На диске").tag(AppStore.SizeMode.alloc)
@@ -75,7 +73,7 @@ struct ContentView: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
-        .background(Color(nsColor: NSColor.windowBackgroundColor))
+        .background(Color.panelBg) // .top → var(--panel) → белый/тёмный
     }
 
     private var logo: some View {
@@ -94,9 +92,56 @@ struct ContentView: View {
         }
     }
 
+    // MARK: - Плашки (эталон #banner)
+
+    @ViewBuilder
+    private var banners: some View {
+        // Dropbox-баннер
+        if isDropbox && UserDefaults.standard.string(forKey: "banner") != "off" {
+            HStack(spacing: 10) {
+                Text("☁️ **Квоту Dropbox считают по «Размеру»**: файлы «только онлайн» на маке не занимают места, но в тариф входят. Фиолетовым — сколько лежит только в облаке. Папки с пометкой «⊘ не синхр.» лежат только на этом маке и в квоту не входят. Общие папки считаются в квоту каждого участника.")
+                    .font(.system(size: 12.5))
+                Spacer()
+                Button(action: {
+                    UserDefaults.standard.set("off", forKey: "banner")
+                }) {
+                    Text("×")
+                        .foregroundColor(.secondary)
+                        .font(.system(size: 16))
+                }
+                .buttonStyle(.borderless)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .background(
+                // color-mix(in srgb, var(--cloud) 10%, var(--panel))  → #6a4fd8 при 10% на panel
+                Color.cloudColor.opacity(0.1)
+            )
+        }
+
+        // Stuck-предупреждение
+        if let stuck = store.result?.stuck, !stuck.isEmpty {
+            let paths = stuck.prefix(5).map { p -> String in
+                guard let root = store.result?.root else { return p }
+                return String(p.dropFirst(root.count)) // относительный путь
+            }
+            HStack(alignment: .top, spacing: 10) {
+                Text("⚠️ **\(plural(Int64(stuck.count), "папку", "папки", "папок")) прочитать не удалось**: облако не ответило за отведённое время, их размер не учтён. \(paths.map { "`\($0)`" }.joined(separator: ", "))\(stuck.count > 5 ? " и другие" : "")")
+                    .font(.system(size: 12.5))
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .background(Color.warningBg)
+        }
+    }
+
+    private var isDropbox: Bool {
+        guard let root = store.result?.root else { return false }
+        return root.contains("/CloudStorage/Dropbox")
+    }
+
     // MARK: - Строка сведений (как renderInfo в эталоне)
 
-    /// Имя для отображения: у корня — последний сегмент пути, у остальных — displayName
     private func displayName(for node: Node) -> String {
         if node.parent == nil {
             let path = node.name
@@ -105,23 +150,19 @@ struct ContentView: View {
         return node.displayName
     }
 
-    /// Dropbox-корень?
-    private var isDropbox: Bool {
-        guard let root = store.result?.root else { return false }
-        return root.contains("/CloudStorage/Dropbox")
-    }
-
     private var infoBar: some View {
         Group {
             if let sel = store.selected {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 22) {
+                        // Имя — приоритет ширины, max-width ~40ch, не обрезать до «ts-fi…»
                         Text(displayName(for: sel))
                             .fontWeight(.bold)
                             .lineLimit(1)
                             .truncationMode(.tail)
-                            .frame(maxWidth: 40, alignment: .leading)
-                            .fixedSize()
+                            .layoutPriority(1) // приоритет растяжения
+                            .frame(maxWidth: 260) // ~40ch × ~6.5pt ≈ 260pt, но с приоритетом
+                            .fixedSize(horizontal: false, vertical: false)
 
                         infoItem(label: "Размер", value: fmtBytes(store.value(sel)))
                         infoItem(label: "На диске", value: fmtBytes(sel.alloc))
@@ -133,9 +174,8 @@ struct ContentView: View {
                             infoItem(label: "Доля в родителе", value: fmtPct(pct))
                         }
 
-                        if sel.cloud > 0 {
-                            infoItem(label: "Только в облаке", value: fmtBytes(sel.cloud), color: .purple)
-                        }
+                        // «Только в облаке» всегда, даже 0 Б, фиолетовым
+                        infoItem(label: "Только в облаке", value: fmtBytes(sel.cloud), color: .cloudColor)
 
                         if isDropbox && sel.ign > 0 {
                             infoItem(label: "Не синхронизируется", value: fmtBytes(sel.ign))
@@ -143,8 +183,8 @@ struct ContentView: View {
                             infoItem(label: "В квоте Dropbox", value: fmtBytes(inQuota))
                         }
 
-                        infoItem(label: "Файлов", value: "\(sel.files)")
-                        infoItem(label: "Папок", value: "\(sel.dirs)")
+                        infoItem(label: "Файлов", value: formatCount(sel.files))
+                        infoItem(label: "Папок", value: formatCount(sel.dirs))
                         infoItem(label: "Последнее изменение", value: fmtDate(sel.mtime))
                     }
                     .padding(.horizontal, 16)
@@ -162,9 +202,17 @@ struct ContentView: View {
                 .font(.system(size: 13))
             Text(value)
                 .fontWeight(.semibold)
-                .font(.system(.body, design: .monospaced).monospacedDigit())
+                .font(.system(size: 13).monospacedDigit())  // системный шрифт, .monospacedDigit()
                 .foregroundColor(color ?? .primary)
         }
+    }
+
+    /// Форматирование счётчика с разделителями тысяч, как NF.format() в эталоне
+    private func formatCount(_ n: Int64) -> String {
+        let nf = NumberFormatter()
+        nf.numberStyle = .decimal
+        nf.locale = Locale(identifier: "ru-RU")
+        return nf.string(from: NSNumber(value: n)) ?? "\(n)"
     }
 
     // MARK: - HSplitView (48/52)
@@ -176,25 +224,10 @@ struct ContentView: View {
                 .background(Color.panelBg)
                 .frame(minWidth: 380, idealWidth: 610)
 
-            TabView {
-                Text("Диаграмма — задание 06")
-                    .tabItem { Text("Диаграмма") }
-                    .tag(AppStore.Tab.pie)
-                Text("Детали — задание 07")
-                    .tabItem { Text("Детали") }
-                    .tag(AppStore.Tab.details)
-                Text("Расширения — задание 08")
-                    .tabItem { Text("Расширения") }
-                    .tag(AppStore.Tab.ext)
-                Text("Возраст файлов — задание 08")
-                    .tabItem { Text("Возраст файлов") }
-                    .tag(AppStore.Tab.age)
-                Text("Топ файлов — задание 08")
-                    .tabItem { Text("Топ файлов") }
-                    .tag(AppStore.Tab.top)
-                Text("Дубли — задание 08")
-                    .tabItem { Text("Дубли") }
-                    .tag(AppStore.Tab.dups)
+            // Правая панель: свои вкладки (как .tabs в эталоне) + контент по store.tab
+            VStack(spacing: 0) {
+                tabBar
+                rightContent
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.panelBg)
@@ -204,16 +237,155 @@ struct ContentView: View {
         .background(Color.windowBg)
     }
 
-    // MARK: - Строка состояния
+    // MARK: - Свои вкладки (как .tabs button в эталоне, без TabView)
+
+    private var tabBar: some View {
+        HStack(spacing: 2) {
+            tabButton(label: "Диаграмма", tab: .pie)
+            tabButton(label: "Детали", tab: .details)
+            tabButton(label: "Расширения", tab: .ext)
+            tabButton(label: "Возраст файлов", tab: .age)
+            tabButton(label: "Топ файлов", tab: .top)
+            tabButton(label: "Дубли", tab: .dups)
+        }
+        .padding(.horizontal, 8)
+        .padding(.top, 6)
+        .background(Color.panel2Bg)
+    }
+
+    private func tabButton(label: String, tab: AppStore.Tab) -> some View {
+        Button(action: { store.tab = tab }) {
+            Text(label)
+                .font(.system(size: 13))
+                .fontWeight(store.tab == tab ? .semibold : .regular)
+                .foregroundColor(store.tab == tab ? .primary : .secondary)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(store.tab == tab ? Color.panelBg : Color.clear)
+                .clipShape(
+                    UnevenRoundedRectangle(
+                        topLeadingRadius: 7,
+                        bottomLeadingRadius: 0,
+                        bottomTrailingRadius: 0,
+                        topTrailingRadius: 7
+                    )
+                )
+                .overlay(
+                    // Рамка сверху и с боков у активной вкладки (как border-top-left-radius/border-top-right-radius)
+                    Group {
+                        if store.tab == tab {
+                            UnevenRoundedRectangle(
+                                topLeadingRadius: 7,
+                                bottomLeadingRadius: 0,
+                                bottomTrailingRadius: 0,
+                                topTrailingRadius: 7
+                            )
+                            .stroke(Color.lineColor, lineWidth: 1)
+                        }
+                    }
+                )
+        }
+        .buttonStyle(.plain)
+        .overlay(
+            // Нижний разделитель: у неактивных линия под вкладкой
+            Group {
+                if store.tab != tab {
+                    Rectangle()
+                        .fill(Color.lineColor)
+                        .frame(height: 1)
+                        .offset(y: 0)
+                }
+            },
+            alignment: .bottom
+        )
+    }
+
+    /// Нижняя граница вкладок (общая разделительная линия под всей панелью вкладок)
+    private var tabBorder: some View {
+        Rectangle()
+            .fill(Color.lineColor)
+            .frame(height: 1)
+    }
+
+    // Каждая вкладка займёт весь низ правой панели
+    @ViewBuilder
+    private var rightContent: some View {
+        Group {
+            switch store.tab {
+            case .pie:
+                Text("Диаграмма — задание 07")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            case .details:
+                Text("Детали — задание 07")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            case .ext:
+                Text("Расширения — задание 08")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            case .age:
+                Text("Возраст файлов — задание 08")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            case .top:
+                Text("Топ файлов — задание 08")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            case .dups:
+                Text("Дубли — задание 08")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .overlay(
+            Rectangle()
+                .fill(Color.lineColor)
+                .frame(height: 1),
+            alignment: .top
+        )
+    }
+
+    // MARK: - Строка состояния (как .status в эталоне)
 
     private var statusBar: some View {
         HStack(spacing: 16) {
+            // Путь выделенного (или выбранного в правой панели)
             Text(store.selected?.path ?? "")
                 .foregroundColor(.primary)
                 .lineLimit(1)
                 .truncationMode(.head)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
+            // Кнопки «Показать в Finder» и «Скопировать путь»
+            if let sel = store.selected {
+                Button("Показать в Finder") {
+                    let url = URL(fileURLWithPath: sel.path)
+                    NSWorkspace.shared.activateFileViewerSelecting([url])
+                }
+                .buttonStyle(.plain)
+                .font(.system(size: 12))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 2)
+                .background(Color.panelBg)
+                .cornerRadius(6)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6)
+                        .stroke(Color.lineColor, lineWidth: 1)
+                )
+
+                Button("Скопировать путь") {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(sel.path, forType: .string)
+                }
+                .buttonStyle(.plain)
+                .font(.system(size: 12))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 2)
+                .background(Color.panelBg)
+                .cornerRadius(6)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6)
+                        .stroke(Color.lineColor, lineWidth: 1)
+                )
+            }
+
+            // Мета-информация справа
             if let result = store.result {
                 let meta = "Скан \(result.scanned) · \(String(format: "%.1f", result.took)) с"
                     + (result.errors > 0 ? " · нет доступа: \(result.errors)" : "")
@@ -259,4 +431,17 @@ struct ContentView: View {
                 .shadow(radius: 8)
             )
     }
+}
+
+// MARK: - Расширение Color для дополнительных цветов
+
+extension Color {
+    /// Цвет «Только в облаке»: #6a4fd8, тёмная #9f8bff
+    static let cloudColor = Color.dynamicColor(lightHex: "#6a4fd8", darkHex: "#9f8bff")
+
+    /// Цвет линии разделителя: #dde2ea / #2c323c
+    static let lineColor = Color.dynamicColor(lightHex: "#dde2ea", darkHex: "#2c323c")
+
+    /// Фон предупреждения (stuck — жёлтый)
+    static let warningBg = Color.dynamicColor(lightHex: "#fff3cd", darkHex: "#332701")
 }
