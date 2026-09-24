@@ -14,7 +14,7 @@ extension L10n {
 
         // MARK: - Dropbox-баннер
         "☁️ **Квоту Dropbox считают по «Размеру»**: файлы «только онлайн» на маке не занимают места, но в тариф входят. Фиолетовым — сколько лежит только в облаке. Папки с пометкой «⊘ не синхр.» лежат только на этом маке и в квоту не входят. Общие папки считаются в квоту каждого участника.":
-            "☁️ **Dropbox quota counts «Size»**: files marked «online only» take no space on Mac but count toward your plan. Purple indicates cloud-only data. Folders marked «⊘ not synced» exist only on this Mac and don't count toward quota. Shared folders count toward each member's quota.",
+            "☁️ **Dropbox quota counts “Size”**: files marked “online only” take no space on Mac but count toward your plan. Purple indicates cloud-only data. Folders marked “⊘ not synced” exist only on this Mac and don't count toward quota. Shared folders count toward each member's quota.",
 
         // MARK: - Stuck-баннер (с подстановками)
         "⚠️ **папку прочитать не удалось**: облако не ответило за отведённое время, их размер не учтён. ":
@@ -69,8 +69,8 @@ extension L10n {
         // MARK: - Top
         "Изменён": "Modified",
         "Файл": "File",
-        " крупнейших файлов скана лежат в «": " largest scan files are in «",
-        "».": "».",
+        " крупнейших файлов скана лежат в «": " largest scan files are in “",
+        "».": "”.",
         " крупнейших файлов. Выберите папку в дереве, чтобы оставить только её файлы.": " largest files. Select a folder in the tree to filter by it.",
 
         // MARK: - Dups
@@ -114,8 +114,8 @@ extension L10n {
         "⊘ не синхр.": "⊘ not synced",
 
         // MARK: - Node menu
-        "Не синхронизируется: исключена папка «": "Not syncing: excluded folder «",
-        "»": "»",
+        "Не синхронизируется: исключена папка «": "Not syncing: excluded folder “",
+        "»": "”",
         "Снова синхронизировать с Dropbox": "Sync with Dropbox again",
         "Не синхронизировать с Dropbox": "Stop syncing with Dropbox",
         "Переместить в корзину…": "Move to Trash…",
@@ -131,7 +131,7 @@ extension L10n {
             "It will be deleted from Dropbox on all devices. Can be restored from Mac Trash or dropbox.com deleted files.",
         "Вернуть можно из корзины.": "Can be restored from Trash.",
         "На этом маке всё останется, но из облака и с других устройств удалится и перестанет занимать квоту. Вернуть — правый клик → «Снова синхронизировать».":
-            "Everything stays on this Mac, but it will be removed from the cloud and other devices and stop counting toward quota. To restore — right-click → «Sync with Dropbox again».",
+            "Everything stays on this Mac, but it will be removed from the cloud and other devices and stop counting toward quota. To restore — right-click → “Sync with Dropbox again”.",
 
         // MARK: - Menu app
         "Открыть…": "Open…",
