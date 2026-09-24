@@ -9,14 +9,14 @@ public final class Node: Identifiable {
     public let id: Int
     public let kind: NodeKind
     public var name: String
-    public let size: Int64
-    public let alloc: Int64
-    public let cloud: Int64
-    public let files: Int64
-    public let dirs: Int64
+    public var size: Int64
+    public var alloc: Int64
+    public var cloud: Int64
+    public var files: Int64
+    public var dirs: Int64
     public let mtime: Int64
-    public let ign: Int64
-    public let selfIgnored: Bool
+    public var ign: Int64
+    public var selfIgnored: Bool
     public weak var parent: Node?
     public var children: [Node]?
 
@@ -163,10 +163,10 @@ public struct ScanResult {
     public let errors: Int64
     public let stuck: [String]
     public let tree: Node
-    public let top: [TopFile]
+    public var top: [TopFile]
     public let ext: [ExtStat]
     public let age: [AgeBucket]
-    public let dups: [DupGroup]
+    public var dups: [DupGroup]
     public let dupMin: Int64
 
     public init(data: [String: Any]) {

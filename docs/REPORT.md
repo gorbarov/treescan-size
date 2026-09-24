@@ -108,3 +108,33 @@ Swift: 12.87 с, Python-эталон: 11.78 с на этом же реально
 ```
 
 Проверка `tscan --model-check /tmp/ts-fixture | diff - tools/expected/01_model_check.txt` — diff без различий.
+
+## Задание 03. Состояние приложения (AppStore) и самопроверка без окна
+
+**Модель:** DeepSeek V4 Flash, агент Claude Code.
+
+### Что сделано
+
+1. **Sources/TreeSizeCore/Model.swift** — поля `size`, `alloc`, `cloud`, `files`, `dirs`, `ign`, `selfIgnored` изменены с `let` на `var`. Поля `top` и `dups` в `ScanResult` тоже стали `var`. Остальное не тронуто.
+2. **Sources/TreeSizeApp/AppStore.swift** — `@MainActor final class AppStore: ObservableObject` с `@Published` полями из UI-SPEC 3. Реализованы:
+   - `value(_:)` — размер по режиму;
+   - `children(_:)` — дети, отсортированные по value, без пустых сводок;
+   - `visibleRows` — плоский список раскрытого дерева;
+   - `select(_:)` / `toggle(_:)`;
+   - `viewDir` — папка правой панели;
+   - `pieSlices(for:)` — секторы кольца с порогом 1 %, до 8 секторов, «Прочее» с `node = nil`, `colorIndex = nil`;
+   - `topFiles(in:)` / `dupGroups(in:)` — фильтрация по пути папки;
+   - `removeLocal(_:)` — вычитание из предков, чистка top/dups, перевыбор родителя; возвращает замыкание отката.
+3. **Sources/TreeSizeApp/SelfTest.swift** — `@MainActor func runSelfTest(root:)`: синхронный скан, создание AppStore, сбор фактов по заданию.
+4. **Sources/TreeSizeApp/main.swift** — обработка `--selftest` и `--root`, печать JSON и `exit(0)`.
+
+### Сколько раз не собиралось
+
+- **2 раза**: первый — `@MainActor` не стоял на `runSelfTest`, второй — не было `import TreeSizeCore` в SelfTest.swift и AppStore.swift.
+- Потом ещё одна правка: вызов `runSelfTest` из main.swift через `Task { @MainActor in ... }` с `RunLoop.current.run()`, так как `main` не на `@MainActor`.
+
+### Вывод проверки
+
+```
+ЗАДАНИЕ 03: OK
+```
