@@ -27,7 +27,100 @@ public final class AppStore: ObservableObject {
         public let colorIndex: Int?
     }
 
+    @Published public var showPlaces = false
+
     public init() {}
+
+    // MARK: - Режим
+
+    /// Установить режим по правилу: Dropbox → .size, иначе .alloc
+    public func setDefaultMode(for rootPath: String) {
+        mode = rootPath.contains("/CloudStorage/Dropbox") ? .size : .alloc
+    }
+
+    // MARK: - Скан
+
+    /// Запустить скан папки в фоне, обновлять прогресс каждые 0,5 с
+    public func scan(path: String) {
+        isScanning = true
+        scanPath = path
+        progress = (0, 0, "")
+
+        let options = ScanOptions()
+        let scanner = Scanner(options: options)
+
+        // Слабая ссылка для захвата в фоновых задачах
+        weak let weakSelf = self
+
+        Task.detached {
+            let data = scanRoot(path, options: options, scanner: scanner)
+            await MainActor.run {
+                guard let store = weakSelf else { return }
+                store.result = ScanResult(data: data)
+                store.setDefaultMode(for: path)
+                store.isScanning = false
+                store.progress = (scanner.nfiles, scanner.bytes, scanner.cur)
+                if let tree = store.result?.tree {
+                    store.select(tree)
+                    store.expanded.insert(tree.id)
+                }
+                UserDefaults.standard.set(path, forKey: "lastRoot")
+            }
+        }
+
+        // Мониторинг прогресса
+        Task.detached {
+            while true {
+                do {
+                    try await Task.sleep(nanoseconds: 500_000_000)
+                } catch {
+                    break
+                }
+                await MainActor.run {
+                    guard let store = weakSelf, store.isScanning else { return }
+                    store.progress = (scanner.nfiles, scanner.bytes, scanner.cur)
+                }
+            }
+        }
+    }
+
+    /// Пересканировать текущий корень
+    public func rescan() {
+        guard let root = result?.root else { return }
+        scan(path: root)
+    }
+
+    /// Выбрать, что сканировать, по правилам UI-SPEC 12:
+    /// 1. lastRoot; 2. Dropbox; 3. домашняя папка.
+    /// Если в args есть --root, сканировать его, не трогая lastRoot.
+    public func startInitialScan(_ args: [String]) {
+        // --root имеет приоритет
+        if let rootIdx = args.firstIndex(of: "--root"), rootIdx + 1 < args.count {
+            scan(path: args[rootIdx + 1])
+            return
+        }
+
+        // lastRoot из UserDefaults
+        if let lastRoot = UserDefaults.standard.string(forKey: "lastRoot") {
+            var isDir: ObjCBool = false
+            if FileManager.default.fileExists(atPath: lastRoot, isDirectory: &isDir), isDir.boolValue {
+                scan(path: lastRoot)
+                return
+            }
+        }
+
+        // Dropbox
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
+        let dropbox = (home as NSString).appendingPathComponent("Library/CloudStorage/Dropbox")
+        var isDir: ObjCBool = false
+        if FileManager.default.fileExists(atPath: dropbox, isDirectory: &isDir), isDir.boolValue {
+            scan(path: dropbox)
+            return
+        }
+
+        // Домашняя папка
+        scan(path: home)
+    }
 
     // MARK: - Режим
 

@@ -153,3 +153,40 @@ Swift: 12.87 с, Python-эталон: 11.78 с на этом же реально
 `DupGroup.init` сделан `public`.
 
 Проверка: `ЗАДАНИЕ 03: OK`.
+
+## Задание 04. Окно приложения: каркас, запуск скана, снимок
+
+**Модель:** DeepSeek V4 Flash, агент Claude Code.
+
+### Что сделано
+
+1. **Sources/TreeSizeApp/TreeSizeUIApp.swift** — новый файл: `struct TreeSizeUIApp: App` без `@main`. `WindowGroup` с `ContentView` + `.environmentObject(store)`, `.defaultSize(width: 1280, height: 820)`, `.commands` с «Открыть…» ⌘O и «Пересканировать» ⌘R.
+2. **Sources/TreeSizeApp/ContentView.swift** — новый файл: каркас окна сверху вниз по UI-SPEC 4:
+   - панель инструментов: логотип (синий/жёлтый/оранжевый квадраты), «TreeSize для мака», путь корня серым с обрезкой посередине, кнопки «📂 Открыть…» и «⟳ Пересканировать», сегмент «Размер | На диске»;
+   - строка сведений (как `renderInfo`): имя жирным, подписи серым/значения жирным через `infoItem`, «Только в облаке» фиолетовым, Dropbox-поля только для Dropbox-корня с `ign > 0`, порядок как в эталоне;
+   - `HSplitView` с левой панелью (`minWidth: 380, idealWidth: 610`) и правой (`minWidth: 440, idealWidth: 670`) — ≈48/52;
+   - строка состояния: путь выделенного слева, «Скан … · … с · нет доступа: N» справа;
+   - оверлей скана с прогрессом, затемнением, карточкой.
+3. **Sources/TreeSizeApp/Snapshot.swift** — новый файл: `takeSnapshot(args:)` — синхронный скан, `AppStore`, `NSWindow` 1280×820 за экраном, `NSHostingView(ContentView)`, через 1,5 с `cacheDisplay` в PNG, `exit(0)`. Поддержка `--dark`, `--select`, `--tab`.
+4. **Sources/TreeSizeApp/main.swift** — изменён: `import AppKit`, ветка `--snapshot` через `Task { @MainActor in }`, ветка по умолчанию — `NSApplication.shared.setActivationPolicy(.regular)` и `TreeSizeUIApp.main()`.
+5. **Sources/TreeSizeApp/AppStore.swift** — изменён: добавлены `showPlaces`, `scan(path:)`, `rescan()`, `startInitialScan(args:)`, `setDefaultMode(for:)`.
+
+### Исправления по приёмке
+
+- HSplitView: левой панели `minWidth: 380, idealWidth: 610`, правой `minWidth: 440, idealWidth: 670`.
+- Строка сведений: убран пустой белвый блок; фон `controlBackgroundColor`; разделитель; имя у корня — последний сегмент пути.
+- Режим по умолчанию: `.alloc` для обычных папок, `.size` для Dropbox. В `--snapshot` не читается UserDefaults.
+- Поля строки сведений: «Только в облаке» всегда фиолетовым; Dropbox-поля только для Dropbox; порядок как в эталоне.
+- Фон панели инструментов: `windowBackgroundColor` с разделителем снизу.
+
+### Сколько раз не собиралось
+
+- **1 раз**: Swift 6 строгая проверка `@MainActor` + `Sendable` — пришлось обернуть вызов `takeSnapshot` в `Task { @MainActor in }` и переписать захват `weak self` с `weak let weakSelf`.
+- **1 раз**: после правок по приёмке — сборка с первого раза.
+
+### Вывод проверки
+
+```
+ЗАДАНИЕ 04: снимок готов, его смотрит приёмщик
+ЗАДАНИЕ 03: OK
+```

@@ -1,4 +1,6 @@
 import Foundation
+import TreeSizeCore
+import AppKit
 
 let args = CommandLine.arguments
 
@@ -17,4 +19,14 @@ if args.contains("--selftest") {
     RunLoop.current.run()
 }
 
-print("TreeSizeApp: интерфейс — задание 04")
+if args.contains("--snapshot") {
+    NSApplication.shared.setActivationPolicy(.accessory)
+    Task { @MainActor in
+        takeSnapshot(args: args)
+    }
+    RunLoop.current.run()
+} else {
+    // Нормальный запуск GUI
+    NSApplication.shared.setActivationPolicy(.regular)
+    TreeSizeUIApp.main()
+}
