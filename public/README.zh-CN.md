@@ -38,7 +38,7 @@
 
 ## 它是怎么做出来的
 
-TreeBars 也是一个实验：**代码由廉价编程模型 DeepSeek V4 Flash 编写**，Claude Opus 担任技术负责人——写需求、把工作拆成带预期答案的小任务、审查代码。模型总花费不到 3 美元。详细记录见 [docs/FINDINGS.md](docs/FINDINGS.md)（俄文）。
+TreeBars 也是一个实验：**代码由廉价编程模型 DeepSeek V4 Flash 编写**，Claude Opus 担任技术负责人——写需求、把工作拆成带预期答案的小任务、审查代码。模型总花费约 3 美元。详细记录见 [docs/FINDINGS.md](docs/FINDINGS.md)（俄文）。
 
 ## 参与贡献
 

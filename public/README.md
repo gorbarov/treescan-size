@@ -66,7 +66,7 @@ What TreeBars adds on top: marks Dropbox/iCloud online-only files, "Don't sync" 
 
 ## How it was built
 
-TreeBars is also an experiment: **the code was written by a cheap coding model** (DeepSeek V4 Flash), while Claude Opus acted as the tech lead — wrote the spec, cut the work into small tasks with precomputed answers, and reviewed the code. A Python script and an HTML report ([reference/](reference/)) served as the reference implementation. Total model cost was under $3.
+TreeBars is also an experiment: **the code was written by a cheap coding model** (DeepSeek V4 Flash), while Claude Opus acted as the tech lead — wrote the spec, cut the work into small tasks with precomputed answers, and reviewed the code. A Python script and an HTML report ([reference/](reference/)) served as the reference implementation. Total model cost was about $3.
 
 The cheap model did well on logic with a reference and on UI with a code skeleton. It also once disabled the Trash menu's system-folder protection while every test was green — only code review caught it. The findings, tasks, checks and the lessons list are in [docs/FINDINGS.md](docs/FINDINGS.md) and [docs/RESEARCH.md](docs/RESEARCH.md) (in Russian; English write-up coming).
 
