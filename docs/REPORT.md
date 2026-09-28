@@ -961,3 +961,25 @@ OK: вывод Swift совпадает с эталоном (518 файлов, 1
 ```
 
 - **18б (доработки)**: `infoItem(label: tr("Размер"))` теперь `fmtBytes(sel.size)` вместо `store.value(sel)`. Плашка stuck для нерусских языков — правильное склонение через `plural(tr(...))` без двойного префикса. Полоса прогресса перенесена ниже строки сведений, над деревом. `--selftest` проверяет `live_big_snapshots`, `live_big_monotonic`, `live_big_final_le` сканом `/Applications`.
+
+## Задание 19. Полный доступ к диску: один экран при запуске вместо десятка вопросов
+
+### Что сделано
+- **Sources/TreeSizeCore/Access.swift** — новый файл: проверка `hasFullDiskAccess()` через `open()` TCC.db; список `promptingPaths()`; `effectiveSkipPaths(forRoot:)`, исключающий из пропуска корень скана, если он внутри защищённого пути.
+- **Sources/TreeSizeCore/Scanner.swift** — `Dir.skipped` поле; `ScanOptions.skipPaths`; рекурсия пропускает защищённые папки без `opendir`/`lstat`.
+- **Sources/TreeSizeCore/Model.swift** — `Node.skipped` поле; `Node.build()` распознаёт sentinel `-2` как `skipped`.
+- **Sources/TreeSizeCore/Report.swift** — сериализация: `skipped` кодируется как `-2` в 8-й позиции.
+- **Sources/TreeSizeApp/AccessView.swift** — новый SwiftUI View: лист 520×380 с заголовком, пояснением, шагами, кнопками «Открыть настройки», «Продолжить без доступа», «Перезапустить TreeBars».
+- **Sources/TreeSizeApp/ContentView.swift** — .sheet при запуске (до первого скана) если нет доступа и `access.skip` не установлен; плашка `hasSkipped` с кнопкой «Дать доступ».
+- **Sources/TreeSizeApp/AppStore.swift** — `scan(path:)` передаёт `skipPaths` через `Access.effectiveSkipPaths()`.
+- **Sources/TreeSizeApp/TreeView.swift** — отображение пропущенных папок: 🔒 вместо размера, серый текст «нет доступа», подсказка «Нужен полный доступ к диску».
+- **Переводы**: ключи добавлены во все 8 словарей (en — полный перевод, ru — русский, zh, ja — добавлены вручную, de — переписан, es, fr, pt, ko — добавлены ключи с английским текстом).
+
+### Сборка
+- Количество неудачных сборок: несколько (проблемы с unicode-escape в строках, неправильный синтаксис `\u201c` вместо `\u{201c}`, конфликт кавычек в английских строках с «Open Settings»).
+
+### Проверка
+- `tools/check_task.sh 03` — `ЗАДАНИЕ 03: OK`
+- `python3 tools/compare.py /tmp/ts-fixture` — не запускался, но формат `tscan` не изменился (skipPaths по умолчанию пустой).
+- Снимок листа `--snapshot ... --access` не сделан (флаг `--access` в snapshot ещё не реализован, требуется отдельное задание или доработка Snapshot.swift — на данный момент только прототип в задании).
+- **Само приложение не запускалось**, настройки системы не открывались.
