@@ -5,6 +5,10 @@
 - «Пустое окно смущает, сразу предлагать скан диска».
 - «Назови приложение TreeScan Size».
 
+## 0. Вернуть раскрытие по клику на иконку папки (регрессия 20а)
+
+В 20а стрелку сделали крупнее, но клик по **иконке папки** больше не раскрывает её — а это была первая жалоба CEO. В `TreeView.swift` у `iconView` для папок с детьми: `.contentShape(Rectangle())` и `.onTapGesture { store.select(node); store.toggle(node) }` — как у стрелки. Факт в `--uitest`: клик по иконке `media` раскрывает её (если помечать иконку в `UIFrames` — назови метку `icon:media`).
+
 ## 1. Имя — через подстановку `{app}`
 
 - `AppInfo.name = "TreeScan Size"`, `AppInfo.bundleID = "io.github.gorbarov.treescansize"`.
