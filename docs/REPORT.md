@@ -884,3 +884,43 @@ $ tools/check_task.sh 03
 - **Изменены**: `Sources/TreeSizeCore/L10n_en.swift`, `L10n_zh.swift`, `L10n_ja.swift`, `L10n_ko.swift`, `L10n_de.swift`, `L10n_es.swift`, `L10n_fr.swift`, `L10n_pt.swift` — 10 новых ключей в каждом
 
 **Доработка:** убрана развилка `if L10n.isRussian` в подписи топа — оставлена единая строка с `tr(" из ")`. Ключ « из » есть во всех 8 словарях. Снимки top с английским и китайским — OK.
+
+## Задание 17. Клики в дереве, иконка, тормоза после скана
+
+**Модель:** Sonnet, агент Claude Code.
+
+### Что сделано
+
+1. **TreeView.swift — клики без задержки и клик по стрелке/иконке**:
+   - Одинарный клик по строке выделяет сразу — `.onTapGesture(count: 2)` остался для раскрытия, `.onTapGesture(count: 1)` заменён на `.simultaneousGesture(TapGesture().onEnded { store.select(node) })`. SwiftUI больше не ждёт второй клик.
+   - Стрелка ▸/▾ и иконка папки обёрнуты в `HStack(spacing: 0)` с `.contentShape(Rectangle())` и `.onTapGesture { store.select(node); store.toggle(node) }`. Клик по любой из них раскрывает/сворачивает папку и выделяет строку.
+
+2. **make_icon.swift — жёлтый прямоугольник исправлен**:
+   - `r2` (жёлтый) — высота изменена с `c2w` (5 единиц) на `c1w` (9 единиц), нижний край на `oy + c2w + gap` (5 + 2 = 7 единиц от низа). Теперь жёлтый занимает всю верхнюю половину правой колонки (5×9), оранжевый — нижнюю (5×5), зазор 2 единицы везде одинаковый, как в template.html.
+   - Иконка пересобрана через `swift scripts/make_icon.swift`.
+
+3. **AppStore.swift — тормоза после скана**:
+   - `ScanResult(data: data)` перенесён из `MainActor.run` в фоновую задачу: `let built = ScanResult(data: data)` выполняется в `Task.detached`, на главный поток приходит уже готовая модель.
+   - Цикл прогресса теперь завершается: `MainActor.run` возвращает `Bool` — `true` если скан ещё идёт, `false` если нет. При `false` делается `break`.
+   - Добавлен кэш отсортированных детей: `private var childrenCache: [Int: [Node]] = [:]`. Заполняется в `children(_:)`, очищается при смене `result`, `mode`, в `removeLocal`. Добавлен публичный `invalidateCache()` для вызова из `NodeMenu.doIgnore`.
+   - В NodeMenu.swift добавлен `store.invalidateCache()` после `objectWillChange.send()`.
+
+### Сколько раз не собиралось
+
+- **0 раз**: сборка с первой попытки (`swift build -c release --disable-sandbox --scratch-path /tmp/ts-build`), `Build complete!`.
+
+### Вывод проверки
+
+```
+ЗАДАНИЕ 03: OK
+```
+
+(`--uitest` — прошёл, вывод совпадает с предыдущим. Снимок `--snapshot /tmp/ts-build/snap_17.png --tab pie` — создан, 22 408 байт.)
+
+### Созданные/изменённые файлы
+
+- **Изменён**: `Sources/TreeSizeApp/TreeView.swift` — клики по стрелке/иконке, simultaneousGesture
+- **Изменён**: `Sources/TreeSizeApp/AppStore.swift` — ScanResult в фоне, прогресс-цикл с Bool, childrenCache
+- **Изменён**: `scripts/make_icon.swift` — высота жёлтого с 5 на 9 единиц
+- **Изменён**: `Sources/TreeSizeApp/NodeMenu.swift` — вызов `invalidateCache()`
+- **Коммит**: `e545d5d` — «Задание 17: клики, иконка, тормоза»
