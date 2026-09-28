@@ -3,11 +3,13 @@ import TreeSizeCore
 
 @MainActor
 public final class AppStore: ObservableObject {
-    @Published public var result: ScanResult? = nil
+    @Published public var result: ScanResult? = nil {
+        didSet { childrenCache.removeAll() }
+    }
     @Published public var selected: Node? = nil
     @Published public var expanded: Set<Int> = []
     @Published public var mode: SizeMode = .size {
-        didSet { if oldValue != mode { saveMode() } }
+        didSet { if oldValue != mode { saveMode(); childrenCache.removeAll() } }
     }
     @Published public var tab: Tab = .pie
     @Published public var isScanning: Bool = false
@@ -35,6 +37,9 @@ public final class AppStore: ObservableObject {
 
     /// Рамки размеченных вью — без @Published, чтобы не было цикла перерисовки
     public var uiFrames: [String: CGRect] = [:]
+
+    // Кэш отсортированных детей — очищается при смене result, mode, removeLocal, toggle
+    private var childrenCache: [Int: [Node]] = [:]
 
     public init() {}
 
@@ -75,9 +80,10 @@ public final class AppStore: ObservableObject {
 
         Task.detached {
             let data = scanRoot(path, options: options, scanner: scanner)
+            let built = ScanResult(data: data)          // тяжёлое — в фоне, не на главном потоке
             await MainActor.run {
                 guard let store = weakSelf else { return }
-                store.result = ScanResult(data: data)
+                store.result = built
                 store.loadMode(for: path)
                 store.isScanning = false
                 store.progress = (scanner.nfiles, scanner.bytes, scanner.cur)
@@ -97,10 +103,12 @@ public final class AppStore: ObservableObject {
                 } catch {
                     break
                 }
-                await MainActor.run {
-                    guard let store = weakSelf, store.isScanning else { return }
+                let stillScanning = await MainActor.run {
+                    guard let store = weakSelf, store.isScanning else { return false }
                     store.progress = (scanner.nfiles, scanner.bytes, scanner.cur)
+                    return true
                 }
+                if !stillScanning { break }
             }
         }
     }
@@ -152,10 +160,14 @@ public final class AppStore: ObservableObject {
     // MARK: - Дети
 
     public func children(_ n: Node) -> [Node] {
+        // Проверяем кэш
+        if let cached = childrenCache[n.id] { return cached }
         guard let kids = n.children else { return [] }
-        return kids
+        let sorted = kids
             .filter { !($0.kind == .rest && $0.files == 0 && $0.dirs == 0) }
             .sorted { value($0) > value($1) }
+        childrenCache[n.id] = sorted
+        return sorted
     }
 
     // MARK: - Плоский список
@@ -198,6 +210,11 @@ public final class AppStore: ObservableObject {
         } else {
             expanded.insert(n.id)
         }
+    }
+
+    /// Очистить кэш детей (после удаления/изменения узлов)
+    public func invalidateCache() {
+        childrenCache.removeAll()
     }
 
     // MARK: - Папка правой панели
@@ -264,6 +281,8 @@ public final class AppStore: ObservableObject {
     /// Вычитает из предков, чистит top/dups, перевыбор.
     /// Возвращает замыкание отката. Сам файл не трогает.
     public func removeLocal(_ node: Node) -> () -> Void {
+        // Кэш детей устарел, очищаем
+        childrenCache.removeAll()
         let nodePath = node.path
         let pre = nodePath + "/"
 

@@ -33,8 +33,8 @@ let r1 = NSRect(x: ox, y: oy, width: c1w, height: totalH)
 NSColor(calibratedRed: 0x2a / 255.0, green: 0x78 / 255.0, blue: 0xd6 / 255.0, alpha: 1).setFill()
 NSBezierPath(roundedRect: r1, xRadius: cr, yRadius: cr).fill()
 
-// Жёлтый (#eda100) — верхний правый квадрат
-let r2 = NSRect(x: ox + c1w + gap, y: oy + c1w + gap, width: c2w, height: c2w)
+// Жёлтый (#eda100) — правая колонка, верхняя строка: 5×9 (ширина × высота)
+let r2 = NSRect(x: ox + c1w + gap, y: oy + c2w + gap, width: c2w, height: c1w)
 NSColor(calibratedRed: 0xed / 255.0, green: 0xa1 / 255.0, blue: 0x00 / 255.0, alpha: 1).setFill()
 NSBezierPath(roundedRect: r2, xRadius: cr, yRadius: cr).fill()
 

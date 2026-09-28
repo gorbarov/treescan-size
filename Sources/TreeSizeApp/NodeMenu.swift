@@ -209,6 +209,7 @@ struct NodeMenu: View {
                 p = ancestor.parent
             }
             store.objectWillChange.send()
+            store.invalidateCache()
         }
     }
 }

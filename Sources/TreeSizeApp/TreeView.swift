@@ -17,16 +17,10 @@ struct TreeView: View {
                         let (node, depth) = rows[i]
                         TreeRowView(node: node, depth: depth, isSelected: node.id == store.selected?.id)
                             .id(node.id)
-                            // Двойной клик — раскрыть/свернуть (как в эталоне)
-                            .onTapGesture(count: 2) {
-                                if node.kind == .dir && (node.children?.isEmpty == false) {
-                                    store.toggle(node)
-                                }
-                            }
-                            // Одинарный клик — выделить
-                            .onTapGesture(count: 1) {
-                                store.select(node)
-                            }
+                            // Двойной клик — раскрыть/свернуть
+                            .onTapGesture(count: 2) { if node.kind == .dir && node.children?.isEmpty == false { store.toggle(node) } }
+                            // Одинарный клик — сразу выделить, без задержки (simultaneousGesture не ждёт второй клик)
+                            .simultaneousGesture(TapGesture().onEnded { store.select(node) })
                             // Контекстное меню — UI-SPEC раздел 9
                             .contextMenu {
                                 NodeMenu(node: node, store: store)
@@ -153,18 +147,24 @@ struct TreeRowView: View {
                 Color.clear
                     .frame(width: CGFloat(depth * 16 + 4))
 
-                // Стрелка ▸/▾ (только у папок с детьми)
+                // Стрелка ▸/▾ + иконка папки — кликабельная область (раскрыть/свернуть + выделить)
                 if hasChildren {
-                    Text(store.expanded.contains(node.id) ? "▾" : "▸")
-                        .font(.system(size: 10))
-                        .foregroundColor(.secondary)
-                        .frame(width: 16, alignment: .center)
+                    HStack(spacing: 0) {
+                        Text(store.expanded.contains(node.id) ? "▾" : "▸")
+                            .font(.system(size: 10))
+                            .foregroundColor(.secondary)
+                            .frame(width: 16, alignment: .center)
+                        iconView
+                    }
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        store.select(node)
+                        store.toggle(node)
+                    }
                 } else {
                     Color.clear.frame(width: 16)
+                    iconView
                 }
-
-                // Иконка папки/файла/сводки
-                iconView
 
                 // Размер: системный шрифт, жирный, .monospacedDigit() — как .sz в эталоне
                 Text(fmtBytes(store.value(node)))
