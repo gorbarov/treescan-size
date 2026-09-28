@@ -253,6 +253,19 @@ public func runSelfTest(root: String) -> [String: Any] {
         }
     }
 
+    // --- effectiveSkipPaths факты ---
+    do {
+        let home = NSHomeDirectory()
+        let dataRoot = "/System/Volumes/Data"
+        let skipDataRoot = Access.effectiveSkipPaths(hasAccess: false, forRoot: dataRoot)
+        let desktopDataPath = dataRoot + home + "/Desktop"
+        facts["skip_data_root_has_desktop"] = skipDataRoot.contains(desktopDataPath)
+
+        let docsPath = home + "/Documents"
+        let skipDocs = Access.effectiveSkipPaths(hasAccess: false, forRoot: docsPath)
+        facts["skip_docs_root_no_docs"] = !skipDocs.contains(docsPath)
+    }
+
     // --- live-скан: с live=true даёт то же итоговое дерево ---
     do {
         let liveScanner = Scanner(options: ScanOptions())

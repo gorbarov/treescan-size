@@ -5,6 +5,8 @@ import TreeSizeCore
 struct AccessView: View {
     @Binding var showAccessSheet: Bool
     @State private var restartShown = false
+    /// Если true, кнопка «Продолжить без доступа» неактивна (режим снимка)
+    public var isSnapshot: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -54,14 +56,17 @@ struct AccessView: View {
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
 
-                // Вторичная кнопка
+                // Вторичная кнопка — неактивна в режиме снимка
                 Button(action: {
                     UserDefaults.standard.set(true, forKey: "access.skip")
-                    showAccessSheet = false
+                    if !isSnapshot {
+                        showAccessSheet = false
+                    }
                 }) {
                     Text(tr("Продолжить без доступа"))
                         .frame(maxWidth: .infinity)
                 }
+                .disabled(isSnapshot)
                 .buttonStyle(.bordered)
                 .controlSize(.large)
 
