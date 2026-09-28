@@ -1052,3 +1052,5 @@ OK: вывод Swift совпадает с эталоном (518 файлов, 1
 - `Sources/TreeSizeApp/Snapshot.swift`
 - `Sources/TreeSizeApp/main.swift`
 - `scripts/make_app.sh`
+- **Правка 1**: AccessView2 — добавлена кнопка «Показать в Finder» справа от пути к бандлу.
+- **Правка 2**: WelcomeView — из списка мест убран дубль /System/Volumes/Data (он уже в большой кнопке «Весь диск»).
