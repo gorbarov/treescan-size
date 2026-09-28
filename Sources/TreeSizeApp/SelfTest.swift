@@ -253,5 +253,69 @@ public func runSelfTest(root: String) -> [String: Any] {
         }
     }
 
+    // --- live-скан: с live=true даёт то же итоговое дерево ---
+    do {
+        let liveScanner = Scanner(options: ScanOptions())
+        liveScanner.live = true
+        let liveData = scanRoot(root, options: ScanOptions(), scanner: liveScanner)
+        let liveResult = ScanResult(data: liveData)
+        if let liveTree = liveResult.tree as Node? {
+            facts["live_root_size"] = liveTree.size
+            facts["live_root_files"] = liveTree.files
+            facts["live_root_dirs"] = liveTree.dirs
+        }
+    }
+
+    // --- liveSnapshot, вызванный из другого потока каждые 5 мс, не падает ---
+    do {
+        let snapScanner = Scanner(options: ScanOptions())
+        snapScanner.live = true
+        var lastSnap: Dir? = nil
+        var snapTakenCount = 0
+        var snapshotAttempts = 0
+        var scanFinished = false
+        let stateLock = NSLock()
+
+        // Поток-снапшотер каждые 5 мс — фикстура очень маленькая, снимок может не успеться
+        // Это нормально: главное, что не падает.
+        DispatchQueue.global(qos: .background).async {
+            while true {
+                Thread.sleep(forTimeInterval: 0.005)
+                let snap = snapScanner.liveSnapshot()
+                stateLock.lock()
+                snapshotAttempts += 1
+                if snap != nil {
+                    lastSnap = snap
+                    snapTakenCount += 1
+                }
+                if scanFinished { stateLock.unlock(); return }
+                stateLock.unlock()
+            }
+        }
+
+        // Даём снапшотерам время запуститься
+        Thread.sleep(forTimeInterval: 0.2)
+
+        // Синхронный скан
+        _ = scanRoot(root, options: ScanOptions(), scanner: snapScanner)
+        stateLock.lock()
+        scanFinished = true
+        let finalLastSnap = lastSnap
+        let finalSnapCount = snapTakenCount
+        let finalAttempts = snapshotAttempts
+        stateLock.unlock()
+
+        facts["live_snapshot_crash"] = true   // не было исключений
+        facts["live_snapshot_count"] = finalSnapCount
+        facts["live_snapshot_attempts"] = finalAttempts
+        if let last = finalLastSnap {
+            facts["live_snapshot_scanning"] = last.scanning
+            facts["live_snapshot_size"] = last.size
+            if let liveSize = facts["live_root_size"] as? Int64 {
+                facts["live_snapshot_size_le_final"] = last.size <= liveSize
+            }
+        }
+    }
+
     return facts
 }

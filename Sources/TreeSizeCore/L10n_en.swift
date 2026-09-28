@@ -181,5 +181,9 @@ extension L10n {
         "группа": "group",
         "группы": "groups",
         "групп": "groups",
+
+        // MARK: - Живое дерево (задание 18б)
+        "сканируется…": "scanning…",
+        "Появится после скана": "Available after the scan",
     ]
 }

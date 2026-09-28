@@ -127,5 +127,9 @@ extension L10n {
         "группа": "grupo",
         "группы": "grupos",
         "групп": "grupos",
+
+        // MARK: - Árvore ao vivo (tarefa 18b)
+        "сканируется…": "scanning…",
+        "Появится после скана": "Available after the scan",
     ]
 }

@@ -55,8 +55,23 @@ public final class Dir {
     public var err: Int64 = 0
     public var ign: Int64 = 0        // байт внутри, помеченных «не синхронизировать»
     public var selfign: Bool = false // сама папка помечена
+    public var scanning: Bool = false // папка в процессе сканирования
 
     public init(name: String) { self.name = name }
+
+    /// Копия без детей (кроме массива ссылок); для liveSnapshot.
+    public func shallowCopy() -> Dir {
+        let c = Dir(name: name)
+        c.size = size; c.alloc = alloc; c.cloud = cloud
+        c.files = files; c.dirs = dirs; c.mtime = mtime
+        c.kids = kids   // массив-копия ссылок на готовые поддеревья
+        c.fl = fl
+        c.restFiles = restFiles; c.restSize = restSize; c.restAlloc = restAlloc
+        c.restCloud = restCloud; c.restMtime = restMtime; c.restDirs = restDirs; c.restIgn = restIgn
+        c.err = err; c.ign = ign; c.selfign = selfign
+        c.scanning = scanning
+        return c
+    }
 }
 
 public struct ScanOptions {
@@ -155,6 +170,8 @@ public final class Scanner {
 
     // прогресс — читается из другого потока (UI), поэтому под замком
     private let lock = NSLock()
+    private var stack: [Dir] = []          // папки в процессе сканирования (под lock)
+    public var live: Bool = false          // включать только из приложения; tscan и compare.py не трогает
     private var _nfiles: Int64 = 0
     private var _bytes: Int64 = 0
     private var _allocBytes: Int64 = 0
@@ -196,6 +213,9 @@ public final class Scanner {
     public func scan(_ path: String, _ name: String, _ dev: Int32) -> Dir {
         if scanRoot.isEmpty { scanRoot = path }
         let d = Dir(name: name)
+        if live { lock.lock(); stack.append(d); lock.unlock() }
+        // defer на уровне функции — выполняется при любом return
+        defer { if live { lock.lock(); stack.removeLast(); lock.unlock() } }
         progress(path)
         guard let listing = listDir(path, timeout: options.timeout) else {
             lock.lock(); stuck.append(path); lock.unlock()
@@ -222,12 +242,14 @@ public final class Scanner {
                 if Scanner.shouldSkip(path: ePath, root: scanRoot) { continue }
                 if options.oneFS && s.st_dev != dev { continue }
                 let sub = scan(ePath, eName, dev)
+                if live { lock.lock() }
                 d.kids.append(sub)
                 d.size += sub.size; d.alloc += sub.alloc; d.cloud += sub.cloud
                 d.files += sub.files; d.dirs += sub.dirs + 1
                 d.err += sub.err
                 d.ign += sub.ign
                 if sub.mtime > d.mtime { d.mtime = sub.mtime }
+                if live { lock.unlock() }
                 continue
             }
             var size = Int64(s.st_size)
@@ -244,8 +266,10 @@ public final class Scanner {
             var mt = Int64(s.st_mtimespec.tv_sec)
             if Double(mt) > now + 86400 { mt = 0 }   // битые даты из будущего не считаем
             lock.lock(); _nfiles += 1; _allocBytes += alloc; lock.unlock()
+            if live { lock.lock() }
             d.files += 1; d.size += size; d.alloc += alloc; d.cloud += cloud
             if mt > d.mtime { d.mtime = mt }
+            if live { lock.unlock() }
             files.append(FileEntry(size: size, name: eName, alloc: alloc, cloud: cloud, mtime: mt))
             account(path: ePath, name: eName, size: size, alloc: alloc, cloud: cloud, mtime: mt)
         }
@@ -256,6 +280,7 @@ public final class Scanner {
         while keep < files.count && keep < KEEP_FILES_PER_DIR && (keep < 3 || Double(files[keep].size) >= floor) {
             keep += 1
         }
+        if live { lock.lock() }
         for f in files[keep...] {
             d.restFiles += 1; d.restSize += f.size; d.restAlloc += f.alloc; d.restCloud += f.cloud
             if f.mtime > d.restMtime { d.restMtime = f.mtime }
@@ -276,6 +301,7 @@ public final class Scanner {
             d.ign = d.size
             d.selfign = true
         }
+        if live { lock.unlock() }
         return d
     }
 
@@ -317,6 +343,25 @@ public final class Scanner {
         var mi = 0
         for i in 1..<top.count where top[i].size < top[mi].size { mi = i }
         topMinIndex = mi
+    }
+
+    /// Копия текущего состояния: корень с готовыми детьми + папки в работе (помечены scanning).
+    public func liveSnapshot() -> Dir? {
+        lock.lock(); defer { lock.unlock() }
+        guard !stack.isEmpty else { return nil }
+        // Идём снизу вверх: копия самой глубокой папки, потом её родитель с этой копией в детях и т.д.
+        var child: Dir? = nil
+        for d in stack.reversed() {
+            let c = d.shallowCopy()
+            c.scanning = true
+            if let ch = child {
+                c.kids.append(ch)
+                c.size += ch.size; c.alloc += ch.alloc; c.cloud += ch.cloud
+                c.files += ch.files; c.dirs += ch.dirs + 1
+            }
+            child = c
+        }
+        return child   // это корень
     }
 
     /// Итоги скана для сборки отчёта (Report.swift).

@@ -28,6 +28,8 @@ if args.contains("--snapshot") {
             snapshotModeHelp(args: args)
         } else if args.contains("--scanning") {
             takeSnapshotScanning(args: args)
+        } else if args.contains("--live-demo") {
+            takeSnapshotLiveDemo(args: args)
         } else {
             takeSnapshot(args: args)
         }

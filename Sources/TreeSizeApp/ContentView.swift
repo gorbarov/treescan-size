@@ -10,24 +10,21 @@ struct ContentView: View {
     @State private var showModeHelp = false
 
     var body: some View {
-        ZStack {
-            VStack(spacing: 0) {
-                toolbar
-                banners
-                Divider()
-                infoBar
-                    .background(Color.panel2Bg)
-                Divider()
-                mainSplit
-                    .background(Color.windowBg)
-                Divider()
-                statusBar
-                    .background(Color.panel2Bg)
-            }
-
+        VStack(spacing: 0) {
             if store.isScanning {
-                scanOverlay
+                scanProgressBar
             }
+            toolbar
+            banners
+            Divider()
+            infoBar
+                .background(Color.panel2Bg)
+            Divider()
+            mainSplit
+                .background(Color.windowBg)
+            Divider()
+            statusBar
+                .background(Color.panel2Bg)
         }
         .background(Color.windowBg)
         .onPreferenceChange(UIFramesKey.self) { store.uiFrames = $0 }
@@ -355,19 +352,27 @@ struct ContentView: View {
     @ViewBuilder
     private var rightContent: some View {
         VStack(spacing: 0) {
-            switch store.tab {
-            case .pie:
-                PieView()
-            case .details:
-                DetailsView()
-            case .ext:
-                ExtView()
-            case .age:
-                AgeView()
-            case .top:
-                TopView()
-            case .dups:
-                DupsView()
+            if store.isScanning && (store.tab == .ext || store.tab == .age || store.tab == .top || store.tab == .dups) {
+                Spacer()
+                Text(tr("Появится после скана"))
+                    .foregroundColor(.secondary)
+                    .font(.system(size: 13))
+                Spacer()
+            } else {
+                switch store.tab {
+                case .pie:
+                    PieView()
+                case .details:
+                    DetailsView()
+                case .ext:
+                    ExtView()
+                case .age:
+                    AgeView()
+                case .top:
+                    TopView()
+                case .dups:
+                    DupsView()
+                }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -431,43 +436,44 @@ struct ContentView: View {
         .font(.system(size: 12))
     }
 
-    // MARK: - Оверлей скана
+    // MARK: - Полоса прогресса во время скана (вместо оверлея)
 
-    private var scanOverlay: some View {
-        Color.black.opacity(0.28)
-            .edgesIgnoringSafeArea(.all)
-            .overlay(
-                VStack(spacing: 8) {
-                    Text(tr("Сканирую ") + store.scanPath + tr("…"))
-                        .fontWeight(.bold)
-                    if let exp = store.expectedAlloc, exp > 0 {
-                        ProgressView(value: min(Double(store.progress.alloc) / Double(exp), 1.0))
-                            .frame(width: 360)
-                    } else {
-                        ProgressView()
-                            .progressViewStyle(.linear)
-                            .frame(width: 360)
-                    }
-                    let elapsed = elapsedString(from: store.scanStarted)
-                    Text(nf(store.progress.files) + tr(" файлов · ") + fmtBytes(store.progress.alloc)
-                        + (store.expectedAlloc.map { tr(" из ") + fmtBytes($0) } ?? "") + " · " + elapsed)
-                        .foregroundColor(.secondary)
-                        .monospacedDigit()
-                    if !store.progress.cur.isEmpty {
-                        Text(store.progress.cur)
-                            .font(.system(size: 11))
-                            .foregroundColor(.secondary)
-                            .lineLimit(1)
-                            .truncationMode(.head)
-                    }
-                }
-                .padding(26)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(nsColor: NSColor.windowBackgroundColor))
-                )
-                .shadow(radius: 8)
-            )
+    private var scanProgressBar: some View {
+        HStack(spacing: 10) {
+            if let exp = store.expectedAlloc, exp > 0 {
+                ProgressView(value: min(Double(store.progress.alloc) / Double(exp), 1.0))
+                    .progressViewStyle(.linear)
+                    .frame(width: 240)
+            } else {
+                ProgressView()
+                    .progressViewStyle(.linear)
+                    .frame(width: 240)
+            }
+
+            let elapsed = elapsedString(from: store.scanStarted)
+            Text(nf(store.progress.files) + tr(" файлов · ") + fmtBytes(store.progress.alloc)
+                + (store.expectedAlloc.map { tr(" из ") + fmtBytes($0) } ?? "") + " · " + elapsed)
+                .foregroundColor(.secondary)
+                .monospacedDigit()
+                .lineLimit(1)
+
+            if !store.progress.cur.isEmpty {
+                Text(store.progress.cur)
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.head)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 6)
+        .background(Color.panelBg)
+    }
+
+    private func nf(_ n: Int64) -> String {
+        fmtCount(n)
     }
 }
 

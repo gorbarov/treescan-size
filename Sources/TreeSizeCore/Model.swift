@@ -17,6 +17,7 @@ public final class Node: Identifiable {
     public let mtime: Int64
     public var ign: Int64
     public var selfIgnored: Bool
+    public var scanning: Bool = false   // папка в процессе сканирования (живое дерево)
     public weak var parent: Node?
     public var children: [Node]?
     /// Полный путь, кэшируется при assignPaths() после построения дерева
@@ -58,6 +59,7 @@ public final class Node: Identifiable {
         var kidsArr: [Any]? = nil
         var ign: Int64 = 0
         var selfIgnored = false
+        var dirScanning = false
 
         switch kindVal {
         case 0:
@@ -68,7 +70,15 @@ public final class Node: Identifiable {
                 if let rawIgn = (arr[8] as? NSNumber)?.int64Value {
                     selfIgnored = rawIgn == -1
                     ign = selfIgnored ? size : rawIgn
-                    if arr.count > 9 { kidsArr = arr[9] as? [Any] }
+                    if arr.count > 9 {
+                        // Флаг scanning (Bool) на 9-й позиции, если true
+                        if arr[9] is Bool {
+                            dirScanning = arr[9] as! Bool
+                            if arr.count > 10 { kidsArr = arr[10] as? [Any] }
+                        } else {
+                            kidsArr = arr[9] as? [Any]
+                        }
+                    }
                 } else if let kids = arr[8] as? [Any] {
                     // формат без ign (JS-совместимость)
                     kidsArr = kids
@@ -98,6 +108,7 @@ public final class Node: Identifiable {
         let node = Node(id: id, kind: kind, name: nameRaw, size: size, alloc: alloc,
                         cloud: cloud, files: files, dirs: dirs, mtime: mtime,
                         ign: ign, selfIgnored: selfIgnored, parent: parent, children: nil)
+        node.scanning = dirScanning
 
         if let ka = kidsArr {
             node.children = ka.map { Node.build(from: $0 as! [Any], parent: node) }
@@ -261,5 +272,28 @@ public struct ScanResult {
         dups = dupList
 
         dupMin = (data["dupMin"] as? NSNumber)?.int64Value ?? 0
+    }
+
+    /// Конструктор для живого дерева (снимок во время скана): только дерево, остальные списки пустые.
+    /// - Parameter treeArr: сериализованное дерево (массив из serialize).
+    /// - Parameter rootPath: полный путь корня.
+    /// - Parameter scanned: дата/время снимка.
+    public init(liveTree treeArr: [Any], rootPath: String, scanned: String) {
+        self.root = rootPath
+        self.scanned = scanned
+        self.took = 0
+        self.errors = 0
+        self.stuck = []
+        self.top = []
+        self.ext = []
+        self.age = []
+        self.dups = []
+        self.dupMin = 0
+
+        Node.resetIds()
+        let built = Node.build(from: treeArr)
+        built.name = root
+        built.assignPaths()
+        tree = built
     }
 }

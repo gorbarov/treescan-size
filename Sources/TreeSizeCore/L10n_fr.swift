@@ -127,5 +127,9 @@ extension L10n {
         "группа": "groupe",
         "группы": "groupes",
         "групп": "groupes",
+
+        // MARK: - Arbre en direct (tâche 18b)
+        "сканируется…": "scanning…",
+        "Появится после скана": "Available after the scan",
     ]
 }

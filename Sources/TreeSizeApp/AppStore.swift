@@ -71,7 +71,7 @@ public final class AppStore: ObservableObject {
 
     // MARK: - Скан
 
-    /// Запустить скан папки в фоне, обновлять прогресс каждые 0,5 с
+    /// Запустить скан папки в фоне, обновлять прогресс и живое дерево.
     public func scan(path: String) {
         isScanning = true
         scanPath = path
@@ -81,9 +81,12 @@ public final class AppStore: ObservableObject {
 
         let options = ScanOptions()
         let scanner = Scanner(options: options)
+        scanner.live = true   // включаем живой режим
 
         // Слабая ссылка для захвата в фоновых задачах
         weak let weakSelf = self
+
+        var lastSnapshot: Double = 0   // для разумного интервала снимков
 
         Task.detached {
             let data = scanRoot(path, options: options, scanner: scanner)
@@ -120,7 +123,7 @@ public final class AppStore: ObservableObject {
             }
         }
 
-        // Мониторинг прогресса
+        // Мониторинг прогресса + живое дерево
         Task.detached {
             while true {
                 do {
@@ -128,12 +131,46 @@ public final class AppStore: ObservableObject {
                 } catch {
                     break
                 }
-                let stillScanning = await MainActor.run {
-                    guard let store = weakSelf, store.isScanning else { return false }
+                let shouldSnapshot = await MainActor.run { () -> Bool? in
+                    guard let store = weakSelf, store.isScanning else { return nil }
                     store.progress = (scanner.nfiles, scanner.allocBytes, scanner.cur)
-                    return true
+                    // Снимок раз в 1 с
+                    let now = Date().timeIntervalSince1970
+                    if now - lastSnapshot >= 1.0 {
+                        lastSnapshot = now
+                        return true
+                    }
+                    return false
                 }
-                if !stillScanning { break }
+                guard let snap = shouldSnapshot, snap else {
+                    if shouldSnapshot == nil { break }
+                    continue
+                }
+                // Снимок живого дерева — не на главном потоке
+                if let snapDir = scanner.liveSnapshot() {
+                    let thr = max(1, Int64(Double(snapDir.size) * options.minShare))
+                    let treeArr = serialize(snapDir, thr: thr)
+                    let df = DateFormatter()
+                    df.dateFormat = "yyyy-MM-dd HH:mm"
+                    let scannedStr = df.string(from: Date())
+                    let snapResult = ScanResult(liveTree: treeArr, rootPath: path, scanned: scannedStr)
+                    await MainActor.run {
+                        guard let store = weakSelf, store.isScanning else { return }
+                        store.result = snapResult
+                        // Восстанавливаем выделение
+                        if let sp = store.selectedPath {
+                            if let n = store.node(at: sp) {
+                                store.select(n, expand: false)
+                            }
+                        }
+                        // Если корень ещё не раскрыт — раскрываем
+                        if let tree = snapResult.tree as Node? {
+                            if !store.expanded.contains(tree.path) {
+                                store.expanded.insert(tree.path)
+                            }
+                        }
+                    }
+                }
             }
         }
     }

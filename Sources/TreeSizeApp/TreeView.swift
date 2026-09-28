@@ -181,6 +181,7 @@ struct TreeRowView: View {
                     .truncationMode(.tail)
                     .foregroundColor(textColor)
                     .strikethrough(node.selfIgnored, color: .secondary)
+                    .font(node.scanning ? .system(size: 13).italic() : nil)
 
                 // ☁ (фиолетовым, если cloud >= size/2 в режиме Размер)
                 if showCloud {
@@ -196,6 +197,18 @@ struct TreeRowView: View {
                 if node.selfIgnored {
                     Text(tr("⊘ не синхр."))
                         .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                        .padding(.trailing, 4)
+                }
+
+                // Сканируется — индикатор для живого дерева
+                if node.scanning {
+                    ProgressView()
+                        .controlSize(.mini)
+                        .padding(.trailing, 4)
+                    Text(tr("сканируется…"))
+                        .font(.system(size: 12, design: .default).italic())
                         .foregroundColor(.secondary)
                         .lineLimit(1)
                         .padding(.trailing, 4)

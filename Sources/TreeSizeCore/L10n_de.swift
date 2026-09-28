@@ -127,5 +127,9 @@ extension L10n {
         "группа": "Gruppe",
         "группы": "Gruppen",
         "групп": "Gruppen",
+
+        // MARK: - Live-Baum (Aufgabe 18b)
+        "сканируется…": "scanning…",
+        "Появится после скана": "Available after the scan",
     ]
 }
