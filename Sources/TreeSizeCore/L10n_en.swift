@@ -187,17 +187,25 @@ extension L10n {
         "Появится после скана": "Available after the scan",
 
         // MARK: - Полный доступ к диску (задание 19)
-        "Дайте TreeBars полный доступ к диску": "Give TreeBars Full Disk Access",
+        "Дайте {app} полный доступ к диску": "Give {app} Full Disk Access",
         "Без него macOS будет спрашивать разрешение на каждую защищённую папку: Рабочий стол, Документы, Загрузки, iCloud, данные других приложений. С полным доступом — ни одного вопроса и честный размер всего диска.": "Without it, macOS asks for permission for every protected folder: Desktop, Documents, Downloads, iCloud, other apps' data. With Full Disk Access there are no prompts and you see the real size of the whole disk.",
         "1. Нажмите «Открыть настройки».": "1. Click “Open Settings”.",
-        "2. Включите TreeBars в списке «Полный доступ к диску» (если его нет — нажмите «+» и выберите TreeBars в Программах).": "2. Turn on TreeBars in the Full Disk Access list (if it isn't there, click “+” and choose TreeBars in Applications).",
-        "3. Перезапустите TreeBars.": "3. Restart TreeBars.",
-        "TreeBars ничего не отправляет в сеть и удаляет только в Корзину, после подтверждения.": "TreeBars never sends anything over the network and only moves files to the Trash, after a confirmation.",
+        "2. Включите {app} в списке «Полный доступ к диску» (если его нет — нажмите «+» и выберите {app} в Программах).": "2. Turn on {app} in the Full Disk Access list (if it isn't there, click “+” and choose {app} in Applications).",
+        "3. Перезапустите {app}.": "3. Restart {app}.",
+        "{app} ничего не отправляет в сеть и удаляет только в Корзину, после подтверждения.": "{app} never sends anything over the network and only moves files to the Trash, after a confirmation.",
         "Открыть настройки": "Open Settings",
         "Продолжить без доступа": "Continue without access",
-        "Перезапустить TreeBars": "Restart TreeBars",
+        "Перезапустить {app}": "Restart {app}",
         "Нужен полный доступ к диску": "Needs Full Disk Access",
-        "🔒 Часть папок пропущена — у TreeBars нет полного доступа к диску.": "🔒 Some folders were skipped — TreeBars doesn't have Full Disk Access.",
+        "🔒 Часть папок пропущена — у {app} нет полного доступа к диску.": "🔒 Some folders were skipped — {app} doesn't have Full Disk Access.",
         "Дать доступ": "Grant access",
+        // 20б: стартовый экран и второй вариант диалога доступа
+        "Доступ пока не включён для этой копии {app}": "Access isn't turned on for this copy of {app} yet",
+        "macOS выдаёт доступ конкретной копии приложения. В списке «Полный доступ к диску» должна быть включена именно эта:": "macOS grants access to a specific copy of an app. This exact copy must be turned on in the Full Disk Access list:",
+        "Если в списке другая копия или её нет — перетащите значок ниже в список или нажмите «+».": "If the list shows a different copy or none at all, drag the icon below into the list or click “+”.",
+        "Что просканировать?": "What to scan?",
+        "Весь диск — Macintosh HD": "Whole disk — Macintosh HD",
+        "Выбрать другую папку…": "Choose another folder…",
+        "занято ": "used ",
     ]
 }

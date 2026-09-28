@@ -132,18 +132,26 @@ extension L10n {
         "сканируется…": "scanning…",
         "Появится после скана": "Available after the scan",
         // MARK: - Full Disk Access (task 19)
-        "Дайте TreeBars полный доступ к диску": "Conceda Acesso Total ao Disco ao TreeBars",
+        "Дайте {app} полный доступ к диску": "Conceda Acesso Total ao Disco ao {app}",
         "Без него macOS будет спрашивать разрешение на каждую защищённую папку: Рабочий стол, Документы, Загрузки, iCloud, данные других приложений. С полным доступом — ни одного вопроса и честный размер всего диска.": "Sem isso, o macOS pede permissão para cada pasta protegida: Mesa, Documentos, Downloads, iCloud, dados de outros apps. Com o Acesso Total ao Disco, não há nenhum aviso e você vê o tamanho real do disco inteiro.",
         "1. Нажмите «Открыть настройки».": "1. Clique em “Abrir Ajustes”.",
-        "2. Включите TreeBars в списке «Полный доступ к диску» (если его нет — нажмите «+» и выберите TreeBars в Программах).": "2. Ative o TreeBars na lista de Acesso Total ao Disco (se ele não estiver lá, clique em “+” e escolha o TreeBars em Aplicativos).",
-        "3. Перезапустите TreeBars.": "3. Reinicie o TreeBars.",
-        "TreeBars ничего не отправляет в сеть и удаляет только в Корзину, после подтверждения.": "O TreeBars nunca envia nada pela rede e só move arquivos para o Lixo, após uma confirmação.",
+        "2. Включите {app} в списке «Полный доступ к диску» (если его нет — нажмите «+» и выберите {app} в Программах).": "2. Ative o {app} na lista de Acesso Total ao Disco (se ele não estiver lá, clique em “+” e escolha o {app} em Aplicativos).",
+        "3. Перезапустите {app}.": "3. Reinicie o {app}.",
+        "{app} ничего не отправляет в сеть и удаляет только в Корзину, после подтверждения.": "O {app} nunca envia nada pela rede e só move arquivos para o Lixo, após uma confirmação.",
         "Открыть настройки": "Abrir Ajustes",
         "Продолжить без доступа": "Continuar sem acesso",
-        "Перезапустить TreeBars": "Reiniciar o TreeBars",
+        "Перезапустить {app}": "Reiniciar o {app}",
         "Нужен полный доступ к диску": "Precisa de Acesso Total ao Disco",
-        "🔒 Часть папок пропущена — у TreeBars нет полного доступа к диску.": "🔒 Algumas pastas foram ignoradas — o TreeBars não tem Acesso Total ao Disco.",
+        "🔒 Часть папок пропущена — у {app} нет полного доступа к диску.": "🔒 Algumas pastas foram ignoradas — o {app} não tem Acesso Total ao Disco.",
         "Дать доступ": "Conceder acesso",
+        // 20б: стартовый экран и второй вариант диалога доступа
+        "Доступ пока не включён для этой копии {app}": "O acesso ainda não foi ativado para esta cópia do {app}",
+        "macOS выдаёт доступ конкретной копии приложения. В списке «Полный доступ к диску» должна быть включена именно эта:": "O macOS concede acesso a uma cópia específica do app. Na lista Acesso Total ao Disco, esta cópia exata precisa estar ativada:",
+        "Если в списке другая копия или её нет — перетащите значок ниже в список или нажмите «+».": "Se a lista mostrar outra cópia ou nenhuma, arraste o ícone abaixo para a lista ou clique em “+”.",
+        "Что просканировать?": "O que analisar?",
+        "Весь диск — Macintosh HD": "Disco inteiro — Macintosh HD",
+        "Выбрать другую папку…": "Escolher outra pasta…",
+        "занято ": "usado ",
     ]
 }
 

@@ -132,17 +132,25 @@ extension L10n {
         "Появится после скана": "Available after the scan",
 
         // MARK: - Полный доступ к диску (задание 19)
-        "Дайте TreeBars полный доступ к диску": "TreeBars Festplattenvollzugriff geben",
+        "Дайте {app} полный доступ к диску": "{app} Festplattenvollzugriff geben",
         "Без него macOS будет спрашивать разрешение на каждую защищённую папку: Рабочий стол, Документы, Загрузки, iCloud, данные других приложений. С полным доступом — ни одного вопроса и честный размер всего диска.": "Ohne ihn fragt macOS für jeden geschützten Ordner nach Erlaubnis: Schreibtisch, Dokumente, Downloads, iCloud, Daten anderer Apps. Mit Vollzugriff gibt es keine Nachfragen und du siehst die echte Größe der gesamten Festplatte.",
         "1. Нажмите «Открыть настройки».": "1. Klicke auf „Einstellungen öffnen“.",
-        "2. Включите TreeBars в списке «Полный доступ к диску» (если его нет — нажмите «+» и выберите TreeBars в Программах).": "2. Aktiviere TreeBars in der Liste „Festplattenvollzugriff“ (falls es fehlt, klicke auf „+“ und wähle TreeBars in Programme).",
-        "3. Перезапустите TreeBars.": "3. Starte TreeBars neu.",
-        "TreeBars ничего не отправляет в сеть и удаляет только в Корзину, после подтверждения.": "TreeBars sendet nichts über das Netzwerk und verschiebt Dateien nur nach Bestätigung in den Papierkorb.",
+        "2. Включите {app} в списке «Полный доступ к диску» (если его нет — нажмите «+» и выберите {app} в Программах).": "2. Aktiviere {app} in der Liste „Festplattenvollzugriff“ (falls es fehlt, klicke auf „+“ und wähle {app} in Programme).",
+        "3. Перезапустите {app}.": "3. Starte {app} neu.",
+        "{app} ничего не отправляет в сеть и удаляет только в Корзину, после подтверждения.": "{app} sendet nichts über das Netzwerk und verschiebt Dateien nur nach Bestätigung in den Papierkorb.",
         "Открыть настройки": "Einstellungen öffnen",
         "Продолжить без доступа": "Ohne Zugriff fortfahren",
-        "Перезапустить TreeBars": "TreeBars neu starten",
+        "Перезапустить {app}": "{app} neu starten",
         "Нужен полный доступ к диску": "Festplattenvollzugriff erforderlich",
-        "🔒 Часть папок пропущена — у TreeBars нет полного доступа к диску.": "🔒 Einige Ordner wurden übersprungen — TreeBars hat keinen Festplattenvollzugriff.",
+        "🔒 Часть папок пропущена — у {app} нет полного доступа к диску.": "🔒 Einige Ordner wurden übersprungen — {app} hat keinen Festplattenvollzugriff.",
         "Дать доступ": "Zugriff erlauben",
+        // 20б: стартовый экран и второй вариант диалога доступа
+        "Доступ пока не включён для этой копии {app}": "Für diese Kopie von {app} ist der Zugriff noch nicht aktiviert",
+        "macOS выдаёт доступ конкретной копии приложения. В списке «Полный доступ к диску» должна быть включена именно эта:": "macOS gewährt den Zugriff einer bestimmten Kopie der App. In der Liste „Festplattenvollzugriff“ muss genau diese aktiviert sein:",
+        "Если в списке другая копия или её нет — перетащите значок ниже в список или нажмите «+».": "Steht dort eine andere Kopie oder gar keine, ziehen Sie das Symbol unten in die Liste oder klicken Sie auf „+“.",
+        "Что просканировать?": "Was soll gescannt werden?",
+        "Весь диск — Macintosh HD": "Gesamte Festplatte – Macintosh HD",
+        "Выбрать другую папку…": "Anderen Ordner wählen …",
+        "занято ": "belegt ",
     ]
 }
