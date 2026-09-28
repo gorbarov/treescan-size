@@ -110,9 +110,16 @@ public final class Node: Identifiable {
         nextId = 0
     }
 
-    /// Заполнить path у всего дерева рекурсивно (вызывается после build)
+    /// Заполнить path у всего дерева рекурсивно (вызывается после build).
+    /// Разделитель не удваивается, если parentPath уже оканчивается на "/" (корень "/").
     public func assignPaths(parentPath: String = "") {
-        path = parentPath.isEmpty ? name : parentPath + "/" + (kind == .rest ? "\u{2026}" : name)
+        let n = kind == .rest ? "\u{2026}" : name
+        if parentPath.isEmpty {
+            path = n
+        } else {
+            let sep = parentPath.hasSuffix("/") ? "" : "/"
+            path = parentPath + sep + n
+        }
         if let kids = children {
             for child in kids {
                 child.assignPaths(parentPath: path)
@@ -120,13 +127,18 @@ public final class Node: Identifiable {
         }
     }
 
-    /// Найти потомка по пути (рекурсивно). Если не нашёлся — nil.
+    /// Найти потомка по пути — спуск по префиксу, без полного обхода.
+    /// На каждом уровне идёт только в того ребёнка, чей путь совпадает с target
+    /// или является префиксом target (target.hasPrefix(child.path + "/")).
+    /// Если такого нет — nil (узел свёрнут в сводку или не существует).
     public func findDescendant(by target: String) -> Node? {
         if path == target { return self }
         guard let children = children else { return nil }
         for child in children {
             if child.path == target { return child }
-            if let found = child.findDescendant(by: target) { return found }
+            if target.hasPrefix(child.path + "/") {
+                return child.findDescendant(by: target)
+            }
         }
         return nil
     }

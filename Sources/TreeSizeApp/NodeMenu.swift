@@ -3,37 +3,33 @@ import SwiftUI
 import TreeSizeCore
 
 /// Меню для узла (дерево, детали, легенда) или пути (топ, дубли).
+/// Узел ищется лениво — только при построении body, а не при создании объектов списка.
 struct NodeMenu: View {
-    let node: Node?
     let path: String
     let store: AppStore
+    /// Зафиксированный узел (когда меню создаётся от узла), либо nil (ленивый поиск)
+    private let fixedNode: Node?
 
     /// Для узла, найденного в дереве
     init(node: Node, store: AppStore) {
-        self.node = node
+        self.fixedNode = node
         self.path = node.path
         self.store = store
     }
 
-    /// Для пути (топ/дубли) — узел ищется через findDescendant
+    /// Для пути (топ/дубли) — узел ищется лениво при построении body
     init(path: String, store: AppStore) {
+        self.fixedNode = nil
         self.path = path
         self.store = store
-        if let root = store.result?.tree {
-            self.node = {
-                if path == root.path { return root }
-                return root.findDescendant(by: path)
-            }()
-        } else {
-            self.node = nil
-        }
     }
 
-    /// Инициализация из node или path — что передали, тем и работаем
-    private init(node: Node?, path: String, store: AppStore) {
-        self.node = node
-        self.path = path
-        self.store = store
+    /// Узел: если зафиксирован — он, иначе ленивый поиск по пути
+    private var node: Node? {
+        if let fn = fixedNode { return fn }
+        guard let root = store.result?.tree else { return nil }
+        if path == root.path { return root }
+        return root.findDescendant(by: path)
     }
 
     private var isRest: Bool { if let n = node { n.kind == .rest } else { false } }

@@ -217,5 +217,41 @@ public func runSelfTest(root: String) -> [String: Any] {
         }
     }
 
+    // --- findDescendant: префиксный спуск ---
+    facts["findDescendant_media_film_mov"] = tree.findDescendant(by: root + "/media/film.mov")?.name ?? "(nil)"
+    facts["findDescendant_nope_x"] = tree.findDescendant(by: root + "/nope/x") == nil
+
+    // --- findDescendant: файл, свёрнутый в сводку (не существует в дереве) ---
+    // В фикстуре есть папка "many" с 50 файлами, из них только 3 сохраняются поимённо.
+    // Полный путь к одному из свёрнутых: root + "/many/small_10.txt"
+    let collapsedFile = root + "/many/small_10.txt"
+    facts["findDescendant_rest_file"] = tree.findDescendant(by: collapsedFile) == nil
+
+    // --- findDescendant: скорость 10 000 вызовов с несуществующим путём ---
+    let fakePath = root + "/nonexistent/folder/file.txt"
+    let t0 = Date()
+    for _ in 0..<10_000 {
+        _ = tree.findDescendant(by: fakePath)
+    }
+    let elapsed = Date().timeIntervalSince(t0)
+    facts["findDescendant_speed"] = elapsed < 0.5
+
+    // --- assignPaths с корнем /: путь ребёнка "Users" равен "/Users" ---
+    do {
+        let rootNode = Node.build(from: [0, "/", 0, 0, 0, 0, 0, 0, 0, [
+            [0, "Users", 0, 0, 0, 0, 0, 0, 0, [
+                [1, "test.txt", 100, 100, 0, 1, 0, 1000000, 0]
+            ]],
+            [0, "Applications", 0, 0, 0, 0, 0, 0, 0]
+        ]])
+        rootNode.assignPaths()
+        let usersChild = rootNode.children?.first(where: { $0.name == "Users" })
+        if usersChild?.path == "/Users" {
+            facts["root_slash_assign_paths"] = "OK"
+        } else {
+            facts["root_slash_assign_paths"] = "FAIL: \(usersChild?.path ?? "nil")"
+        }
+    }
+
     return facts
 }
