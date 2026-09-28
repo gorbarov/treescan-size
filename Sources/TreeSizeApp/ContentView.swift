@@ -11,14 +11,14 @@ struct ContentView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if store.isScanning {
-                scanProgressBar
-            }
             toolbar
             banners
             Divider()
             infoBar
                 .background(Color.panel2Bg)
+            if store.isScanning {
+                scanProgressBar
+            }
             Divider()
             mainSplit
                 .background(Color.windowBg)
@@ -169,7 +169,11 @@ struct ContentView: View {
                 if L10n.isRussian {
                     return "⚠️ **\(plural(stuckCnt, "папку", "папки", "папок")) прочитать не удалось**: облако не ответило за отведённое время, их размер не учтён. " + pathsStr + suffix
                 } else {
-                    return "⚠️ **\(stuckCnt) " + tr("⚠️ **папки прочитать не удалось**: облако не ответило за отведённое время, их размер не учтён. ") + pathsStr + suffix
+                    let t = plural(stuckCnt, tr("⚠️ **папку прочитать не удалось**: облако не ответило за отведённое время, их размер не учтён. "), tr("⚠️ **папки прочитать не удалось**: облако не ответило за отведённое время, их размер не учтён. "), tr("⚠️ **папок прочитать не удалось**: облако не ответило за отведённое время, их размер не учтён. "))
+                    if let r = t.range(of: "⚠️ **"), r.lowerBound == t.startIndex {
+                        return t.replacingCharacters(in: r, with: "⚠️ **\(stuckCnt) ")
+                    }
+                    return t
                 }
             }()
             HStack(alignment: .top, spacing: 10) {
@@ -211,7 +215,7 @@ struct ContentView: View {
                             .frame(maxWidth: 260) // ~40ch × ~6.5pt ≈ 260pt, но с приоритетом
                             .fixedSize(horizontal: false, vertical: false)
 
-                infoItem(label: tr("Размер"), value: fmtBytes(store.value(sel)))
+                infoItem(label: tr("Размер"), value: fmtBytes(sel.size))
                         infoItem(label: tr("На диске"), value: fmtBytes(sel.alloc))
 
                         if let parent = sel.parent {

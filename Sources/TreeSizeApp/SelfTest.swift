@@ -266,54 +266,60 @@ public func runSelfTest(root: String) -> [String: Any] {
         }
     }
 
-    // --- liveSnapshot, вызванный из другого потока каждые 5 мс, не падает ---
+    // --- liveSnapshot на /Applications: снимки из другого потока каждые 5 мс ---
     do {
-        let snapScanner = Scanner(options: ScanOptions())
-        snapScanner.live = true
-        var lastSnap: Dir? = nil
-        var snapTakenCount = 0
-        var snapshotAttempts = 0
-        var scanFinished = false
-        let stateLock = NSLock()
+        let appsRoot = "/Applications"
+        var isDir: ObjCBool = false
+        let appsExist = FileManager.default.fileExists(atPath: appsRoot, isDirectory: &isDir) && isDir.boolValue
+        if appsExist {
+            let snapScanner = Scanner(options: ScanOptions())
+            snapScanner.live = true
+            var snapshots: [(size: Int64, time: Date)] = []
+            var scanDone = false
+            let lock = NSLock()
 
-        // Поток-снапшотер каждые 5 мс — фикстура очень маленькая, снимок может не успеться
-        // Это нормально: главное, что не падает.
-        DispatchQueue.global(qos: .background).async {
+            // Скан в фоне
+            DispatchQueue.global(qos: .userInitiated).async {
+                _ = scanRoot(appsRoot, options: ScanOptions(), scanner: snapScanner)
+                lock.lock()
+                scanDone = true
+                lock.unlock()
+            }
+
+            // Полинг снимков каждые 5 мс
+            var prevSize: Int64 = -1
+            var monotonic = true
             while true {
                 Thread.sleep(forTimeInterval: 0.005)
-                let snap = snapScanner.liveSnapshot()
-                stateLock.lock()
-                snapshotAttempts += 1
-                if snap != nil {
-                    lastSnap = snap
-                    snapTakenCount += 1
+                if let snap = snapScanner.liveSnapshot() {
+                    snapshots.append((snap.size, Date()))
+                    if prevSize >= 0 && snap.size < prevSize {
+                        monotonic = false
+                    }
+                    prevSize = snap.size
                 }
-                if scanFinished { stateLock.unlock(); return }
-                stateLock.unlock()
+                lock.lock()
+                let done = scanDone
+                lock.unlock()
+                if done { break }
             }
-        }
 
-        // Даём снапшотерам время запуститься
-        Thread.sleep(forTimeInterval: 0.2)
-
-        // Синхронный скан
-        _ = scanRoot(root, options: ScanOptions(), scanner: snapScanner)
-        stateLock.lock()
-        scanFinished = true
-        let finalLastSnap = lastSnap
-        let finalSnapCount = snapTakenCount
-        let finalAttempts = snapshotAttempts
-        stateLock.unlock()
-
-        facts["live_snapshot_crash"] = true   // не было исключений
-        facts["live_snapshot_count"] = finalSnapCount
-        facts["live_snapshot_attempts"] = finalAttempts
-        if let last = finalLastSnap {
-            facts["live_snapshot_scanning"] = last.scanning
-            facts["live_snapshot_size"] = last.size
-            if let liveSize = facts["live_root_size"] as? Int64 {
-                facts["live_snapshot_size_le_final"] = last.size <= liveSize
+            facts["live_big_snapshots"] = snapshots.count
+            facts["live_big_monotonic"] = monotonic
+            // Итоговый размер — через отдельный скан
+            let finalScanner = Scanner(options: ScanOptions())
+            finalScanner.live = true
+            let finalData = scanRoot(appsRoot, options: ScanOptions(), scanner: finalScanner)
+            let finalResult = ScanResult(data: finalData)
+            if let lastSnapSize = snapshots.last?.size {
+                facts["live_big_final_le"] = lastSnapSize <= finalResult.tree.size
+            } else {
+                facts["live_big_final_le"] = false
             }
+        } else {
+            facts["live_big_snapshots"] = 0
+            facts["live_big_monotonic"] = false
+            facts["live_big_final_le"] = false
         }
     }
 
