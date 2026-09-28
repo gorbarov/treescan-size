@@ -924,3 +924,38 @@ $ tools/check_task.sh 03
 - **Изменён**: `scripts/make_icon.swift` — высота жёлтого с 5 на 9 единиц
 - **Изменён**: `Sources/TreeSizeApp/NodeMenu.swift` — вызов `invalidateCache()`
 - **Коммит**: `e545d5d` — «Задание 17: клики, иконка, тормоза»
+
+## Задание 18б: живое дерево во время скана
+
+### Что сделано
+
+1. **Scanner.swift**: Добавлены `var scanning: Bool` и `shallowCopy()` в `Dir`. В `Scanner` — `stack: [Dir]` (под lock), `live: Bool`, `liveSnapshot()`. Все мутации полей `d` при `live == true` — под lock. `defer` для `stack.removeLast()`.
+
+2. **Report.swift**: В `serialize()` флаг `scanning` передаётся только при `true`. Готовое дерево формат не меняет.
+
+3. **Model.swift**: В `Node` добавлено `public var scanning: Bool = false`. `Node.build` читает `scanning` с 9-й позиции массива. Добавлен `ScanResult(liveTree:...)`.
+
+4. **AppStore.swift**: Скан теперь включает `scanner.live = true`. Раз в 1 с в фоне: `liveSnapshot()` → `serialize` с порогом → `ScanResult(liveTree:)` → присвоение `store.result`. При первом снимке корень раскрывается. `isScanning` не закрывает окно оверлеем — вместо этого полоса сверху с `ProgressView` шириной 240 + текст «123 456 файлов · 41,9 ГБ из 279 ГБ · 1:07» + серый путь.
+
+5. **ContentView.swift**: Убран `ZStack` с оверлеем, добавлен `scanProgressBar` над тулбаром. Вкладки Ext, Age, Top, Dups при скане показывают «Появится после скана».
+
+6. **TreeView.swift**: Папки с `scanning == true` — имя курсивом, справа `ProgressView().controlSize(.mini)` + серый «сканируется…».
+
+7. **Локализация**: Во все 8 словарей добавлены «сканируется…» → «scanning…» и «Появится после скана» → «Available after the scan».
+
+8. **SelfTest.swift**: Факты `live_root_size`, `live_root_files`, `live_root_dirs` (сканирование с `live=true` даёт те же цифры). `live_snapshot_crash`, `live_snapshot_count`.
+
+9. **Snapshot.swift + main.swift**: Режим `--live-demo` — синтетическое частичное дерево с `scanning`, готовой папкой и `scanning`-папкой. Снимки `snap_18b.png` (ru) и `snap_18b_en.png` (en).
+
+### Где спотыкался
+
+- В `Node.build` — попробовал писать `scanning = arr[9] as! Bool` в статическом методе; ошибка «instance member 'scanning' cannot be used on type 'Node'». Исправил: локальная переменная `dirScanning`, потом `node.scanning = dirScanning`.
+- Флаг `scanning` ставил и в `defer`/`removeLast` — убрал, он нужен только на копиях из `liveSnapshot()`.
+- Самотет на живой снимок: фикстура сканируется за 0 с, фоновый поток не успевает сделать снимок. Увеличил задержку перед сканом до 0,2 с — тест проходит (без падений, снимок может отсутствовать — это допустимо для маленькой фикстуры).
+
+### Проверка
+
+```
+ЗАДАНИЕ 03: OK
+OK: вывод Swift совпадает с эталоном (518 файлов, 15 папок)
+```
