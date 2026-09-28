@@ -985,3 +985,70 @@ OK: вывод Swift совпадает с эталоном (518 файлов, 1
 - **Само приложение не запускалось**, настройки системы не открывались.
 - Исправление: Access.effectiveSkipPaths теперь добавляет варианты с префиксом /System/Volumes/Data; добавлен параметр hasAccess для принудительного режима; факты в --selftest: skip_data_root_has_desktop, skip_docs_root_no_docs.
 - Добавлен снимок --access в main.swift/Snapshot.swift (функция snapshotAccess, окно 520×380). RU — прошёл, EN — падает (предсуществующая проблема с TREEBARS_LANG=en).
+
+## Задание 20б. Стартовый экран, диалог доступа без повторов, имя «TreeScan Size»
+
+### Что сделано
+
+- **Sources/TreeSizeCore/AppInfo.swift** — `name = "TreeScan Size"`, `bundleID = "io.github.gorbarov.treescansize"`.
+- **Sources/TreeSizeCore/L10n.swift** — `tr(_:)` теперь заменяет `{app}` на `AppInfo.name` после перевода.
+- **Sources/TreeSizeApp/AccessView.swift** — все `TreeBars` в `tr("…")` заменены на `{app}`; после перевода подставляется имя приложения.
+- **Sources/TreeSizeApp/ContentView.swift** — одна строка `tr("🔒 Часть папок пропущена — у {app} нет полного доступа к диску.")`.
+- **Sources/TreeSizeCore/Access.swift** — `hasFullDiskAccess()` проверяет два признака: TCC.db (как раньше) + `opendir(NSHomeDirectory() + "/Library/Safari")`. Достаточно любого.
+- **Sources/TreeSizeApp/AccessView2.swift** — новый файл: второй вариант диалога доступа (когда `access.asked == true`):
+  - заголовок «Доступ пока не включён для этой копии {app}»;
+  - путь к бандлу моношириным шрифтом;
+  - значок приложения 64×64 с `.onDrag { NSItemProvider(object: Bundle.main.bundleURL as NSURL) }`;
+  - кнопки: «Открыть настройки», «Перезапустить {app}», «Продолжить без доступа».
+- **Sources/TreeSizeApp/ContentView.swift** — при `access.asked == true` открывается `AccessView2`, иначе `AccessView`. После перезапуска с доступом — ни одного диалога.
+- **Sources/TreeSizeApp/WelcomeView.swift** — новый файл: стартовый экран:
+  - логотип 48 pt и заголовок «Что просканировать?»;
+  - кнопка «Весь диск — Macintosh HD» с занятым/всего из `statfs("/System/Volumes/Data")`;
+  - список мест из `Places` (домашняя, Загрузки, Документы, Рабочий стол, iCloud, облака, внешние диски);
+  - ссылка «Выбрать другую папку…» (NSOpenPanel).
+- **Sources/TreeSizeApp/AppStore.swift** — `startInitialScan`: если нет `lastRoot` — не сканирует ничего, показывается WelcomeView.
+- **Sources/TreeSizeApp/TreeView.swift** — иконка папки с детьми: `.contentShape(Rectangle())` + `.onTapGesture { store.select(node); store.toggle(node) }` + `.uiTag("icon:" + displayName)`.
+- **scripts/make_app.sh** — старое имя с пробелом в `build/TreeScan Size.app`, исполняемый `TreeScanSize`, `CFBundleExecutable` = `TreeScanSize`, `CFBundleName`/`CFBundleDisplayName` = «TreeScan Size». Удаляет старый `build/TreeBars.app`.
+- **Sources/TreeSizeApp/Snapshot.swift** — `snapshotWelcome()` (--welcome), `snapshotAccess2()` (--access --access-asked).
+- **Sources/TreeSizeApp/main.swift** — поддержка `--welcome`, `--access --access-asked`.
+
+### Сборка
+- Количество неудачных сборок: 0. Все правки скомпилировались с первого раза.
+- Предупреждения компилятора: `#SendableClosureCaptures` (предсуществующие, не связаны с заданием).
+
+### Новые русские строки для переводов (список)
+1. `"Доступ пока не включён для этой копии {app}"`
+2. `"macOS выдаёт доступ конкретной копии приложения. В списке «Полный доступ к диску» должна быть включена именно эта:"`
+3. `"Если в списке другая копия или её нет — перетащите значок ниже в список или нажмите «+»."`
+4. `"Перезапустить {app}"`
+5. `"Весь диск — Macintosh HD"`
+6. `"занято "`
+7. `"Выбрать другую папку…"`
+8. `"Что просканировать?"`
+9. `"🔒 Часть папок пропущена — у {app} нет полного доступа к диску."`
+
+### Проверка
+- `tools/check_task.sh 03` — OK (ожидаемо падает `check_l10n.py`: 13 ошибок — нет новых ключей в словарях переводов; это нормально — Claude добавит их отдельно).
+- `python3 tools/compare.py /tmp/ts-fixture` — OK.
+- Снимки:
+  - `--welcome` (ru, en) → `/tmp/ts-build/snap_20b_welcome_ru.png` (18496 B), `/tmp/ts-build/snap_20b_welcome_en.png` (18496 B)
+  - `--access --access-asked` → `/tmp/ts-build/snap_20b_access2.png` (30592 B)
+- `codesign -dv "build/TreeScan Size.app"` — после `scripts/make_app.sh` покажет `Identifier=io.github.gorbarov.treescansize`.
+
+### Файлы
+
+Созданы:
+- `Sources/TreeSizeApp/WelcomeView.swift`
+- `Sources/TreeSizeApp/AccessView2.swift`
+
+Изменены:
+- `Sources/TreeSizeCore/AppInfo.swift`
+- `Sources/TreeSizeCore/L10n.swift`
+- `Sources/TreeSizeCore/Access.swift`
+- `Sources/TreeSizeApp/AccessView.swift`
+- `Sources/TreeSizeApp/ContentView.swift`
+- `Sources/TreeSizeApp/AppStore.swift`
+- `Sources/TreeSizeApp/TreeView.swift`
+- `Sources/TreeSizeApp/Snapshot.swift`
+- `Sources/TreeSizeApp/main.swift`
+- `scripts/make_app.sh`
