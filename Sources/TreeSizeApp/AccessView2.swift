@@ -24,15 +24,28 @@ struct AccessView2: View {
                 .foregroundColor(.primary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            // Путь к бандлу моноширинным мелким шрифтом
-            Text(Bundle.main.bundlePath)
-                .font(.system(size: 11, design: .monospaced))
-                .foregroundColor(.secondary)
-                .lineLimit(1)
-                .truncationMode(.middle)
-                .padding(8)
-                .background(Color.panel2Bg)
+            // Путь к бандлу моноширинным мелким шрифтом + кнопка «Показать в Finder»
+            HStack(spacing: 8) {
+                Text(Bundle.main.bundlePath)
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundColor(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Button(tr("Показать в Finder")) {
+                    NSWorkspace.shared.activateFileViewerSelecting([Bundle.main.bundleURL])
+                }
+                .buttonStyle(.plain)
+                .font(.system(size: 12))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 2)
+                .background(Color.panelBg)
                 .cornerRadius(6)
+                .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.lineColor, lineWidth: 1))
+            }
+            .padding(8)
+            .background(Color.panel2Bg)
+            .cornerRadius(6)
 
             HStack(spacing: 8) {
                 Text(tr("Если в списке другая копия или её нет — перетащите значок ниже в список или нажмите «+»."))

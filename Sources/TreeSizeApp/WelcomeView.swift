@@ -135,20 +135,21 @@ struct WelcomeView: View {
     // MARK: - Список мест
 
     private var placesList: some View {
-        VStack(spacing: 4) {
-            // Диски
-            ForEach(places.filter { $0.kind == "disk" }, id: \.path) { place in
+        let filteredDisks = places.filter { $0.kind == "disk" && $0.path != "/System/Volumes/Data" }
+        let filteredFolders = places.filter { $0.kind == "folder" }
+        return VStack(spacing: 4) {
+            // Внешние диски (без /System/Volumes/Data — он в большой кнопке)
+            ForEach(filteredDisks, id: \.path) { place in
                 placeRow(place)
             }
 
             // Разделитель
-            if places.contains(where: { $0.kind == "disk" }),
-               places.contains(where: { $0.kind == "folder" }) {
+            if !filteredDisks.isEmpty && !filteredFolders.isEmpty {
                 Divider()
             }
 
             // Папки
-            ForEach(places.filter { $0.kind == "folder" }, id: \.path) { place in
+            ForEach(filteredFolders, id: \.path) { place in
                 placeRow(place)
             }
         }
