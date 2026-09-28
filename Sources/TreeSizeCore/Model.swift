@@ -19,6 +19,8 @@ public final class Node: Identifiable {
     public var selfIgnored: Bool
     public weak var parent: Node?
     public var children: [Node]?
+    /// Полный путь, кэшируется при assignPaths() после построения дерева
+    public private(set) var path: String = ""
 
     private static var nextId = 0
 
@@ -108,20 +110,23 @@ public final class Node: Identifiable {
         nextId = 0
     }
 
-    public var path: String {
-        guard let p = parent else { return name }
-        let pp = p.path
-        let sep = pp.hasSuffix("/") ? "" : "/"
-        let n = kind == .rest ? "\u{2026}" : name
-        return pp + sep + n
+    /// Заполнить path у всего дерева рекурсивно (вызывается после build)
+    public func assignPaths(parentPath: String = "") {
+        path = parentPath.isEmpty ? name : parentPath + "/" + (kind == .rest ? "\u{2026}" : name)
+        if let kids = children {
+            for child in kids {
+                child.assignPaths(parentPath: path)
+            }
+        }
     }
 
     /// Найти потомка по пути (рекурсивно). Если не нашёлся — nil.
-    public func findDescendant(by path: String) -> Node? {
+    public func findDescendant(by target: String) -> Node? {
+        if path == target { return self }
         guard let children = children else { return nil }
         for child in children {
-            if child.path == path { return child }
-            if let found = child.findDescendant(by: path) { return found }
+            if child.path == target { return child }
+            if let found = child.findDescendant(by: target) { return found }
         }
         return nil
     }
@@ -194,6 +199,7 @@ public struct ScanResult {
         Node.resetIds()
         let built = Node.build(from: data["tree"] as! [Any])
         built.name = root
+        built.assignPaths()
         tree = built
 
         let topRaw = data["top"] as? [[Any]] ?? []

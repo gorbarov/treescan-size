@@ -7,13 +7,18 @@ public final class AppStore: ObservableObject {
         didSet { childrenCache.removeAll() }
     }
     @Published public var selected: Node? = nil
-    @Published public var expanded: Set<Int> = []
+    @Published public var selectedPath: String? = nil
+    @Published public var expanded: Set<String> = []
     @Published public var mode: SizeMode = .size {
         didSet { if oldValue != mode { saveMode(); childrenCache.removeAll() } }
     }
     @Published public var tab: Tab = .pie
     @Published public var isScanning: Bool = false
-    @Published public var progress: (files: Int64, bytes: Int64, cur: String) = (0, 0, "")
+    /// progress.files — число файлов, progress.alloc — занятое место (alloc, не bytes),
+    /// progress.cur — текущий путь
+    @Published public var progress: (files: Int64, alloc: Int64, cur: String) = (0, 0, "")
+    @Published public var scanStarted: Date? = nil
+    @Published public var expectedAlloc: Int64? = nil
     @Published public var scanPath: String = ""
 
     public enum SizeMode: String, Sendable {
@@ -71,6 +76,8 @@ public final class AppStore: ObservableObject {
         isScanning = true
         scanPath = path
         progress = (0, 0, "")
+        scanStarted = Date()
+        expectedAlloc = computeExpectedAlloc(path: path)
 
         let options = ScanOptions()
         let scanner = Scanner(options: options)
@@ -86,10 +93,28 @@ public final class AppStore: ObservableObject {
                 store.result = built
                 store.loadMode(for: path)
                 store.isScanning = false
-                store.progress = (scanner.nfiles, scanner.bytes, scanner.cur)
+                store.progress = (scanner.nfiles, scanner.allocBytes, scanner.cur)
+                // Сохраняем lastAlloc для будущего expectedAlloc
                 if let tree = store.result?.tree {
-                    store.select(tree)
-                    store.expanded.insert(tree.id)
+                    UserDefaults.standard.set(tree.alloc, forKey: "lastAlloc." + path)
+                }
+                if let tree = store.result?.tree {
+                    // Восстанавливаем выделение по сохранённому пути
+                    if let sp = store.selectedPath {
+                        if let n = store.node(at: sp) {
+                            store.select(n, expand: false)
+                        } else {
+                            store.select(tree)
+                        }
+                    } else {
+                        store.select(tree)
+                    }
+                    // Восстанавливаем раскрытые пути
+                    for ep in store.expanded {
+                        if store.node(at: ep) == nil {
+                            store.expanded.remove(ep)
+                        }
+                    }
                 }
                 UserDefaults.standard.set(path, forKey: "lastRoot")
             }
@@ -105,7 +130,7 @@ public final class AppStore: ObservableObject {
                 }
                 let stillScanning = await MainActor.run {
                     guard let store = weakSelf, store.isScanning else { return false }
-                    store.progress = (scanner.nfiles, scanner.bytes, scanner.cur)
+                    store.progress = (scanner.nfiles, scanner.allocBytes, scanner.cur)
                     return true
                 }
                 if !stillScanning { break }
@@ -113,9 +138,11 @@ public final class AppStore: ObservableObject {
         }
     }
 
-    /// Пересканировать текущий корень
+    /// Пересканировать текущий корень — сохраняя раскрытые пути и выделенный путь
     public func rescan() {
         guard let root = result?.root else { return }
+        // Сохраняем путь выделенного узла и раскрытые пути
+        selectedPath = selected?.path
         scan(path: root)
     }
 
@@ -181,7 +208,7 @@ public final class AppStore: ObservableObject {
 
     private func addVisible(from node: Node, depth: Int, to rows: inout [(Node, Int)]) {
         rows.append((node, depth))
-        if expanded.contains(node.id) {
+        if expanded.contains(node.path) {
             for child in children(node) {
                 addVisible(from: child, depth: depth + 1, to: &rows)
             }
@@ -194,21 +221,22 @@ public final class AppStore: ObservableObject {
     /// - Parameter expand: если true и узел — папка с детьми, раскрыть и её.
     public func select(_ n: Node, expand: Bool = false) {
         selected = n
+        selectedPath = n.path
         var p: Node? = n.parent
         while let ancestor = p {
-            expanded.insert(ancestor.id)
+            expanded.insert(ancestor.path)
             p = ancestor.parent
         }
         if expand, n.kind == .dir, let kids = n.children, !kids.isEmpty {
-            expanded.insert(n.id)
+            expanded.insert(n.path)
         }
     }
 
     public func toggle(_ n: Node) {
-        if expanded.contains(n.id) {
-            expanded.remove(n.id)
+        if expanded.contains(n.path) {
+            expanded.remove(n.path)
         } else {
-            expanded.insert(n.id)
+            expanded.insert(n.path)
         }
     }
 
@@ -273,6 +301,42 @@ public final class AppStore: ObservableObject {
         return dups.filter { group in
             group.paths.contains { $0.hasPrefix(prefix) }
         }
+    }
+
+    // MARK: - Поиск узла по пути
+
+    /// Найти узел в текущем дереве по полному пути.
+    /// Спускается от корня по компонентам пути.
+    public func node(at path: String) -> Node? {
+        guard let root = result?.tree else { return nil }
+        return root.findDescendant(by: path)
+    }
+
+    // MARK: - Ожидаемый объём скана
+
+    /// Вычислить expectedAlloc для пути
+    private func computeExpectedAlloc(path: String) -> Int64? {
+        // 1. Если корень — точка монтирования
+        var st = statfs()
+        if statfs(path, &st) == 0 {
+            // Сравниваем f_mntonname с путём
+            let mntName = withUnsafePointer(to: st.f_mntonname) { ptr in
+                let raw = UnsafeRawPointer(ptr)
+                return String(cString: raw.assumingMemoryBound(to: CChar.self))
+            }
+            if mntName == path {
+                let blocks = Int64(st.f_blocks - st.f_bfree)
+                let bsize = Int64(st.f_bsize)
+                return blocks * bsize
+            }
+        }
+        // 2. Прошлый скан этого же корня
+        let key = "lastAlloc." + path
+        if let last = UserDefaults.standard.object(forKey: key) as? Int64 {
+            return last
+        }
+        // 3. Неизвестно
+        return nil
     }
 
     // MARK: - Корзина (шаг 2, без FileManager)

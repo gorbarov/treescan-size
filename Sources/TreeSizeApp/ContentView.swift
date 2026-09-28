@@ -440,13 +440,19 @@ struct ContentView: View {
                 VStack(spacing: 8) {
                     Text(tr("Сканирую ") + store.scanPath + tr("…"))
                         .fontWeight(.bold)
-                    if store.progress.files > 0 {
-                        Text(String(store.progress.files) + tr(" файлов · ") + "\(fmtBytes(store.progress.bytes)) · \(String(format: "%.0f", Date().timeIntervalSince1970)) " + tr("с"))
-                            .foregroundColor(.secondary)
+                    if let exp = store.expectedAlloc, exp > 0 {
+                        ProgressView(value: min(Double(store.progress.alloc) / Double(exp), 1.0))
+                            .frame(width: 360)
                     } else {
-                        Text(tr("0 с"))
-                            .foregroundColor(.secondary)
+                        ProgressView()
+                            .progressViewStyle(.linear)
+                            .frame(width: 360)
                     }
+                    let elapsed = elapsedString(from: store.scanStarted)
+                    Text(nf(store.progress.files) + tr(" файлов · ") + fmtBytes(store.progress.alloc)
+                        + (store.expectedAlloc.map { tr(" из ") + fmtBytes($0) } ?? "") + " · " + elapsed)
+                        .foregroundColor(.secondary)
+                        .monospacedDigit()
                     if !store.progress.cur.isEmpty {
                         Text(store.progress.cur)
                             .font(.system(size: 11))

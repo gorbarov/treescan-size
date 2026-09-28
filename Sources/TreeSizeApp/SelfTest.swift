@@ -26,7 +26,7 @@ public func runSelfTest(root: String) -> [String: Any] {
     store.mode = .size
 
     // Раскрываем корень
-    store.expanded.insert(tree.id)
+    store.expanded.insert(tree.path)
 
     // rows_root: visibleRows.count, когда корень раскрыт
     facts["rows_root"] = store.visibleRows.count
@@ -190,6 +190,31 @@ public func runSelfTest(root: String) -> [String: Any] {
         let pathsUnique = Set(paths).count == paths.count
         let realpathsUnique = Set(realpaths).count == realpaths.count
         facts["places_unique_paths"] = pathsUnique && realpathsUnique
+    }
+
+    // --- shouldSkip ---
+    facts["shouldskip_root_slash_volumes_data"] = Scanner.shouldSkip(path: "/System/Volumes/Data", root: "/")
+    facts["shouldskip_root_volumes_data"] = Scanner.shouldSkip(path: "/System/Volumes/Data", root: "/System/Volumes/Data")
+    facts["shouldskip_root_slash_volumes_vm"] = Scanner.shouldSkip(path: "/System/Volumes/VM", root: "/")
+
+    // --- node(at:) находит узел ---
+    let nodeAtMedia = store.node(at: root + "/media")
+    facts["node_at_media_name"] = nodeAtMedia?.name ?? "(nil)"
+
+    // --- Повторная сборка ScanResult сохраняет раскрытие по пути ---
+    do {
+        let dataCopy = data  // копируем те же данные
+        let store2 = AppStore()
+        store2.result = ScanResult(data: dataCopy)
+        if let tree2 = store2.result?.tree {
+            store2.expanded.insert(tree2.path)
+            let mediaPath = root + "/media"
+            if let media2 = store2.node(at: mediaPath) {
+                store2.expanded.insert(media2.path)
+            }
+            // visibleRows включает media и её детей
+            facts["rebuild_rows_with_expanded_media"] = store2.visibleRows.count
+        }
     }
 
     return facts

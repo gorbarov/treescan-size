@@ -147,6 +147,8 @@ public final class Scanner {
     // "size|ext" -> пути (только size >= dupMin)
     private var dups: [String: [String]] = [:]
     private var seenInodes: Set<String> = []
+    /// Корень скана для проверки shouldSkip
+    private var scanRoot: String = ""
 
     public private(set) var errors: Int64 = 0
     public private(set) var stuck: [String] = []
@@ -155,11 +157,13 @@ public final class Scanner {
     private let lock = NSLock()
     private var _nfiles: Int64 = 0
     private var _bytes: Int64 = 0
+    private var _allocBytes: Int64 = 0
     private var _cur: String = ""
     private var lastReport: Double = 0
 
     public var nfiles: Int64 { lock.lock(); defer { lock.unlock() }; return _nfiles }
     public var bytes: Int64 { lock.lock(); defer { lock.unlock() }; return _bytes }
+    public var allocBytes: Int64 { lock.lock(); defer { lock.unlock() }; return _allocBytes }
     public var cur: String { lock.lock(); defer { lock.unlock() }; return _cur }
 
     public init(options: ScanOptions) {
@@ -184,7 +188,13 @@ public final class Scanner {
         }
     }
 
+    /// Пропустить ли путь при скане / (System/Volumes/Data)
+    public static func shouldSkip(path: String, root: String) -> Bool {
+        root == "/" && path == "/System/Volumes/Data"
+    }
+
     public func scan(_ path: String, _ name: String, _ dev: Int32) -> Dir {
+        if scanRoot.isEmpty { scanRoot = path }
         let d = Dir(name: name)
         progress(path)
         guard let listing = listDir(path, timeout: options.timeout) else {
@@ -208,6 +218,8 @@ public final class Scanner {
             let mode = s.st_mode
             if (mode & S_IFMT) == S_IFLNK { continue }
             if (mode & S_IFMT) == S_IFDIR {
+                // Пропускаем /System/Volumes/Data при скане /
+                if Scanner.shouldSkip(path: ePath, root: scanRoot) { continue }
                 if options.oneFS && s.st_dev != dev { continue }
                 let sub = scan(ePath, eName, dev)
                 d.kids.append(sub)
@@ -231,7 +243,7 @@ public final class Scanner {
             let cloud: Int64 = (s.st_flags & SF_DATALESS) != 0 ? size : 0
             var mt = Int64(s.st_mtimespec.tv_sec)
             if Double(mt) > now + 86400 { mt = 0 }   // битые даты из будущего не считаем
-            lock.lock(); _nfiles += 1; lock.unlock()
+            lock.lock(); _nfiles += 1; _allocBytes += alloc; lock.unlock()
             d.files += 1; d.size += size; d.alloc += alloc; d.cloud += cloud
             if mt > d.mtime { d.mtime = mt }
             files.append(FileEntry(size: size, name: eName, alloc: alloc, cloud: cloud, mtime: mt))

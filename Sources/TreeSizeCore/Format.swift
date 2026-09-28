@@ -100,3 +100,16 @@ public func fmtCount(_ n: Int64) -> String {
     }
     return ns.string(from: NSNumber(value: n)) ?? "\(n)"
 }
+
+/// Псевдоним fmtCount для краткости в оверлее
+public func nf(_ n: Int64) -> String { fmtCount(n) }
+
+/// Прошедшее время от scanStarted в формате М:СС
+public func elapsedString(from start: Date?) -> String {
+    guard let start = start else { return "0:00" }
+    let elapsed = Date().timeIntervalSince(start)
+    let totalSeconds = Int(elapsed)
+    let minutes = totalSeconds / 60
+    let seconds = totalSeconds % 60
+    return "\(minutes):\(String(format: "%02d", seconds))"
+}

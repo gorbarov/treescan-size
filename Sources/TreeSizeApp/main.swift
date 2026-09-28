@@ -26,6 +26,8 @@ if args.contains("--snapshot") {
             snapshotPlaces(args: args)
         } else if args.contains("--mode-help") {
             snapshotModeHelp(args: args)
+        } else if args.contains("--scanning") {
+            takeSnapshotScanning(args: args)
         } else {
             takeSnapshot(args: args)
         }

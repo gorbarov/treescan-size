@@ -14,9 +14,9 @@ func runUITest(root: String) -> [String: Any] {
 
     if let tree = store.result?.tree {
         store.select(tree)
-        store.expanded.insert(tree.id)
+        store.expanded.insert(tree.path)
         for child in store.children(tree) {
-            store.expanded.remove(child.id)
+            store.expanded.remove(child.path)
         }
     }
 
@@ -79,7 +79,7 @@ func runUITest(root: String) -> [String: Any] {
         guard let tree = store.result?.tree else { return }
         store.select(tree)
         store.expanded.removeAll()
-        store.expanded.insert(tree.id)
+        store.expanded.insert(tree.path)
     }
 
     reset()
@@ -104,12 +104,12 @@ func runUITest(root: String) -> [String: Any] {
     if !click("row:media") { f["key_right_expanded"] = "не найден: row:media" }
     else {
         key(124, NSRightArrowFunctionKey)
-        let mid = store.result?.tree.findDescendant(by: rootPath + "/media")?.id ?? -1
-        f["key_right_expanded"] = store.expanded.contains(mid)
+        let mid = store.result?.tree.findDescendant(by: rootPath + "/media")
+        f["key_right_expanded"] = mid == nil ? false : store.expanded.contains(mid!.path)
     }
     key(123, NSLeftArrowFunctionKey)
     let mn = store.result?.tree.findDescendant(by: rootPath + "/media")
-    f["key_left_collapsed"] = mn == nil ? false : !store.expanded.contains(mn!.id)
+    f["key_left_collapsed"] = mn == nil ? false : !store.expanded.contains(mn!.path)
 
     reset()
     if !click("tab:Детали") { f["tab_details"] = "не найден: tab:Детали" }

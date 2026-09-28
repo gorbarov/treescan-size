@@ -33,7 +33,7 @@ func takeSnapshot(args: [String]) {
     // Выделить корень, раскрыть его
     if let tree = store.result?.tree {
         store.select(tree)
-        store.expanded.insert(tree.id)
+        store.expanded.insert(tree.path)
     }
 
     // --select
@@ -243,4 +243,77 @@ func findNode(by path: String, in node: Node) -> Node? {
         }
     }
     return nil
+}
+
+/// Снимок оверлея скана с заданными прогрессом
+@MainActor
+func takeSnapshotScanning(args: [String]) {
+    guard let snapIdx = args.firstIndex(of: "--snapshot"), snapIdx + 1 < args.count else {
+        fputs("--snapshot <png> обязателен\n", stderr)
+        exit(1)
+    }
+    guard let rootIdx = args.firstIndex(of: "--root"), rootIdx + 1 < args.count else {
+        fputs("--root <папка> обязателен\n", stderr)
+        exit(1)
+    }
+
+    let pngPath = args[snapIdx + 1]
+    let rootPath = args[rootIdx + 1]
+    let isDark = args.contains("--dark")
+
+    // Синхронный скан
+    let options = ScanOptions()
+    let data = scanRoot(rootPath, options: options)
+
+    let store = AppStore()
+    store.result = ScanResult(data: data)
+    store.mode = rootPath.contains("/CloudStorage/Dropbox") ? .size : .alloc
+
+    if let tree = store.result?.tree {
+        store.select(tree)
+        store.expanded.insert(tree.path)
+    }
+
+    // Включаем режим сканирования с фиксированным прогрессом
+    store.isScanning = true
+    store.scanPath = rootPath
+    store.progress = (files: 123456, alloc: 45_000_000_000, cur: "/Users/example/Documents/Project/Subdir/somefile.dat")
+    store.scanStarted = Date().addingTimeInterval(-67) // 1:07 назад
+    store.expectedAlloc = 300_000_000_000
+
+    let contentView = ContentView().environmentObject(store)
+    let hostingView = NSHostingView(rootView: contentView)
+    hostingView.frame = NSRect(x: 0, y: 0, width: 1280, height: 820)
+
+    let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1280, height: 820),
+                          styleMask: [.titled, .closable, .miniaturizable, .resizable],
+                          backing: .buffered,
+                          defer: false)
+    window.contentView = hostingView
+    window.setFrameOrigin(NSPoint(x: -10000, y: -10000))
+    window.appearance = NSAppearance(named: isDark ? .darkAqua : .aqua)
+    window.orderFront(nil)
+
+    RunLoop.main.run(until: Date(timeIntervalSinceNow: 1.5))
+
+    guard let rep = hostingView.bitmapImageRepForCachingDisplay(in: hostingView.bounds) else {
+        fputs("Ошибка: bitmapImageRepForCachingDisplay вернул nil\n", stderr)
+        exit(1)
+    }
+    hostingView.cacheDisplay(in: hostingView.bounds, to: rep)
+
+    guard let pngData = rep.representation(using: .png, properties: [:]) else {
+        fputs("Ошибка: не удалось создать PNG\n", stderr)
+        exit(1)
+    }
+
+    do {
+        try pngData.write(to: URL(fileURLWithPath: pngPath))
+        fputs("Снимок скана сохранён: \(pngPath)\n", stdout)
+    } catch {
+        fputs("Ошибка записи PNG: \(error.localizedDescription)\n", stderr)
+        exit(1)
+    }
+
+    exit(0)
 }

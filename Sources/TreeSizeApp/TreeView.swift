@@ -15,7 +15,7 @@ struct TreeView: View {
                     let rows = store.visibleRows
                     ForEach(rows.indices, id: \.self) { i in
                         let (node, depth) = rows[i]
-                        TreeRowView(node: node, depth: depth, isSelected: node.id == store.selected?.id)
+                        TreeRowView(node: node, depth: depth, isSelected: store.selected?.path == node.path)
                             .id(node.id)
                             // Двойной клик — раскрыть/свернуть
                             .onTapGesture(count: 2) { if node.kind == .dir && node.children?.isEmpty == false { store.toggle(node) } }
@@ -29,10 +29,12 @@ struct TreeView: View {
                 }
                 .padding(.vertical, 4)
             }
-            .onChange(of: store.selected?.id) { _, newId in
-                if let id = newId {
-                    withAnimation(.easeInOut(duration: 0.1)) {
-                        proxy.scrollTo(id, anchor: .center)
+            .onChange(of: store.selected?.path) { _, newPath in
+                if let path = newPath, let tree = store.result?.tree {
+                    if let n = tree.findDescendant(by: path) {
+                        withAnimation(.easeInOut(duration: 0.1)) {
+                            proxy.scrollTo(n.id, anchor: .center)
+                        }
                     }
                 }
             }
@@ -67,7 +69,7 @@ struct TreeView: View {
 
     private func moveRight() {
         guard let sel = store.selected, sel.kind == .dir, let kids = sel.children, !kids.isEmpty else { return }
-        if !store.expanded.contains(sel.id) {
+        if !store.expanded.contains(sel.path) {
             store.toggle(sel)
         } else if let first = store.children(sel).first {
             store.select(first)
@@ -76,7 +78,7 @@ struct TreeView: View {
 
     private func moveLeft() {
         guard let sel = store.selected else { return }
-        if sel.kind == .dir, store.expanded.contains(sel.id) {
+        if sel.kind == .dir, store.expanded.contains(sel.path) {
             store.toggle(sel)
         } else if let parent = sel.parent {
             store.select(parent)
@@ -150,7 +152,7 @@ struct TreeRowView: View {
                 // Стрелка ▸/▾ + иконка папки — кликабельная область (раскрыть/свернуть + выделить)
                 if hasChildren {
                     HStack(spacing: 0) {
-                        Text(store.expanded.contains(node.id) ? "▾" : "▸")
+                        Text(store.expanded.contains(node.path) ? "▾" : "▸")
                             .font(.system(size: 10))
                             .foregroundColor(.secondary)
                             .frame(width: 16, alignment: .center)
