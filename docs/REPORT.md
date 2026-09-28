@@ -983,3 +983,5 @@ OK: вывод Swift совпадает с эталоном (518 файлов, 1
 - `python3 tools/compare.py /tmp/ts-fixture` — не запускался, но формат `tscan` не изменился (skipPaths по умолчанию пустой).
 - Снимок листа `--snapshot ... --access` не сделан (флаг `--access` в snapshot ещё не реализован, требуется отдельное задание или доработка Snapshot.swift — на данный момент только прототип в задании).
 - **Само приложение не запускалось**, настройки системы не открывались.
+- Исправление: Access.effectiveSkipPaths теперь добавляет варианты с префиксом /System/Volumes/Data; добавлен параметр hasAccess для принудительного режима; факты в --selftest: skip_data_root_has_desktop, skip_docs_root_no_docs.
+- Добавлен снимок --access в main.swift/Snapshot.swift (функция snapshotAccess, окно 520×380). RU — прошёл, EN — падает (предсуществующая проблема с TREEBARS_LANG=en).
