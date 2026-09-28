@@ -66,3 +66,6 @@
 - Изменён: `Sources/TreeSizeApp/SelfTest.swift` — новые факты
 - Изменён: `Sources/TreeSizeApp/UITest.swift` — expanded с path
 - Изменён: `Sources/TreeSizeApp/main.swift` — routing для --scanning
+- **18а fix 1**: `findDescendant(by:)` — спуск по префиксу, а не полный обход (зависание вкладки «Дубли» на 9 мин)
+- **18а fix 2**: `assignPaths` — разделитель без двойной косой (корень `/` → `//Users` исправлено)
+- **18а fix 3**: `NodeMenu` — узел ищется лениво при построении `body`, а не в `init`
