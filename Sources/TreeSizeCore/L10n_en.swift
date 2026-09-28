@@ -196,7 +196,6 @@ extension L10n {
         "Открыть настройки": "Open Settings",
         "Продолжить без доступа": "Continue without access",
         "Перезапустить TreeBars": "Restart TreeBars",
-        "нет доступа": "no access",
         "Нужен полный доступ к диску": "Needs Full Disk Access",
         "🔒 Часть папок пропущена — у TreeBars нет полного доступа к диску.": "🔒 Some folders were skipped — TreeBars doesn't have Full Disk Access.",
         "Дать доступ": "Grant access",

@@ -7,6 +7,13 @@ N=${1:?номер задания}
 B=/tmp/ts-build
 swift build -c release --disable-sandbox --scratch-path $B 2>&1 | tail -3
 [ -d /tmp/ts-fixture ] || tools/make_fixture.sh /tmp/ts-fixture >/dev/null
+# Общие проверки для любого задания: словари переводов и запуск на всех языках (дубль ключа роняет приложение)
+python3 tools/check_l10n.py | tail -5
+for L in ru en zh ja ko de es fr pt; do
+  TREEBARS_LANG=$L $B/release/TreeSizeApp --root /tmp/ts-fixture --mode-help --snapshot $B/lang_$L.png >/dev/null 2>&1 \
+    || { echo "ЯЗЫК $L: приложение упало при запуске"; exit 1; }
+done
+echo "ЯЗЫКИ: запуск на 9 языках OK"
 case $N in
   01) $B/release/tscan --model-check /tmp/ts-fixture > $B/01.txt
       diff -u tools/expected/01_model_check.txt $B/01.txt && echo "ЗАДАНИЕ 01: OK" ;;
