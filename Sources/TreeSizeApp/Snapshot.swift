@@ -36,11 +36,16 @@ func takeSnapshot(args: [String]) {
         store.expanded.insert(tree.path)
     }
 
-    // --select
+    // --fake-stuck: подложить указанное число путей в stuck для проверки плашки
+    if let fakeIdx = args.firstIndex(of: "--fake-stuck"), fakeIdx + 1 < args.count {
+        let fakeCount = Int(args[fakeIdx + 1]) ?? 2
+        store.result?.stuck = (0..<fakeCount).map { "\(rootPath)/some_deep_folder_\($0)/subdir" }
+    }
+
+    // --select: выделить узел
     if let selectIdx = args.firstIndex(of: "--select"), selectIdx + 1 < args.count {
         let selectPath = args[selectIdx + 1]
         if let tree = store.result?.tree {
-            // Ищем узел по пути
             if let node = findNode(by: selectPath, in: tree) {
                 store.select(node, expand: true)
             }

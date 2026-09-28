@@ -88,7 +88,7 @@ public func listPlaces() -> [Place] {
     let cs = home + "/Library/CloudStorage"
     if let items = try? FileManager.default.contentsOfDirectory(atPath: cs) {
         for item in items.sorted() {
-            let p = cs + "/" + item
+            let p = joinPath(cs, item)
             guard !seenPaths.contains(p) else { continue }
             seenPaths.insert(p)
             var isDir: ObjCBool = false

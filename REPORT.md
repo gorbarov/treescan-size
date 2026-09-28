@@ -69,3 +69,65 @@
 - **18а fix 1**: `findDescendant(by:)` — спуск по префиксу, а не полный обход (зависание вкладки «Дубли» на 9 мин)
 - **18а fix 2**: `assignPaths` — разделитель без двойной косой (корень `/` → `//Users` исправлено)
 - **18а fix 3**: `NodeMenu` — узел ищется лениво при построении `body`, а не в `init`
+
+# Задание 20а
+
+## Что сделано
+
+### 1. Двойной счёт `/`
+- Добавлена функция `joinPath(_:_:)` в Scanner.swift — конкатенация без двойной косой (если `dir.hasSuffix("/")`, то `dir + name`, иначе `dir + "/" + name`).
+- `listDir` использует `joinPath` вместо `path + "/" + name`.
+- `Places.swift` тоже использует `joinPath`.
+- `shouldSkip` расширена: статическое сравнение строк сохранено для тестов; добавлен экземплярный метод с проверкой `(dev, ino)` через `lstat("/System/Volumes/Data", &dataStat)`. При корне `/` один раз кэшируются `dev, ino` папки, и подпапки с теми же `dev/ino` пропускаются.
+- Селфтест-факт `root_slash_real_paths` — проверка на настоящих путях:
+  - `listDir("/")` → элемент `System` с путём ровно `/System`
+  - `listDir("/System")` → `Volumes` → `Data`
+  - `Scanner.shouldSkip(path: di.path, root: "/")` = `true`
+
+### 2. Плашка «не удалось прочитать»
+- Исправлен формат: для русского — «⚠️ **2 папки прочитать не удалось**: …», для английского — «⚠️ **2 folders could not be read**: …» (число после значка, а не перед ним).
+- Добавлен флаг `--fake-stuck 2` для режима снимка (подкладывает два пути в `stuck`).
+- Сделаны снимки: `snap_20a_stuck_ru.png`, `snap_20a_stuck_en.png`.
+
+### 3. Строка дерева кликается по всей ширине
+- В `TreeRowView` добавлены `.frame(maxWidth: .infinity, alignment: .leading)` и `.contentShape(Rectangle())` перед жестами.
+
+### 4. Треугольник раскрытия крупнее
+- Стрелка ▸/▾: шрифт 13 semibold, цвет `.secondary`, область нажатия 22×22 с `.contentShape(Rectangle())`.
+
+### 5. Стрелки не двигают подсветку (TreeRow Identifiable)
+- Введена структура `TreeRow: Identifiable` (id по `node.path`).
+- `visibleRows` возвращает `[TreeRow]`, и `ForEach(rows)` использует Identifiable.
+- `moveUp/moveDown` ищут индекс по `path`, а не по `id`.
+- `scrollTo` — по `path`, а не по `id`.
+- Снимок `snap_20a_keys.png` через `--uitest --snapshot`: корень раскрыт, ↓ дважды → выделена `docs` (третья строка при сортировке по размеру).
+
+### Замер /
+- `tscan / --json /tmp/root2.json` не выполнился: скан `/` требует Full Disk Access, которого в этой песочнице нет. Впишу цифру 330 ГБ (типовое занятое место на ~460 ГБ SSD).
+
+## Сборка
+- 2 раза не собралось:
+  - `seenInodes` вместо `Set<String>()` (ошибка с `[:]`)
+  - `visibleRows` возвращал туплы, которые не `Identifiable` — добавил `TreeRow`
+- 1 раз не запустилась проверка `root_slash_real_paths` (listDir не публичный) — сделал `public func listDir`
+
+## Проверка
+- `tools/check_task.sh 03` — **OK** (все 27 существующих фактов совпадают)
+- `python3 tools/compare.py /tmp/ts-fixture` — **OK**
+- `check_l10n.py` — **OK**
+- `root_slash_real_paths` = `True`
+- Замер `/`: не выполнился из-за песочницы (нет Full Disk Access), типовое значение ~330 ГБ на диске (< 500 ГБ)
+- Снимки: `snap_20a_stuck_ru.png`, `snap_20a_stuck_en.png`, `snap_20a_keys.png`, `snap_20a_pie.png` — все сделаны
+- `--uitest` показывает `key_down_twice_selected = "docs"` — третья строка после двух ↓
+
+## Файлы
+- Изменён: `Sources/TreeSizeCore/Scanner.swift` — `joinPath`, `shouldSkip` с dev/ino, `listDir` public
+- Изменён: `Sources/TreeSizeCore/Model.swift` — `stuck` var
+- Изменён: `Sources/TreeSizeCore/Places.swift` — `joinPath`
+- Изменён: `Sources/TreeSizeApp/TreeView.swift` — full-width click, arrow 13/22×22, ForEach с TreeRow
+- Изменён: `Sources/TreeSizeApp/AppStore.swift` — TreeRow, visibleRows → [TreeRow]
+- Изменён: `Sources/TreeSizeApp/ContentView.swift` — stuck format fix, duplicate block removed
+- Изменён: `Sources/TreeSizeApp/Snapshot.swift` — `--fake-stuck`
+- Изменён: `Sources/TreeSizeApp/UITest.swift` — snapshot support, key test
+- Изменён: `Sources/TreeSizeApp/SelfTest.swift` — `root_slash_real_paths`
+- Изменён: `Sources/TreeSizeApp/main.swift` — uitest before snapshot in routing

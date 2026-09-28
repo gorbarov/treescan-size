@@ -3,7 +3,7 @@ import SwiftUI
 import TreeSizeCore
 
 @MainActor
-func runUITest(root: String) -> [String: Any] {
+func runUITest(root: String, snapshotPath: String? = nil) -> [String: Any] {
     L10n.forceLang("ru")
     let options = ScanOptions()
     let data = scanRoot(root, options: options)
@@ -129,6 +129,39 @@ func runUITest(root: String) -> [String: Any] {
     if !click("tab:Детали") { f["details_dbl_selected"] = "не найден: tab:Детали" }
     else if !click("cell:docs", count: 2) { f["details_dbl_selected"] = "не найден: cell:docs" }
     else { f["details_dbl_selected"] = store.selected?.name ?? "" }
+
+    // Стрелки + снимок: открыть корень, ↓ дважды, снимок
+    if let snapPath = snapshotPath {
+        reset()
+        // Раскрываем корень
+        guard let tree = store.result?.tree else { return f }
+        store.expanded.insert(tree.path)
+        wait(0.5)
+        // ↓ дважды
+        key(125, NSDownArrowFunctionKey)
+        key(125, NSDownArrowFunctionKey)
+        let selName = store.selected?.name ?? ""
+        f["key_down_twice_selected"] = selName
+        wait(0.3)
+
+        guard let rep = host.bitmapImageRepForCachingDisplay(in: host.bounds) else {
+            f["keys_snapshot"] = "bitmapImageRepForCachingDisplay вернул nil"
+            return f
+        }
+        host.cacheDisplay(in: host.bounds, to: rep)
+
+        guard let pngData = rep.representation(using: .png, properties: [:]) else {
+            f["keys_snapshot"] = "не удалось создать PNG"
+            return f
+        }
+
+        do {
+            try pngData.write(to: URL(fileURLWithPath: snapPath))
+            f["keys_snapshot"] = snapPath
+        } catch {
+            f["keys_snapshot"] = "ошибка записи: \(error.localizedDescription)"
+        }
+    }
 
     return f
 }

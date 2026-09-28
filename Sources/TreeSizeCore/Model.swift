@@ -218,7 +218,7 @@ public struct ScanResult {
     public let scanned: String
     public let took: Double
     public let errors: Int64
-    public let stuck: [String]
+    public var stuck: [String]
     public let tree: Node
     public var top: [TopFile]
     public let ext: [ExtStat]

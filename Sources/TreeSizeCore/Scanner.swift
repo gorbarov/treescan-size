@@ -104,7 +104,7 @@ private final class DirListingState {
     var done = false
 }
 
-func listDir(_ path: String, timeout: Double) -> (items: [(name: String, path: String, st: stat?)], err: Int32)? {
+public func listDir(_ path: String, timeout: Double) -> (items: [(name: String, path: String, st: stat?)], err: Int32)? {
     let res = DirListingState()
     let sem = DispatchSemaphore(value: 0)
     DispatchQueue.global(qos: .userInitiated).async {
@@ -120,7 +120,7 @@ func listDir(_ path: String, timeout: Double) -> (items: [(name: String, path: S
                 String(cString: raw.baseAddress!.assumingMemoryBound(to: CChar.self))
             }
             if name == "." || name == ".." { continue }
-            let full = path + "/" + name
+            let full = joinPath(path, name)
             var st = stat()
             let r = lstat(full, &st)
             res.lock.lock()
@@ -151,6 +151,15 @@ func listDir(_ path: String, timeout: Double) -> (items: [(name: String, path: S
     }
 }
 
+/// Конкатенация пути без двойной косой: dir + "/" + name, но если dir оканчивается на "/",
+/// то без дополнительной косой (чтобы корень "/" не давал "//System").
+public func joinPath(_ dir: String, _ name: String) -> String {
+    if dir.hasSuffix("/") {
+        return dir + name
+    }
+    return dir + "/" + name
+}
+
 public final class Scanner {
     public let options: ScanOptions
     public let now: Double
@@ -167,6 +176,8 @@ public final class Scanner {
     private var seenInodes: Set<String> = []
     /// Корень скана для проверки shouldSkip
     private var scanRoot: String = ""
+    /// (dev, ino) папки /System/Volumes/Data при корне / (для устойчивости к двойной косой)
+    private var _skipDevIno: (dev: Int32, ino: UInt64)? = nil
 
     public private(set) var errors: Int64 = 0
     public private(set) var stuck: [String] = []
@@ -208,13 +219,32 @@ public final class Scanner {
         }
     }
 
-    /// Пропустить ли путь при скане / (System/Volumes/Data)
+    /// Пропустить ли путь при скане / (System/Volumes/Data).
+    /// Статическая проверка по строковому сравнению (для тестов).
     public static func shouldSkip(path: String, root: String) -> Bool {
         root == "/" && path == "/System/Volumes/Data"
     }
 
+    /// Проверка по dev/ino (устойчива к двойной косой) + строковое сравнение.
+    private func shouldSkip(path: String, st: stat) -> Bool {
+        guard scanRoot == "/" else { return false }
+        if let skipDI = _skipDevIno, st.st_dev == skipDI.dev, st.st_ino == skipDI.ino {
+            return true
+        }
+        return Scanner.shouldSkip(path: path, root: scanRoot)
+    }
+
     public func scan(_ path: String, _ name: String, _ dev: Int32) -> Dir {
-        if scanRoot.isEmpty { scanRoot = path }
+        if scanRoot.isEmpty {
+            scanRoot = path
+            // При корне / — кэшируем (dev, ino) папки /System/Volumes/Data
+            if scanRoot == "/" {
+                var dataStat = stat()
+                if lstat("/System/Volumes/Data", &dataStat) == 0 {
+                    _skipDevIno = (dataStat.st_dev, dataStat.st_ino)
+                }
+            }
+        }
         let d = Dir(name: name)
         if live { lock.lock(); stack.append(d); lock.unlock() }
         // defer на уровне функции — выполняется при любом return
@@ -242,7 +272,7 @@ public final class Scanner {
             if (mode & S_IFMT) == S_IFLNK { continue }
             if (mode & S_IFMT) == S_IFDIR {
                 // Пропускаем /System/Volumes/Data при скане /
-                if Scanner.shouldSkip(path: ePath, root: scanRoot) { continue }
+                if self.shouldSkip(path: ePath, st: s) { continue }
                 if options.oneFS && s.st_dev != dev { continue }
                 // Пропускаем защищённые папки без полного доступа
                 if options.skipPaths.contains(ePath) {

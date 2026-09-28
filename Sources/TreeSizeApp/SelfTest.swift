@@ -253,7 +253,40 @@ public func runSelfTest(root: String) -> [String: Any] {
         }
     }
 
-    // --- effectiveSkipPaths факты ---
+    // --- root_slash_real_paths: listDir на / проверяет, что joinPath не удваивает косую, 
+    // и shouldSkip на /System/Volumes/Data работает с реальным путём ---
+    do {
+        if let systemList = listDir("/", timeout: 5) {
+            let systemItem = systemList.items.first { $0.name == "System" }
+            if let si = systemItem, si.path == "/System" {
+                // Путь ровно /System — ок
+                if let volumesList = listDir(si.path, timeout: 5) {
+                    let volumesItem = volumesList.items.first { $0.name == "Volumes" }
+                    if let vi = volumesItem, vi.path == "/System/Volumes" {
+                        if let dataList = listDir(vi.path, timeout: 5) {
+                            let dataItem = dataList.items.first { $0.name == "Data" }
+                            if let di = dataItem {
+                                // Проверяем shouldSkip для полученного элемента Data с корнем /
+                                facts["root_slash_real_paths"] = Scanner.shouldSkip(path: di.path, root: "/")
+                            } else {
+                                facts["root_slash_real_paths"] = "no Data item in /System/Volumes"
+                            }
+                        } else {
+                            facts["root_slash_real_paths"] = "listDir /System/Volumes timed out"
+                        }
+                    } else {
+                        facts["root_slash_real_paths"] = "no Volumes item in /System or wrong path"
+                    }
+                } else {
+                    facts["root_slash_real_paths"] = "listDir /System timed out"
+                }
+            } else {
+                facts["root_slash_real_paths"] = "no System item in / or wrong path: \(systemItem?.path ?? "nil")"
+            }
+        } else {
+            facts["root_slash_real_paths"] = "listDir / timed out"
+        }
+    }
     do {
         let home = NSHomeDirectory()
         let dataRoot = "/System/Volumes/Data"

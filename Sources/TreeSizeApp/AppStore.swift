@@ -1,6 +1,13 @@
 // Состояние приложения — UI-SPEC раздел 3
 import TreeSizeCore
 
+/// Строка дерева: привязана к пути, а не к номеру позиции (чтобы подсветка не плавала при стрелках).
+public struct TreeRow: Identifiable {
+    public let node: Node
+    public let depth: Int
+    public var id: String { node.path }
+}
+
 @MainActor
 public final class AppStore: ObservableObject {
     @Published public var result: ScanResult? = nil {
@@ -237,15 +244,15 @@ public final class AppStore: ObservableObject {
 
     // MARK: - Плоский список
 
-    public var visibleRows: [(node: Node, depth: Int)] {
+    public var visibleRows: [TreeRow] {
         guard let root = result?.tree else { return [] }
-        var rows: [(Node, Int)] = []
+        var rows: [TreeRow] = []
         addVisible(from: root, depth: 0, to: &rows)
         return rows
     }
 
-    private func addVisible(from node: Node, depth: Int, to rows: inout [(Node, Int)]) {
-        rows.append((node, depth))
+    private func addVisible(from node: Node, depth: Int, to rows: inout [TreeRow]) {
+        rows.append(TreeRow(node: node, depth: depth))
         if expanded.contains(node.path) {
             for child in children(node) {
                 addVisible(from: child, depth: depth + 1, to: &rows)

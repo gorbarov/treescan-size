@@ -13,28 +13,25 @@ struct TreeView: View {
             ScrollView(.vertical, showsIndicators: true) {
                 LazyVStack(spacing: 0) {
                     let rows = store.visibleRows
-                    ForEach(rows.indices, id: \.self) { i in
-                        let (node, depth) = rows[i]
-                        TreeRowView(node: node, depth: depth, isSelected: store.selected?.path == node.path)
-                            .id(node.id)
+                    ForEach(rows) { row in
+                        TreeRowView(node: row.node, depth: row.depth, isSelected: store.selectedPath == row.node.path)
+                            .id(row.node.path)
                             // Двойной клик — раскрыть/свернуть
-                            .onTapGesture(count: 2) { if node.kind == .dir && node.children?.isEmpty == false { store.toggle(node) } }
+                            .onTapGesture(count: 2) { if row.node.kind == .dir && row.node.children?.isEmpty == false { store.toggle(row.node) } }
                             // Одинарный клик — сразу выделить, без задержки (simultaneousGesture не ждёт второй клик)
-                            .simultaneousGesture(TapGesture().onEnded { store.select(node) })
+                            .simultaneousGesture(TapGesture().onEnded { store.select(row.node) })
                             // Контекстное меню — UI-SPEC раздел 9
                             .contextMenu {
-                                NodeMenu(node: node, store: store)
+                                NodeMenu(node: row.node, store: store)
                             }
                     }
                 }
                 .padding(.vertical, 4)
             }
-            .onChange(of: store.selected?.path) { _, newPath in
-                if let path = newPath, let tree = store.result?.tree {
-                    if let n = tree.findDescendant(by: path) {
-                        withAnimation(.easeInOut(duration: 0.1)) {
-                            proxy.scrollTo(n.id, anchor: .center)
-                        }
+            .onChange(of: store.selectedPath) { _, newPath in
+                if let path = newPath {
+                    withAnimation(.easeInOut(duration: 0.1)) {
+                        proxy.scrollTo(path, anchor: .center)
                     }
                 }
             }
@@ -53,16 +50,16 @@ struct TreeView: View {
 
     private func moveUp() {
         let rows = store.visibleRows
-        guard let sel = store.selected,
-              let i = rows.firstIndex(where: { $0.node.id == sel.id }),
+        guard let selPath = store.selectedPath,
+              let i = rows.firstIndex(where: { $0.node.path == selPath }),
               i > 0 else { return }
         store.select(rows[i - 1].node)
     }
 
     private func moveDown() {
         let rows = store.visibleRows
-        guard let sel = store.selected,
-              let i = rows.firstIndex(where: { $0.node.id == sel.id }),
+        guard let selPath = store.selectedPath,
+              let i = rows.firstIndex(where: { $0.node.path == selPath }),
               i < rows.count - 1 else { return }
         store.select(rows[i + 1].node)
     }
@@ -149,24 +146,22 @@ struct TreeRowView: View {
                 Color.clear
                     .frame(width: CGFloat(depth * 16 + 4))
 
-                // Стрелка ▸/▾ + иконка папки — кликабельная область (раскрыть/свернуть + выделить)
+                // Стрелка ▸/▾ — крупнее, шрифт 13 semibold, область нажатия 22×22
                 if hasChildren {
-                    HStack(spacing: 0) {
-                        Text(store.expanded.contains(node.path) ? "▾" : "▸")
-                            .font(.system(size: 10))
-                            .foregroundColor(.secondary)
-                            .frame(width: 16, alignment: .center)
-                        iconView
-                    }
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        store.select(node)
-                        store.toggle(node)
-                    }
+                    Text(store.expanded.contains(node.path) ? "▾" : "▸")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.secondary)
+                        .frame(width: 22, height: 22, alignment: .center)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            store.select(node)
+                            store.toggle(node)
+                        }
+                    Color.clear.frame(width: 4)
                 } else {
-                    Color.clear.frame(width: 16)
-                    iconView
+                    Color.clear.frame(width: 26)
                 }
+                iconView
 
                 // Размер: системный шрифт, жирный, .monospacedDigit() — как .sz в эталоне
                 if node.skipped {
@@ -246,6 +241,8 @@ struct TreeRowView: View {
             .zIndex(1) // поверх полоски
         }
         .frame(height: 26)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
         .uiTag("row:" + displayName)
     }
 

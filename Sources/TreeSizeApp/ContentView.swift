@@ -180,13 +180,16 @@ struct ContentView: View {
             let suffix = stuck.count > 5 ? tr(" и другие") : ""
             let msg: String = {
                 if L10n.isRussian {
-                    return "⚠️ **\(plural(stuckCnt, "папку", "папки", "папок")) прочитать не удалось**: облако не ответило за отведённое время, их размер не учтён. " + pathsStr + suffix
+                    // Русский: «⚠️ **2 папки прочитать не удалось**: …»
+                    let wordForm = plural(stuckCnt, "папку", "папки", "папок")
+                    return "⚠️ **\(wordForm) прочитать не удалось**: облако не ответило за отведённое время, их размер не учтён. " + pathsStr + suffix
                 } else {
-                    let t = plural(stuckCnt, tr("⚠️ **папку прочитать не удалось**: облако не ответило за отведённое время, их размер не учтён. "), tr("⚠️ **папки прочитать не удалось**: облако не ответило за отведённое время, их размер не учтён. "), tr("⚠️ **папок прочитать не удалось**: облако не ответило за отведённое время, их размер не учтён. "))
-                    if let r = t.range(of: "⚠️ **"), r.lowerBound == t.startIndex {
-                        return t.replacingCharacters(in: r, with: "⚠️ **\(stuckCnt) ")
+                    // Английский (и другие): «⚠️ **2 folders could not be read**: …»
+                    let base = tr("⚠️ **folders could not be read**: the cloud didn't respond in time, their sizes weren't counted. ")
+                    if let r = base.range(of: "⚠️ **"), r.lowerBound == base.startIndex {
+                        return base.replacingCharacters(in: r, with: "⚠️ **\(stuckCnt) ") + pathsStr + suffix
                     }
-                    return t
+                    return "⚠️ **\(stuckCnt) folders could not be read**: the cloud didn't respond in time, their sizes weren't counted. " + pathsStr + suffix
                 }
             }()
             HStack(alignment: .top, spacing: 10) {
