@@ -959,3 +959,5 @@ $ tools/check_task.sh 03
 ЗАДАНИЕ 03: OK
 OK: вывод Swift совпадает с эталоном (518 файлов, 15 папок)
 ```
+
+- **18б (доработки)**: `infoItem(label: tr("Размер"))` теперь `fmtBytes(sel.size)` вместо `store.value(sel)`. Плашка stuck для нерусских языков — правильное склонение через `plural(tr(...))` без двойного префикса. Полоса прогресса перенесена ниже строки сведений, над деревом. `--selftest` проверяет `live_big_snapshots`, `live_big_monotonic`, `live_big_final_le` сканом `/Applications`.
