@@ -8,6 +8,8 @@ import TreeSizeCore
 struct ContentView: View {
     @EnvironmentObject var store: AppStore
     @State private var showModeHelp = false
+    @State private var showAccessSheet = false
+    @State private var hasShownAccessSheet = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -29,6 +31,17 @@ struct ContentView: View {
         .background(Color.windowBg)
         .onPreferenceChange(UIFramesKey.self) { store.uiFrames = $0 }
         .coordinateSpace(name: "uitest")
+        .onAppear {
+            if !hasShownAccessSheet {
+                hasShownAccessSheet = true
+                if !Access.hasFullDiskAccess() && !UserDefaults.standard.bool(forKey: "access.skip") {
+                    showAccessSheet = true
+                }
+            }
+        }
+        .sheet(isPresented: $showAccessSheet) {
+            AccessView(showAccessSheet: $showAccessSheet)
+        }
     }
 
     // MARK: - Панель инструментов (как .top в эталоне)
@@ -184,11 +197,46 @@ struct ContentView: View {
             .padding(.vertical, 8)
             .background(Color.warningBg)
         }
+
+        // Плашка о пропущенных папках (без полного доступа)
+        if hasSkipped {
+            HStack(spacing: 10) {
+                Text(tr("🔒 Часть папок пропущена — у TreeBars нет полного доступа к диску."))
+                    .font(.system(size: 12.5))
+                Spacer()
+                Button(tr("Дать доступ")) {
+                    showAccessSheet = true
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .background(Color.cloudColor.opacity(0.1))
+        }
     }
 
     private var isDropbox: Bool {
         guard let root = store.result?.root else { return false }
         return root.contains("/CloudStorage/Dropbox")
+    }
+
+    /// Есть ли в дереве пропущенные из-за доступа узлы
+    private var hasSkipped: Bool {
+        if let tree = store.result?.tree {
+            return containsSkipped(tree)
+        }
+        return false
+    }
+
+    private func containsSkipped(_ node: Node) -> Bool {
+        if node.skipped { return true }
+        if let kids = node.children {
+            for ch in kids {
+                if containsSkipped(ch) { return true }
+            }
+        }
+        return false
     }
 
     // MARK: - Строка сведений (как renderInfo в эталоне)

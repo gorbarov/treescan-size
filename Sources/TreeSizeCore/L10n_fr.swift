@@ -131,5 +131,20 @@ extension L10n {
         // MARK: - Arbre en direct (tâche 18b)
         "сканируется…": "scanning…",
         "Появится после скана": "Available after the scan",
+        // MARK: - Full Disk Access (task 19)
+        "Дайте TreeBars полный доступ к диску": "Give TreeBars Full Disk Access",
+        "Без него macOS будет спрашивать разрешение на каждую защищённую папку: Рабочий стол, Документы, Загрузки, iCloud, данные других приложений. С полным доступом — ни одного вопроса и честный размер всего диска.": "Without it, macOS asks for permission for every protected folder: Desktop, Documents, Downloads, iCloud, other apps' data. With Full Disk Access there are no prompts and you see the real size of the whole disk.",
+        "1. Нажмите «Открыть настройки».": "1. Click \"Open Settings\".",
+        "2. Включите TreeBars в списке «Полный доступ к диску» (если его нет — нажмите «+» и выберите TreeBars в Программах).": "2. Turn on TreeBars in the Full Disk Access list (if it isn't there, click \"+\" and choose TreeBars in Applications).",
+        "3. Перезапустите TreeBars.": "3. Restart TreeBars.",
+        "TreeBars ничего не отправляет в сеть и удаляет только в Корзину, после подтверждения.": "TreeBars never sends anything over the network and only moves files to the Trash, after a confirmation.",
+        "Открыть настройки": "Open Settings",
+        "Продолжить без доступа": "Continue without access",
+        "Перезапустить TreeBars": "Restart TreeBars",
+        "нет доступа": "no access",
+        "Нужен полный доступ к диску": "Needs Full Disk Access",
+        "🔒 Часть папок пропущена — у TreeBars нет полного доступа к диску.": "🔒 Some folders were skipped - TreeBars doesn't have Full Disk Access.",
+        "Дать доступ": "Grant access",
     ]
 }
+

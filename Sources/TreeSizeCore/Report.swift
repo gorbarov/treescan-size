@@ -40,7 +40,7 @@ public func serialize(_ d: Dir, thr: Int64) -> [Any] {
     if agg[0] != 0 || aggDirs != 0 {
         out.append([2, "", agg[1], agg[2], agg[3], agg[0], aggDirs, agg[4], aggIgn])
     }
-    var node: [Any] = [0, d.name, d.size, d.alloc, d.cloud, d.files, d.dirs, d.mtime, d.selfign ? Int64(-1) : d.ign]
+    var node: [Any] = [0, d.name, d.size, d.alloc, d.cloud, d.files, d.dirs, d.mtime, d.selfign ? Int64(-1) : (d.skipped ? Int64(-2) : d.ign)]
     // Флаг scanning передаётся только при true (живое дерево во время скана).
     // В готовом дереве флага нет — формат не меняется.
     if d.scanning { node.append(true) }

@@ -79,7 +79,8 @@ public final class AppStore: ObservableObject {
         scanStarted = Date()
         expectedAlloc = computeExpectedAlloc(path: path)
 
-        let options = ScanOptions()
+        var options = ScanOptions()
+        options.skipPaths = Access.effectiveSkipPaths(forRoot: path)
         let scanner = Scanner(options: options)
         scanner.live = true   // включаем живой режим
 

@@ -54,7 +54,6 @@ extension L10n {
         "☁️ Файлы «только в облаке»: размер есть, а на диске — ноль.": "☁️ Nur-Cloud-Dateien: Sie haben eine Größe, belegen aber null.",
         "🧊 Разреженные файлы (например, диск Docker или виртуальной машины): размер может быть 460 ГБ, а занято 39 ГБ.": "🧊 Sparse-Dateien (z. B. Docker- oder VM-Disk): 460 GB Größe, aber nur 39 GB belegt.",
         "Чтобы освободить место на маке, смотрите «На диске». Чтобы уложиться в тариф облака — «Размер».": "Um Platz auf dem Mac zu schaffen, schauen Sie auf „Belegt“; für Ihr Cloud-Kontingent auf „Größe“.",
-
         "Изменён": "Geändert",
         "Файл": "Datei",
         " крупнейших файлов скана лежат в «": " größten Dateien des Scans liegen in „",
@@ -131,5 +130,20 @@ extension L10n {
         // MARK: - Live-Baum (Aufgabe 18b)
         "сканируется…": "scanning…",
         "Появится после скана": "Available after the scan",
+
+        // MARK: - Полный доступ к диску (задание 19)
+        "Дайте TreeBars полный доступ к диску": "Give TreeBars Full Disk Access",
+        "Без него macOS будет спрашивать разрешение на каждую защищённую папку: Рабочий стол, Документы, Загрузки, iCloud, данные других приложений. С полным доступом — ни одного вопроса и честный размер всего диска.": "Without it, macOS asks for permission for every protected folder: Desktop, Documents, Downloads, iCloud, other apps' data. With Full Disk Access there are no prompts and you see the real size of the whole disk.",
+        "1. Нажмите «Открыть настройки».": "1. Click “Open Settings”.",
+        "2. Включите TreeBars в списке «Полный доступ к диску» (если его нет — нажмите «+» и выберите TreeBars в Программах).": "2. Turn on TreeBars in the Full Disk Access list (if it isn't there, click “+” and choose TreeBars in Applications).",
+        "3. Перезапустите TreeBars.": "3. Restart TreeBars.",
+        "TreeBars ничего не отправляет в сеть и удаляет только в Корзину, после подтверждения.": "TreeBars never sends anything over the network and only moves files to the Trash, after a confirmation.",
+        "Открыть настройки": "Open Settings",
+        "Продолжить без доступа": "Continue without access",
+        "Перезапустить TreeBars": "Restart TreeBars",
+        "нет доступа": "no access",
+        "Нужен полный доступ к диску": "Needs Full Disk Access",
+        "🔒 Часть папок пропущена — у TreeBars нет полного доступа к диску.": "🔒 Some folders were skipped — TreeBars doesn’t have Full Disk Access.",
+        "Дать доступ": "Grant access",
     ]
 }

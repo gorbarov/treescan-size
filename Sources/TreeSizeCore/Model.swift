@@ -18,6 +18,7 @@ public final class Node: Identifiable {
     public var ign: Int64
     public var selfIgnored: Bool
     public var scanning: Bool = false   // папка в процессе сканирования (живое дерево)
+    public var skipped: Bool = false   // пропущена из-за отсутствия полного доступа к диску
     public weak var parent: Node?
     public var children: [Node]?
     /// Полный путь, кэшируется при assignPaths() после построения дерева
@@ -27,7 +28,7 @@ public final class Node: Identifiable {
 
     private init(id: Int, kind: NodeKind, name: String, size: Int64, alloc: Int64, cloud: Int64,
                  files: Int64, dirs: Int64, mtime: Int64, ign: Int64, selfIgnored: Bool,
-                 parent: Node?, children: [Node]?) {
+                 parent: Node?, children: [Node]?, skipped: Bool = false) {
         self.id = id
         self.kind = kind
         self.name = name
@@ -41,6 +42,7 @@ public final class Node: Identifiable {
         self.selfIgnored = selfIgnored
         self.parent = parent
         self.children = children
+        self.skipped = skipped
     }
 
     @discardableResult
@@ -59,6 +61,7 @@ public final class Node: Identifiable {
         var kidsArr: [Any]? = nil
         var ign: Int64 = 0
         var selfIgnored = false
+        var nodeSkipped = false
         var dirScanning = false
 
         switch kindVal {
@@ -68,8 +71,16 @@ public final class Node: Identifiable {
             if arr.count > 8 {
                 // serialize() всегда кладёт ign на 8-ю позицию
                 if let rawIgn = (arr[8] as? NSNumber)?.int64Value {
-                    selfIgnored = rawIgn == -1
-                    ign = selfIgnored ? size : rawIgn
+                    if rawIgn == -1 {
+                        selfIgnored = true
+                        ign = size
+                    } else if rawIgn == -2 {
+                        nodeSkipped = true
+                        ign = 0
+                    } else {
+                        selfIgnored = false
+                        ign = rawIgn
+                    }
                     if arr.count > 9 {
                         // Флаг scanning (Bool) на 9-й позиции, если true
                         if arr[9] is Bool {
@@ -89,7 +100,8 @@ public final class Node: Identifiable {
             if arr.count > 8 {
                 let rawIgn = (arr[8] as? NSNumber)?.int64Value ?? 0
                 selfIgnored = rawIgn == -1
-                ign = selfIgnored ? size : rawIgn
+                nodeSkipped = rawIgn == -2
+                ign = selfIgnored ? size : (nodeSkipped ? 0 : rawIgn)
             }
             kidsArr = nil
         case 2:
@@ -97,7 +109,8 @@ public final class Node: Identifiable {
             if arr.count > 8 {
                 let rawIgn = (arr[8] as? NSNumber)?.int64Value ?? 0
                 selfIgnored = rawIgn == -1
-                ign = selfIgnored ? size : rawIgn
+                nodeSkipped = rawIgn == -2
+                ign = selfIgnored ? size : (nodeSkipped ? 0 : rawIgn)
             }
             kidsArr = nil
         default:
@@ -107,7 +120,8 @@ public final class Node: Identifiable {
 
         let node = Node(id: id, kind: kind, name: nameRaw, size: size, alloc: alloc,
                         cloud: cloud, files: files, dirs: dirs, mtime: mtime,
-                        ign: ign, selfIgnored: selfIgnored, parent: parent, children: nil)
+                        ign: ign, selfIgnored: selfIgnored, parent: parent, children: nil,
+                        skipped: nodeSkipped)
         node.scanning = dirScanning
 
         if let ka = kidsArr {

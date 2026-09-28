@@ -56,6 +56,7 @@ public final class Dir {
     public var ign: Int64 = 0        // байт внутри, помеченных «не синхронизировать»
     public var selfign: Bool = false // сама папка помечена
     public var scanning: Bool = false // папка в процессе сканирования
+    public var skipped: Bool = false // пропущена из-за отсутствия полного доступа к диску
 
     public init(name: String) { self.name = name }
 
@@ -69,7 +70,7 @@ public final class Dir {
         c.restFiles = restFiles; c.restSize = restSize; c.restAlloc = restAlloc
         c.restCloud = restCloud; c.restMtime = restMtime; c.restDirs = restDirs; c.restIgn = restIgn
         c.err = err; c.ign = ign; c.selfign = selfign
-        c.scanning = scanning
+        c.scanning = scanning; c.skipped = skipped
         return c
     }
 }
@@ -79,6 +80,8 @@ public struct ScanOptions {
     public var minShare: Double
     public var dupMin: Int64
     public var timeout: Double
+
+    public var skipPaths: Set<String> = []
 
     public init(oneFS: Bool = true, minShare: Double = 2e-6, dupMin: Int64 = 5 * 1024 * 1024, timeout: Double = 10) {
         self.oneFS = oneFS
@@ -241,6 +244,15 @@ public final class Scanner {
                 // Пропускаем /System/Volumes/Data при скане /
                 if Scanner.shouldSkip(path: ePath, root: scanRoot) { continue }
                 if options.oneFS && s.st_dev != dev { continue }
+                // Пропускаем защищённые папки без полного доступа
+                if options.skipPaths.contains(ePath) {
+                    let sub = Dir(name: eName)
+                    sub.skipped = true
+                    if live { lock.lock() }
+                    d.kids.append(sub)
+                    if live { lock.unlock() }
+                    continue
+                }
                 let sub = scan(ePath, eName, dev)
                 if live { lock.lock() }
                 d.kids.append(sub)

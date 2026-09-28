@@ -169,11 +169,19 @@ struct TreeRowView: View {
                 }
 
                 // Размер: системный шрифт, жирный, .monospacedDigit() — как .sz в эталоне
-                Text(fmtBytes(store.value(node)))
-                    .fontWeight(.bold)
-                    .font(.system(size: 13).monospacedDigit())
-                    .frame(minWidth: 62, alignment: .leading)
-                    .lineLimit(1)
+                if node.skipped {
+                    Text("🔒")
+                        .font(.system(size: 11))
+                        .frame(minWidth: 62, alignment: .leading)
+                        .lineLimit(1)
+                        .help(tr("Нужен полный доступ к диску"))
+                } else {
+                    Text(fmtBytes(store.value(node)))
+                        .fontWeight(.bold)
+                        .font(.system(size: 13).monospacedDigit())
+                        .frame(minWidth: 62, alignment: .leading)
+                        .lineLimit(1)
+                }
 
                 // Имя — с зачёркиванием и серым, если selfIgnored
                 Text(displayName)
@@ -193,9 +201,21 @@ struct TreeRowView: View {
 
                 Spacer(minLength: 4)
 
-                // ⊘ не синхр. — серым, прямо перед колонкой процентов (как в эталоне)
+        // ⊘ не синхр. — серым, прямо перед колонкой процентов (как в эталоне)
                 if node.selfIgnored {
                     Text(tr("⊘ не синхр."))
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                        .padding(.trailing, 4)
+                }
+
+                // 🔒 пропущенная папка — без полного доступа
+                if node.skipped {
+                    Text("🔒")
+                        .font(.system(size: 12))
+                        .padding(.trailing, 2)
+                    Text(tr("нет доступа"))
                         .font(.system(size: 12))
                         .foregroundColor(.secondary)
                         .lineLimit(1)
