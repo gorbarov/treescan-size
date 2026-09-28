@@ -23,7 +23,10 @@ public enum L10n {
 }
 
 /// Перевод строки интерфейса: по-русски возвращает как есть; нет перевода — английский; нет и его — русский.
+/// После перевода заменяет "{app}" на имя приложения.
 public func tr(_ ru: String) -> String {
-    if L10n.lang == "ru" { return ru }
-    return L10n.tables[L10n.lang]?[ru] ?? L10n.en[ru] ?? ru
+    let result: String
+    if L10n.lang == "ru" { result = ru }
+    else { result = L10n.tables[L10n.lang]?[ru] ?? L10n.en[ru] ?? ru }
+    return result.replacingOccurrences(of: "{app}", with: AppInfo.name)
 }

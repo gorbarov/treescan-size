@@ -9,6 +9,9 @@ APP_NAME=$(grep 'static let name' Sources/TreeSizeCore/AppInfo.swift | sed 's/.*
 BUNDLE_ID=$(grep 'static let bundleID' Sources/TreeSizeCore/AppInfo.swift | sed 's/.*"\(.*\)".*/\1/')
 VERSION=$(grep 'static let version' Sources/TreeSizeCore/AppInfo.swift | sed 's/.*"\(.*\)".*/\1/')
 
+# Исполняемый файл — без пробела (TreeScanSize)
+EXEC=$(echo "$APP_NAME" | tr -d ' ')
+
 echo "=== Шаг 1: иконка ==="
 swift scripts/make_icon.swift 2>&1 | tail -1
 
@@ -20,8 +23,11 @@ APP_DIR="$B/$APP_NAME.app"
 mkdir -p "$APP_DIR/Contents/MacOS"
 mkdir -p "$APP_DIR/Contents/Resources"
 
-cp -f "$T/release/TreeSizeApp" "$APP_DIR/Contents/MacOS/$APP_NAME"
+cp -f "$T/release/TreeSizeApp" "$APP_DIR/Contents/MacOS/$EXEC"
 cp -f "$B/AppIcon.icns" "$APP_DIR/Contents/Resources/AppIcon.icns"
+
+# Удаляем старый TreeBars.app, если есть
+rm -rf "$B/TreeBars.app"
 
 cat <<EOF > "$APP_DIR/Contents/Info.plist"
 <?xml version="1.0" encoding="UTF-8"?>
@@ -35,7 +41,7 @@ cat <<EOF > "$APP_DIR/Contents/Info.plist"
 	<key>CFBundleDisplayName</key>
 	<string>$APP_NAME</string>
 	<key>CFBundleExecutable</key>
-	<string>$APP_NAME</string>
+	<string>$EXEC</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleIconFile</key>
@@ -57,7 +63,7 @@ EOF
 echo "=== Шаг 4: подпись ==="
 codesign --force --deep -s - "$APP_DIR"
 
-echo "=== Готово: $APP_DIR ==="
-ls -la "$APP_DIR/Contents/MacOS/$APP_NAME"
+echo "=== Готово: "$APP_DIR" ==="
+ls -la "$APP_DIR/Contents/MacOS/$EXEC"
 ls -la "$APP_DIR/Contents/Resources/AppIcon.icns"
 ls -la "$APP_DIR/Contents/Info.plist"

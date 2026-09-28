@@ -192,8 +192,9 @@ public final class AppStore: ObservableObject {
     }
 
     /// Выбрать, что сканировать, по правилам UI-SPEC 12:
-    /// 1. lastRoot; 2. Dropbox; 3. домашняя папка.
-    /// Если в args есть --root, сканировать его, не трогая lastRoot.
+    /// 1. Если есть --root, сканировать его.
+    /// 2. Если есть lastRoot — сканировать его.
+    /// 3. Иначе — не сканировать ничего (показать WelcomeView).
     public func startInitialScan(_ args: [String]) {
         // --root имеет приоритет
         if let rootIdx = args.firstIndex(of: "--root"), rootIdx + 1 < args.count {
@@ -210,17 +211,7 @@ public final class AppStore: ObservableObject {
             }
         }
 
-        // Dropbox
-        let home = FileManager.default.homeDirectoryForCurrentUser.path
-        let dropbox = (home as NSString).appendingPathComponent("Library/CloudStorage/Dropbox")
-        var isDir: ObjCBool = false
-        if FileManager.default.fileExists(atPath: dropbox, isDirectory: &isDir), isDir.boolValue {
-            scan(path: dropbox)
-            return
-        }
-
-        // Домашняя папка
-        scan(path: home)
+        // Ничего не сканируем — покажем WelcomeView
     }
 
     // MARK: - Режим

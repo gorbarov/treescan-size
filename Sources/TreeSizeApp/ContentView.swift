@@ -11,36 +11,59 @@ struct ContentView: View {
     @State private var showAccessSheet = false
     @State private var hasShownAccessSheet = false
 
+    /// Есть ли результат скана или идёт скан?
+    private var hasContent: Bool {
+        store.result != nil || store.isScanning
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            toolbar
-            banners
-            Divider()
-            infoBar
-                .background(Color.panel2Bg)
-            if store.isScanning {
-                scanProgressBar
+            if hasContent {
+                toolbar
+                banners
+                Divider()
+                infoBar
+                    .background(Color.panel2Bg)
+                if store.isScanning {
+                    scanProgressBar
+                }
+                Divider()
+                mainSplit
+                    .background(Color.windowBg)
+                Divider()
+                statusBar
+                    .background(Color.panel2Bg)
+            } else {
+                // Стартовый экран — занимает всё окно
+                WelcomeView()
+                    .environmentObject(store)
             }
-            Divider()
-            mainSplit
-                .background(Color.windowBg)
-            Divider()
-            statusBar
-                .background(Color.panel2Bg)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.windowBg)
         .onPreferenceChange(UIFramesKey.self) { store.uiFrames = $0 }
         .coordinateSpace(name: "uitest")
         .onAppear {
             if !hasShownAccessSheet {
                 hasShownAccessSheet = true
-                if !Access.hasFullDiskAccess() && !UserDefaults.standard.bool(forKey: "access.skip") {
-                    showAccessSheet = true
+                let hasAccess = Access.hasFullDiskAccess()
+                if !hasAccess && !UserDefaults.standard.bool(forKey: "access.skip") {
+                    let asked = UserDefaults.standard.bool(forKey: "access.asked")
+                    if asked {
+                        showAccessSheet = true  // показываем второй вариант
+                    } else {
+                        showAccessSheet = true  // первый вариант
+                    }
                 }
             }
         }
         .sheet(isPresented: $showAccessSheet) {
-            AccessView(showAccessSheet: $showAccessSheet)
+            let asked = UserDefaults.standard.bool(forKey: "access.asked")
+            if asked {
+                AccessView2(showAccessSheet: $showAccessSheet)
+            } else {
+                AccessView(showAccessSheet: $showAccessSheet)
+            }
         }
     }
 
@@ -204,7 +227,7 @@ struct ContentView: View {
         // Плашка о пропущенных папках (без полного доступа)
         if hasSkipped {
             HStack(spacing: 10) {
-                Text(tr("🔒 Часть папок пропущена — у TreeBars нет полного доступа к диску."))
+                Text(tr("🔒 Часть папок пропущена — у {app} нет полного доступа к диску."))
                     .font(.system(size: 12.5))
                 Spacer()
                 Button(tr("Дать доступ")) {

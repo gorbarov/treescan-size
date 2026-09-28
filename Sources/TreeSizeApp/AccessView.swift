@@ -11,7 +11,7 @@ struct AccessView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // Заголовок жирным 17 pt
-            Text(tr("Дайте TreeBars полный доступ к диску"))
+            Text(tr("Дайте {app} полный доступ к диску"))
                 .fontWeight(.bold)
                 .font(.system(size: 17))
                 .padding(.bottom, 4)
@@ -26,15 +26,15 @@ struct AccessView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text(tr("1. Нажмите «Открыть настройки»."))
                     .font(.system(size: 13))
-                Text(tr("2. Включите TreeBars в списке «Полный доступ к диску» (если его нет — нажмите «+» и выберите TreeBars в Программах)."))
+                Text(tr("2. Включите {app} в списке «Полный доступ к диску» (если его нет — нажмите «+» и выберите {app} в Программах)."))
                     .font(.system(size: 13))
-                Text(tr("3. Перезапустите TreeBars."))
+                Text(tr("3. Перезапустите {app}."))
                     .font(.system(size: 13))
             }
             .padding(.leading, 8)
 
             // Мелкий серый текст
-            Text(tr("TreeBars ничего не отправляет в сеть и удаляет только в Корзину, после подтверждения."))
+            Text(tr("{app} ничего не отправляет в сеть и удаляет только в Корзину, после подтверждения."))
                 .font(.system(size: 11))
                 .foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -80,7 +80,7 @@ struct AccessView: View {
                             DispatchQueue.main.async { NSApp.terminate(nil) }
                         }
                     }) {
-                        Text(tr("Перезапустить TreeBars"))
+                        Text(tr("Перезапустить {app}"))
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.bordered)

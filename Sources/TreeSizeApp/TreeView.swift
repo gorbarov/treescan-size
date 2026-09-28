@@ -307,6 +307,7 @@ struct TreeRowView: View {
     }
 
     /// Папка: жёлтый прямоугольник 16×12 скругление 2 + «ушко» 7×3 слева сверху
+    /// Если есть дети — клик раскрывает/сворачивает (как стрелка).
     private var folderIcon: some View {
         ZStack(alignment: .topLeading) {
             // Ушко 7×3
@@ -321,6 +322,14 @@ struct TreeRowView: View {
         }
         .frame(width: 16, height: 16)
         .padding(.trailing, 4)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            if hasChildren {
+                store.select(node)
+                store.toggle(node)
+            }
+        }
+        .uiTag("icon:" + displayName)
     }
 
     /// Файл: прямоугольник 11×14 цвета группы, скругление справа сверху

@@ -47,13 +47,19 @@ if args.contains("--snapshot") {
         if args.contains("--places") {
             snapshotPlaces(args: args)
         } else if args.contains("--access") {
-            snapshotAccess(args: args)
+            if args.contains("--access-asked") {
+                snapshotAccess2(args: args)
+            } else {
+                snapshotAccess(args: args)
+            }
         } else if args.contains("--mode-help") {
             snapshotModeHelp(args: args)
         } else if args.contains("--scanning") {
             takeSnapshotScanning(args: args)
         } else if args.contains("--live-demo") {
             takeSnapshotLiveDemo(args: args)
+        } else if args.contains("--welcome") {
+            snapshotWelcome(args: args)
         } else {
             takeSnapshot(args: args)
         }

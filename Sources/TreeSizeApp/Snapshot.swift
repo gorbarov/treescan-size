@@ -469,3 +469,109 @@ func snapshotAccess(args: [String]) {
 
     exit(0)
 }
+
+/// Снимок стартового экрана (WelcomeView) — окно 1280×820 (полный ContentView без результата)
+@MainActor
+func snapshotWelcome(args: [String]) {
+    guard let snapIdx = args.firstIndex(of: "--snapshot"), snapIdx + 1 < args.count else {
+        fputs("--snapshot <png> обязателен\n", stderr)
+        exit(1)
+    }
+    let pngPath = args[snapIdx + 1]
+    let isDark = args.contains("--dark")
+
+    let store = AppStore()
+    store.mode = .size
+
+    // Создаём ContentView
+    let contentView = ContentView().environmentObject(store)
+    let hostingView = NSHostingView(rootView: contentView)
+    // Задаём фиксированный размер NSHostingView
+    hostingView.frame = NSRect(x: 0, y: 0, width: 1280, height: 820)
+
+    let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1280, height: 820),
+                          styleMask: [.titled, .closable, .miniaturizable, .resizable],
+                          backing: .buffered,
+                          defer: false)
+    window.contentView = hostingView
+    window.setFrameOrigin(NSPoint(x: 0, y: 0))
+    window.appearance = NSAppearance(named: isDark ? .darkAqua : .aqua)
+    window.orderFront(nil)
+    window.makeKey()
+
+    RunLoop.main.run(until: Date(timeIntervalSinceNow: 2.0))
+
+    // bitmapImageRepForCachingDisplay с правильными bounds
+    let captureRect = NSRect(x: 0, y: 0, width: 1280, height: 820)
+    guard let rep = hostingView.bitmapImageRepForCachingDisplay(in: captureRect) else {
+        fputs("Ошибка: bitmapImageRepForCachingDisplay вернул nil\n", stderr)
+        exit(1)
+    }
+    hostingView.cacheDisplay(in: captureRect, to: rep)
+
+    window.orderOut(nil)
+
+    guard let pngData = rep.representation(using: .png, properties: [:]) else {
+        fputs("Ошибка: не удалось создать PNG\n", stderr)
+        exit(1)
+    }
+
+    do {
+        try pngData.write(to: URL(fileURLWithPath: pngPath))
+        fputs("Снимок Welcome сохранён: \(pngPath)\n", stdout)
+    } catch {
+        fputs("Ошибка записи PNG: \(error.localizedDescription)\n", stderr)
+        exit(1)
+    }
+
+    exit(0)
+}
+
+/// Снимок второго варианта диалога доступа (AccessView2) — окно 520×420
+@MainActor
+func snapshotAccess2(args: [String]) {
+    guard let snapIdx = args.firstIndex(of: "--snapshot"), snapIdx + 1 < args.count else {
+        fputs("--snapshot <png> обязателен\n", stderr)
+        exit(1)
+    }
+    let pngPath = args[snapIdx + 1]
+    let isDark = args.contains("--dark")
+
+    let accessView = AccessView2(showAccessSheet: .constant(true), isSnapshot: true)
+    let hostingView = NSHostingView(rootView: accessView)
+    hostingView.frame = NSRect(x: 0, y: 0, width: 520, height: 420)
+
+    let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 520, height: 420),
+                          styleMask: [.titled, .closable, .miniaturizable, .resizable],
+                          backing: .buffered,
+                          defer: false)
+    window.contentView = hostingView
+    window.setFrameOrigin(NSPoint(x: -10000, y: -10000))
+    window.appearance = NSAppearance(named: isDark ? .darkAqua : .aqua)
+    window.orderFront(nil)
+
+    RunLoop.main.run(until: Date(timeIntervalSinceNow: 1.0))
+
+    guard let rep = hostingView.bitmapImageRepForCachingDisplay(in: hostingView.bounds) else {
+        fputs("Ошибка: bitmapImageRepForCachingDisplay вернул nil\n", stderr)
+        exit(1)
+    }
+    hostingView.cacheDisplay(in: hostingView.bounds, to: rep)
+
+    window.orderOut(nil)
+
+    guard let pngData = rep.representation(using: .png, properties: [:]) else {
+        fputs("Ошибка: не удалось создать PNG\n", stderr)
+        exit(1)
+    }
+
+    do {
+        try pngData.write(to: URL(fileURLWithPath: pngPath))
+        fputs("Снимок Access2 сохранён: \(pngPath)\n", stdout)
+    } catch {
+        fputs("Ошибка записи PNG: \(error.localizedDescription)\n", stderr)
+        exit(1)
+    }
+
+    exit(0)
+}

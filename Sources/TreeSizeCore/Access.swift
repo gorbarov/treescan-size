@@ -1,11 +1,20 @@
 import Foundation
 
 public enum Access {
-    /// Есть ли у приложения «Полный доступ к диску». Открыть этот файл можно только с полным доступом;
-    /// попытка не вызывает системного вопроса.
+    /// Есть ли у приложения «Полный доступ к диску». Проверяет два признака (достаточно любого):
+    /// 1. Открытие TCC.db (как раньше);
+    /// 2. opendir Safari — без полного доступа macOS отвечает EPERM, без системного вопроса.
+    /// Больше ничего не открывает, чтобы не вызывать системный вопрос.
     public static func hasFullDiskAccess() -> Bool {
+        // Признак 1: TCC.db
         let fd = open("/Library/Application Support/com.apple.TCC/TCC.db", O_RDONLY)
         if fd >= 0 { close(fd); return true }
+        // Признак 2: Safari
+        let safari = NSHomeDirectory() + "/Library/Safari"
+        if let dir = opendir(safari) {
+            closedir(dir)
+            return true
+        }
         return false
     }
 
