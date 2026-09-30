@@ -5,7 +5,9 @@
 <p align="center"><b>Macの容量を何が使っているか、サイズバー付きのフォルダツリーで。</b><br>
 無料・オープンソース・通信なし。Dropbox と iCloud に対応。</p>
 
-<p align="center"><a href="README.md">English</a> · <a href="README.zh-CN.md">简体中文</a></p>
+<p align="center">
+  <a href="README.md">English</a> · <a href="README.ru.md">Русский</a> · <a href="README.es.md">Español</a> · <a href="README.de.md">Deutsch</a> · <a href="README.fr.md">Français</a> · <a href="README.pt-BR.md">Português</a> · <a href="README.ko.md">한국어</a> · <a href="README.zh-CN.md">简体中文</a> · <b>日本語</b>
+</p>
 
 <p align="center"><img src="docs/screenshots/pie-ja.png" width="860" alt="TreeScan Size：フォルダツリーと円グラフ"></p>
 
