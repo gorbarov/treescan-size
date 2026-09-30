@@ -1,0 +1,936 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TreeSize для мака</title>
+<style>
+:root{
+  --bg:#eef1f5; --panel:#ffffff; --panel2:#f7f9fb; --line:#dde2ea; --text:#1b2330; --muted:#687384; --faint:#9aa3b1;
+  --accent:#2a78d6; --sel:#d6e6fb; --selLine:#8db6ee; --hover:#eef4fc;
+  --bar1:#fff0bf; --bar2:#ffd36e; --barLine:rgba(214,160,20,.35); --fbar1:#e4ecf7; --fbar2:#c3d6f0;
+  --pct:#2a78d6; --pctBg:#e6eaf0; --cloud:#6a4fd8; --gap:#ffffff; --tip:#1b2330; --tipText:#fff;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){ :root{
+  --bg:#121418; --panel:#1a1d23; --panel2:#1f232a; --line:#2c323c; --text:#e6eaf0; --muted:#8e98a8; --faint:#646d7b;
+  --accent:#5b9cf0; --sel:#233a5c; --selLine:#3d6399; --hover:#222833;
+  --bar1:#4a3d17; --bar2:#86691c; --barLine:rgba(240,190,60,.25); --fbar1:#23324a; --fbar2:#2e4a72;
+  --pct:#3987e5; --pctBg:#2a3039; --cloud:#9f8bff; --gap:#15181d; --tip:#f1f3f6; --tipText:#15181d;
+  color-scheme: dark;
+}}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--text);font:13px/1.35 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,sans-serif;display:flex;flex-direction:column;overflow:hidden}
+.top,.banner,.info,.status{flex:none}
+button{font:inherit;color:inherit}
+.top{display:flex;align-items:center;gap:14px;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line)}
+.logo{display:grid;grid-template-columns:9px 5px;grid-template-rows:9px 5px;gap:2px;flex:none}
+.logo i{border-radius:2px;background:var(--accent)} .logo i:nth-child(1){grid-row:span 2;background:#2a78d6}
+.logo i:nth-child(2){background:#eda100} .logo i:nth-child(3){background:#eb6834}
+.brand{font-weight:650;font-size:15px;white-space:nowrap}
+.brand small{font-weight:400;color:var(--muted)}
+.rootpath{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
+.seg{display:inline-flex;background:var(--pctBg);border-radius:8px;padding:2px;flex:none}
+.seg button{border:0;background:none;padding:4px 12px;border-radius:6px;cursor:pointer;color:var(--muted)}
+.seg button.on{background:var(--panel);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.15)}
+.info{display:flex;gap:4px 22px;flex-wrap:wrap;padding:8px 16px;background:var(--panel2);border-bottom:1px solid var(--line);align-items:baseline}
+.info .k{color:var(--muted);margin-right:5px}
+.info .v{font-weight:600;font-variant-numeric:tabular-nums}
+.info .v.cl{color:var(--cloud)}
+.info .nm{font-weight:650;max-width:40ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.main{display:grid;grid-template-columns:var(--lw,48%) 5px 1fr;min-height:0;flex:1}
+.pane{background:var(--panel);min-width:0;min-height:0;display:flex;flex-direction:column}
+.split{cursor:col-resize;background:var(--bg);border-left:1px solid var(--line);border-right:1px solid var(--line)}
+.split:hover{background:var(--selLine)}
+/* дерево */
+#tree{overflow:auto;flex:1;outline:none;padding:4px 0}
+.row{position:relative;height:26px;display:flex;align-items:center;padding-left:var(--ind);white-space:nowrap;cursor:default;user-select:none}
+.row::before{content:"";position:absolute;left:calc(var(--ind) + 36px);top:2px;bottom:2px;width:calc((100% - var(--ind) - 36px - 62px) * var(--p));background:linear-gradient(90deg,var(--bar2),var(--bar1));border-radius:4px;box-shadow:inset 0 0 0 1px var(--barLine)}
+.row.file::before{background:linear-gradient(90deg,var(--fbar2),var(--fbar1));box-shadow:none}
+.row.agg::before{background:var(--pctBg);box-shadow:none}
+.row:hover{background:var(--hover)}
+.row.sel{background:var(--sel);box-shadow:inset 2px 0 0 var(--accent)}
+.row>*{position:relative}
+.tw{width:16px;text-align:center;color:var(--muted);font-size:10px;flex:none;cursor:pointer}
+.ic{width:16px;height:12px;margin:0 4px 0 2px;flex:none;border-radius:2px;background:#e9b53b;position:relative}
+.ic::before{content:"";position:absolute;left:0;top:-2px;width:7px;height:3px;background:#e9b53b;border-radius:2px 2px 0 0}
+.ic.f{width:11px;height:14px;margin:0 6px 0 4px;background:var(--c,#9aa3b1);border-radius:1px 4px 1px 1px}
+.ic.f::before{display:none}
+.ic.a{background:none;border:1.5px dashed var(--faint)} .ic.a::before{display:none}
+.sz{font-weight:650;font-variant-numeric:tabular-nums;min-width:62px;margin-right:8px}
+.nm{overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+.row .pc{flex:none;width:58px;text-align:right;padding-right:10px;color:var(--muted);font-variant-numeric:tabular-nums;font-size:12px}
+.row.sel .pc{color:var(--text)}
+.row.agg .nm,.row.agg .sz{color:var(--muted);font-weight:400}
+.row .cl{margin-left:6px;color:var(--cloud);font-size:11px}
+/* правая панель */
+.tabs{display:flex;gap:2px;padding:6px 8px 0;border-bottom:1px solid var(--line);background:var(--panel2);overflow-x:auto;flex:none}
+.tabs button{border:1px solid transparent;border-bottom:0;background:none;padding:6px 12px;border-radius:7px 7px 0 0;cursor:pointer;color:var(--muted);white-space:nowrap}
+.tabs button.on{background:var(--panel);border-color:var(--line);color:var(--text);margin-bottom:-1px;font-weight:600}
+.view{flex:1;min-height:0;display:none;flex-direction:column}
+.view.on{display:flex}
+.crumbs{display:flex;align-items:center;gap:2px;flex-wrap:wrap;padding:7px 10px;border-bottom:1px solid var(--line);flex:none}
+.crumbs button{border:0;background:none;padding:2px 6px;border-radius:5px;cursor:pointer;color:var(--accent)}
+.crumbs button:hover{background:var(--hover)}
+.crumbs span{color:var(--faint)}
+.crumbs .up{border:1px solid var(--line);color:var(--text);margin-right:6px}
+#mapwrap{position:relative;flex:1;min-height:0;margin:8px 10px 0}
+#map{position:absolute;inset:0;width:100%;height:100%;border-radius:6px}
+#hl{position:absolute;pointer-events:none;border:2px solid #fff;box-shadow:0 0 0 1.5px #0b0b0b;border-radius:2px;display:none}
+#msel{position:absolute;pointer-events:none;border:2px dashed #fff;box-shadow:0 0 0 1.5px var(--accent);display:none}
+.piebox{flex:1;min-height:0;display:flex;gap:28px;padding:18px 22px;align-items:flex-start;overflow:auto}
+#piewrap{flex:0 0 auto;width:clamp(200px,36%,380px);aspect-ratio:1}
+#pie{width:100%;height:100%;overflow:visible;display:block}
+#pie path{cursor:pointer;stroke:var(--panel);stroke-width:1.2;stroke-linejoin:round;transition:opacity .12s}
+#pie.hov path{opacity:.3} #pie.hov path.on{opacity:1}
+#pie text{text-anchor:middle;fill:var(--text)} #pie .c1{font-size:17px;font-weight:700} #pie .c2{font-size:9.5px;fill:var(--muted)}
+#pieleg{flex:1;min-width:0}
+.lg{display:grid;grid-template-columns:12px minmax(0,1fr) auto 58px;gap:2px 12px;align-items:center;padding:6px 8px;border-radius:7px;cursor:pointer}
+.lg:hover,.lg.on{background:var(--hover)}
+.lg i{width:12px;height:12px;border-radius:3px}
+.lg .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lg .n small{color:var(--muted);display:block;overflow:hidden;text-overflow:ellipsis}
+.lg .s{font-weight:650;font-variant-numeric:tabular-nums;text-align:right}
+.lg .q{color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+.hint{font-size:12px;padding:6px 8px;margin:6px 0 0}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;padding:8px 12px 10px;color:var(--muted);font-size:12px;flex:none}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+#tip{position:fixed;pointer-events:none;background:var(--tip);color:var(--tipText);padding:7px 10px;border-radius:8px;font-size:12px;max-width:420px;display:none;z-index:9;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+#tip b{display:block;word-break:break-all;margin-bottom:2px}
+#tip .m{opacity:.75}
+.scroll{overflow:auto;flex:1;min-height:0}
+table{border-collapse:collapse;width:100%}
+th{position:sticky;top:0;background:var(--panel2);text-align:left;font-weight:600;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none;z-index:1}
+th.r,td.r{text-align:right}
+th .ar{color:var(--accent)}
+td{padding:4px 8px;border-bottom:1px solid var(--line);white-space:nowrap;font-variant-numeric:tabular-nums}
+tbody tr:hover{background:var(--hover)}
+tbody tr.sel{background:var(--sel)}
+td.name{max-width:420px;overflow:hidden;text-overflow:ellipsis}
+td.name .ic{display:inline-block;vertical-align:-2px}
+td.path{max-width:560px;overflow:hidden;text-overflow:ellipsis}
+td.path small{color:var(--muted);display:block;overflow:hidden;text-overflow:ellipsis}
+.pbar{display:inline-block;width:90px;height:14px;background:var(--pctBg);border-radius:3px;position:relative;vertical-align:-3px;overflow:hidden}
+.pbar i{position:absolute;left:0;top:0;bottom:0;background:var(--pct);border-radius:3px}
+.pbar+span{display:inline-block;min-width:48px;text-align:right}
+td.cl,.cltxt{color:var(--cloud)}
+.muted{color:var(--muted)}
+.note{padding:10px 14px;color:var(--muted);border-bottom:1px solid var(--line);flex:none}
+.note b{color:var(--text)}
+.stack{display:flex;height:22px;border-radius:5px;overflow:hidden;margin:12px 14px 4px;gap:2px}
+.stack i{display:block;min-width:2px}
+.glist{display:flex;flex-wrap:wrap;gap:4px 16px;padding:4px 14px 10px;border-bottom:1px solid var(--line);font-size:12px;flex:none}
+.glist i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.age{padding:16px 18px;display:grid;grid-template-columns:auto 1fr auto auto;gap:10px 14px;align-items:center}
+.age .b{height:22px;background:var(--pctBg);border-radius:4px;overflow:hidden}
+.age .b i{display:block;height:100%;background:var(--pct);border-radius:4px}
+.age .v{font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+.dup{padding:8px 14px;border-bottom:1px solid var(--line)}
+.dup .h{display:flex;gap:12px;align-items:baseline}
+.dup .h b{font-variant-numeric:tabular-nums}
+.dup ul{margin:4px 0 0;padding-left:18px;color:var(--muted)}
+.dup li{word-break:break-all}
+.cp{border:0;background:none;cursor:pointer;color:var(--faint);padding:0 4px;font-size:12px}
+.cp:hover{color:var(--accent)}
+.status{display:flex;gap:16px;align-items:center;padding:5px 12px;background:var(--panel2);border-top:1px solid var(--line);color:var(--muted);font-size:12px;min-width:0}
+.status .p{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
+.status button{border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:2px 8px;cursor:pointer}
+.banner{display:none;gap:10px;align-items:flex-start;padding:8px 16px;background:color-mix(in srgb,var(--cloud) 10%,var(--panel));border-bottom:1px solid var(--line);font-size:12.5px}
+.banner.on{display:flex}
+.banner button{margin-left:auto;border:0;background:none;cursor:pointer;color:var(--muted);font-size:16px;line-height:1}
+.menu{position:fixed;z-index:20;min-width:240px;max-width:340px;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,.22);padding:5px;display:none}
+.menu.on{display:block}
+.menu button{display:block;width:100%;text-align:left;border:0;background:none;padding:6px 10px;border-radius:6px;cursor:pointer}
+.menu button:hover{background:var(--accent);color:#fff}
+.menu button.danger{color:#d03b3b} .menu button.danger:hover{background:#d03b3b;color:#fff}
+.menu hr{border:0;border-top:1px solid var(--line);margin:4px 0}
+.menu .h{padding:4px 10px 6px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.menu .h small{display:block;font-weight:400;color:var(--muted)}
+.menu .off{color:var(--muted);font-size:12px;padding:6px 10px}
+.row .ig{margin-left:6px;color:var(--muted);font-size:12px}
+.row.ignored .nm{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--faint)}
+.row.ignored::before{background:repeating-linear-gradient(135deg,var(--pctBg) 0 4px,transparent 4px 8px);box-shadow:inset 0 0 0 1px var(--line)}
+.rescan{flex:none;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:5px 12px;cursor:pointer}
+.rescan:hover{border-color:var(--accent);color:var(--accent)}
+.places{position:fixed;top:54px;right:16px;width:min(460px,calc(100vw - 32px));max-height:75vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.24);z-index:25;display:none;padding:8px}
+.places.on{display:block}
+.ph{font-weight:650;padding:4px 8px 8px}
+.pl{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:3px 10px;align-items:center;padding:7px 8px;border-radius:8px;cursor:pointer}
+.pl:hover{background:var(--hover)} .pl.cur{background:var(--sel)}
+.pl .pi{font-size:16px;text-align:center}
+.pl .pn{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pl .pn small{font-weight:400;color:var(--muted);margin-left:6px}
+.pl .pv{color:var(--muted);font-size:12px;text-align:right;white-space:nowrap}
+.dbar{grid-column:2/4;height:8px;background:var(--pctBg);border-radius:4px;overflow:hidden}
+.dbar i{display:block;height:100%;background:var(--pct);border-radius:4px}
+.dbar i.hi{background:#d03b3b}
+.psep{border-top:1px solid var(--line);margin:6px 0}
+.pfoot{border-top:1px solid var(--line);margin-top:6px;padding:8px 4px 2px;display:flex;flex-direction:column;gap:8px}
+.pfoot>button,#pform button{border:1px solid var(--line);background:var(--panel2);border-radius:8px;padding:6px 12px;cursor:pointer;text-align:left}
+.pfoot>button:hover,#pform button:hover{border-color:var(--accent);color:var(--accent)}
+#pform{display:flex;gap:6px} #ppath{flex:1;min-width:0;border:1px solid var(--line);border-radius:8px;padding:6px 10px;background:var(--panel);color:var(--text);font:inherit}
+.busy{position:fixed;inset:0;background:rgba(0,0,0,.28);display:none;place-items:center;z-index:30}
+.busy.on{display:grid}
+.busy>div{background:var(--panel);padding:18px 26px;border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.25);text-align:center;line-height:1.6}
+.toast{position:fixed;bottom:40px;left:50%;transform:translateX(-50%);background:var(--tip);color:var(--tipText);padding:6px 14px;border-radius:8px;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+@media (max-width:760px){
+  body{overflow:auto;height:auto;display:block}
+  .main{grid-template-columns:1fr;display:block}
+  .split{display:none}
+  #tree{max-height:45vh}
+  #mapwrap{height:60vh;flex:none}
+  .piebox{flex-direction:column;align-items:stretch}
+  #piewrap{width:100%;max-width:340px;margin:0 auto}
+  .top,.info{padding-left:16px;padding-right:16px}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo"><i></i><i></i><i></i></div>
+  <div class="brand">TreeSize <small>для мака</small></div>
+  <div class="rootpath" id="rootpath"></div>
+  <button class="rescan" id="openBtn" hidden title="Выбрать диск или папку">📂 Открыть…</button>
+  <button class="rescan" id="rescan" hidden title="Заново просканировать папку и обновить отчёт">⟳ Пересканировать</button>
+  <div class="seg" id="mode" title="Размер: сколько файлы весят (так считает квота Dropbox). На диске: сколько реально занято на этом маке.">
+    <button data-m="s" class="on">Размер</button><button data-m="a">На диске</button>
+  </div>
+</header>
+<div class="banner" id="banner"><div id="bannerText"></div><button id="bannerClose" aria-label="Закрыть">×</button></div>
+<div class="info" id="info"></div>
+<div class="main" id="main">
+  <section class="pane"><div id="tree" tabindex="0"></div></section>
+  <div class="split" id="split"></div>
+  <section class="pane">
+    <nav class="tabs" id="tabs">
+      <button data-t="pie" class="on">Диаграмма</button>
+      <button data-t="det">Детали</button>
+      <button data-t="ext">Расширения</button>
+      <button data-t="age">Возраст файлов</button>
+      <button data-t="top">Топ файлов</button>
+      <button data-t="dup">Дубли</button>
+      <button data-t="map">Плитки</button>
+    </nav>
+    <div class="view on" id="v-pie">
+      <div class="crumbs" id="crumbsPie"></div>
+      <div class="piebox"><div id="piewrap"><svg id="pie" viewBox="-106 -106 212 212"></svg></div><div id="pieleg"></div></div>
+    </div>
+    <div class="view" id="v-map">
+      <div class="crumbs" id="crumbs"></div>
+      <div id="mapwrap"><canvas id="map"></canvas><div id="msel"></div><div id="hl"></div></div>
+      <div class="legend" id="legend"></div>
+    </div>
+    <div class="view" id="v-det"><div class="scroll"><table id="det"></table></div></div>
+    <div class="view" id="v-ext"><div class="note">Типы файлов по всему скану.</div><div class="stack" id="stack"></div><div class="glist" id="glist"></div><div class="scroll"><table id="ext"></table></div></div>
+    <div class="view" id="v-age"><div class="note" id="ageNote"></div><div class="scroll"><div class="age" id="age"></div></div></div>
+    <div class="view" id="v-top"><div class="note" id="topNote"></div><div class="scroll"><table id="top"></table></div></div>
+    <div class="view" id="v-dup"><div class="note" id="dupNote"></div><div class="scroll" id="dup"></div></div>
+  </section>
+</div>
+<footer class="status"><span class="p" id="spath"></span><button id="reveal" hidden>Показать в Finder</button><button id="copy">Скопировать путь</button><span id="smeta"></span></footer>
+<div id="tip"></div><div class="toast" id="toast"></div><div class="menu" id="menu"></div><div class="busy" id="busy"><div><b id="busyH">Пересканирую…</b><br><span class="muted" id="busyT">0 с</span><br><small class="muted" id="busyP"></small></div></div>
+<div class="places" id="places">
+  <div class="ph">Что просканировать</div>
+  <div id="plist"></div>
+  <div class="pfoot">
+    <button id="choose">Выбрать папку в Finder…</button>
+    <form id="pform"><input id="ppath" placeholder="или путь: ~/Movies, /Volumes/Диск" autocomplete="off"><button>Сканировать</button></form>
+  </div>
+</div>
+
+<script id="data" type="application/json">/*__DATA__*/{}</script>
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const D = JSON.parse($('#data').textContent);
+const NF = new Intl.NumberFormat('ru-RU');
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const store = { get(k){ try{return localStorage.getItem('ts.'+k)}catch(e){return null} }, set(k,v){ try{localStorage.setItem('ts.'+k,v)}catch(e){} } };
+
+function fmt(b){
+  if (b < 1024) return b + ' Б';
+  const u = ['КБ','МБ','ГБ','ТБ','ПБ']; let i = -1;
+  do { b /= 1024; i++; } while (b >= 1024 && i < u.length - 1);
+  return (b >= 100 ? b.toFixed(0) : b >= 10 ? b.toFixed(1) : b.toFixed(2)).replace('.', ',') + ' ' + u[i];
+}
+const pctTxt = x => (x*100 >= 10 ? (x*100).toFixed(0) : (x*100).toFixed(1)).replace('.', ',') + ' %';
+const dateTxt = m => m ? new Date(m*1000).toLocaleDateString('ru-RU') : '—';
+function plural(n, a, b, c){ const m10 = n%10, m100 = n%100; return NF.format(n) + ' ' + (m10===1&&m100!==11 ? a : m10>=2&&m10<=4&&(m100<12||m100>14) ? b : c); }
+
+/* ---- типы файлов (цвета — категориальная палитра, синий оставлен папкам) ---- */
+const GROUPS = [
+  ['video','Видео','#eb6834','mp4 mov avi mkv m4v wmv webm mts m2ts 3gp flv mpg mpeg vob braw r3d mxf prores'],
+  ['photo','Фото и графика','#eda100','jpg jpeg png heic heif gif bmp tif tiff webp raw cr2 cr3 nef arw dng orf rw2 raf psd psb ai eps svg sketch fig xcf indd'],
+  ['audio','Аудио','#e87ba4','mp3 wav m4a aac flac ogg aiff aif wma opus amr caf'],
+  ['doc','Документы','#1baf7a','pdf doc docx xls xlsx ppt pptx key pages numbers txt md rtf odt ods odp csv epub djvu fb2 mobi'],
+  ['arch','Архивы и образы','#4a3aa7','zip rar 7z tar gz tgz bz2 xz dmg iso pkg img sparseimage sparsebundle vmdk vdi qcow2 bak'],
+  ['code','Код и данные','#008300','js ts json py html css sql db sqlite sqlite3 log xml yml yaml go rs java c cpp h php rb sh ipynb parquet pkl npy pt safetensors gguf bin dat'],
+  ['app','Программы','#e34948','app exe msi dll dylib so apk ipa jar deb rpm'],
+  ['other','Прочее','#8d96a3',''],
+];
+const EXT2G = {}; GROUPS.forEach((g, i) => g[3].split(' ').forEach(e => e && (EXT2G[e] = i)));
+const extOf = name => { const d = name.lastIndexOf('.'); return d > 0 && d < name.length-1 ? name.slice(d+1).toLowerCase() : ''; };
+const groupOf = ext => EXT2G[ext] ?? GROUPS.length - 1;
+
+const ROOT_NAME = D.root === '/System/Volumes/Data' ? 'Macintosh HD' : D.root.split('/').filter(Boolean).pop() || '/';
+/* ---- дерево данных ---- */
+const aggName = n => '[' + [n.f && plural(n.f,'файл','файла','файлов'), n.d && plural(n.d,'папка','папки','папок')].filter(Boolean).join(' и ') + ' помельче]';
+let uid = 0;
+const NODES = [];
+function build(a, p){
+  const n = {id: uid++, t: a[0], name: a[1], s: a[2], a: a[3], c: a[4], f: a[5], d: a[6], m: a[7], p, k: null, open: false};
+  NODES[n.id] = n;
+  if (n.t === 2) n.name = aggName(n);
+  if (n.t === 1) n.g = groupOf(extOf(n.name));
+  const x = Array.isArray(a[8]) ? 0 : a[8], kidsArr = Array.isArray(a[8]) ? a[8] : a[9];
+  n.si = x === -1; n.x = n.si ? n.s : (x || 0);          // «не синхронизируется»: байт; si — помечена сама
+  if (kidsArr) n.k = kidsArr.map(x => build(x, n));
+  return n;
+}
+const ROOT = build(D.tree, null);
+ROOT.name = D.root; ROOT.open = true;
+
+// Dropbox меряем «Размером» (так считает квота), диски и обычные папки — «На диске»:
+// у разреженных файлов вроде Docker.raw размер в разы больше занятого места
+const MODE_KEY = 'mode.' + (/CloudStorage\/Dropbox/.test(D.root) ? 'dbx' : 'disk');
+let MODE = store.get(MODE_KEY) || (MODE_KEY === 'mode.dbx' ? 's' : 'a');
+const V = n => MODE === 's' ? n.s : n.a;
+const sortCache = new Map();
+function kids(n){
+  if (!n.k) return [];
+  const key = n.id + MODE;
+  let r = sortCache.get(key);
+  if (!r) { r = n.k.filter(c => c.t !== 2 || c.f || c.d).sort((x, y) => V(y) - V(x)); sortCache.set(key, r); }
+  return r;
+}
+function pathOf(n){
+  if (!n.p) return D.root;
+  const pp = pathOf(n.p);
+  return (pp.endsWith('/') ? pp : pp + '/') + (n.t === 2 ? '…' : n.name);
+}
+const dirOf = n => n.t === 0 ? n : n.p;
+
+let SEL = ROOT;          // выделено в дереве; правая панель показывает dirOf(SEL)
+let MSEL = null;         // выделено на диаграмме / в таблице
+let TAB = store.get('tab') || 'pie';
+
+/* ---- шапка и инфо ---- */
+$('#rootpath').textContent = D.root;
+const API = D.api || null;
+const IS_DBX = /CloudStorage\/Dropbox/.test(D.root);
+document.title = 'TreeSize — ' + ROOT_NAME;
+$('#smeta').textContent = `Скан ${D.scanned} · ${D.took} с` + (D.errors ? ` · нет доступа: ${NF.format(D.errors)}` : '');
+if (IS_DBX && store.get('banner') !== 'off') {
+  $('#bannerText').innerHTML = '☁️ <b>Квоту Dropbox считают по «Размеру»</b>: файлы «только онлайн» на маке не занимают места, но в тариф входят. Фиолетовым — сколько лежит только в облаке. Папки с пометкой «⊘ не синхр.» лежат только на этом маке и в квоту не входят. Общие папки считаются в квоту каждого участника. ' +
+    (API ? '<b>Правый клик</b> по папке или файлу — показать в Finder, не синхронизировать, в корзину.' : 'Чтобы по правому клику удалять и исключать из синхронизации, запускайте отчёт через <b>TreeSize.command</b>.');
+  $('#banner').classList.add('on');
+}
+if (D.stuck && D.stuck.length){
+  const warn = document.createElement('div'); warn.className = 'banner on';
+  warn.innerHTML = `<div>⚠️ <b>${plural(D.stuck.length,'папку','папки','папок')} прочитать не удалось</b>: облако не ответило за отведённое время, их размер не учтён. ` +
+    D.stuck.slice(0, 5).map(p => `<code>${esc(p.slice(D.root.length) || '/')}</code>`).join(', ') + (D.stuck.length > 5 ? ' и другие' : '') + '</div>';
+  $('#banner').after(warn);
+}
+$('#bannerClose').onclick = () => { $('#banner').classList.remove('on'); store.set('banner','off'); };
+
+function renderInfo(){
+  const n = SEL;
+  const items = [
+    ['', `<span class="nm" title="${esc(pathOf(n))}">${esc(n.p ? n.name : ROOT_NAME || '/')}</span>`],
+    ['Размер', fmt(n.s)], ['На диске', fmt(n.a)],
+    ['Только в облаке', fmt(n.c), 'cl'],
+    ...(IS_DBX && n.x ? [['Не синхронизируется', fmt(n.x)], ['В квоте Dropbox', fmt(n.s - n.x)]] : []),
+    ['Файлов', NF.format(n.f)], ['Папок', NF.format(n.d)],
+    ['Последнее изменение', dateTxt(n.m)],
+  ];
+  if (n.p) items.splice(3, 0, ['Доля в родителе', pctTxt(V(n.p) ? V(n) / V(n.p) : 0)]);
+  $('#info').innerHTML = items.map(([k, v, c]) => k ? `<span><span class="k">${k}</span><span class="v ${c||''}">${v}</span></span>` : v).join('');
+  $('#spath').textContent = pathOf(MSEL || n);
+}
+
+/* ---- дерево слева ---- */
+const treeEl = $('#tree');
+let ROWS = [];
+function flatten(){
+  const rows = [];
+  (function walk(n, dep){ rows.push([n, dep]); if (n.open) for (const c of kids(n)) walk(c, dep + 1); })(ROOT, 0);
+  return rows;
+}
+function rowHtml(n, dep, i){
+  const par = n.p ? V(n.p) : V(n);
+  const p = par ? V(n) / par : 1;
+  const cls = (n.t === 1 ? ' file' : n.t === 2 ? ' agg' : '') + (n.si ? ' ignored' : '');
+  const tw = n.k ? (n.open ? '▾' : '▸') : '';
+  const ic = n.t === 0 ? '<span class="ic"></span>' : n.t === 1 ? `<span class="ic f" style="--c:${GROUPS[n.g][2]}"></span>` : '<span class="ic a"></span>';
+  const ig = n.si ? '<span class="ig" title="Не синхронизируется с Dropbox — в квоту не входит">⊘ не синхр.</span>' : '';
+  const cl = n.c && MODE === 's' && n.c >= n.s * 0.5 && n.s > 0 ? `<span class="cl" title="Только в облаке: ${fmt(n.c)}">☁</span>` : '';
+  return `<div class="row${cls}${n === SEL ? ' sel' : ''}" data-i="${i}" style="--ind:${dep*16+4}px;--p:${p.toFixed(4)}"><span class="tw">${tw}</span>${ic}<span class="sz">${fmt(V(n))}</span><span class="nm">${esc(n.p ? n.name : D.root)}</span>${ig}${cl}<span class="pc">${n.p ? pctTxt(p) : ''}</span></div>`;
+}
+function renderTree(scroll){
+  ROWS = flatten();
+  treeEl.innerHTML = ROWS.map(([n, d], i) => rowHtml(n, d, i)).join('');
+  if (scroll) { const el = treeEl.querySelector('.row.sel'); el && el.scrollIntoView({block: 'nearest'}); }
+}
+treeEl.addEventListener('click', e => {
+  const r = e.target.closest('.row'); if (!r) return;
+  const n = ROWS[+r.dataset.i][0];
+  if (e.target.classList.contains('tw')) { n.open = !n.open; renderTree(); return; }
+  select(n);
+});
+treeEl.addEventListener('dblclick', e => {
+  const r = e.target.closest('.row'); if (!r || e.target.classList.contains('tw')) return;
+  const n = ROWS[+r.dataset.i][0];
+  if (n.k) { n.open = !n.open; renderTree(); }
+});
+treeEl.addEventListener('keydown', e => {
+  const i = ROWS.findIndex(r => r[0] === SEL);
+  if (e.key === 'ArrowDown' && i < ROWS.length - 1) select(ROWS[i+1][0]);
+  else if (e.key === 'ArrowUp' && i > 0) select(ROWS[i-1][0]);
+  else if (e.key === 'ArrowRight') { if (SEL.k && !SEL.open) { SEL.open = true; renderTree(); } else if (SEL.k) select(kids(SEL)[0]); }
+  else if (e.key === 'ArrowLeft') { if (SEL.open && SEL.k) { SEL.open = false; renderTree(); } else if (SEL.p) select(SEL.p); }
+  else return;
+  e.preventDefault();
+});
+
+function select(n, opts = {}){
+  SEL = n; MSEL = null;
+  let redraw = false;
+  for (let a = n.p; a; a = a.p) if (!a.open){ a.open = true; redraw = true; }
+  if (opts.expand && n.k && !n.open){ n.open = true; redraw = true; }
+  const i = ROWS.findIndex(r => r[0] === n);
+  if (redraw || i < 0) renderTree(true);
+  else {  // только сдвинуть подсветку: перерисовка съела бы второй клик двойного клика
+    treeEl.querySelectorAll('.row.sel').forEach(r => r.classList.remove('sel'));
+    const el = treeEl.querySelector(`.row[data-i="${i}"]`);
+    if (el){ el.classList.add('sel'); el.scrollIntoView({block: 'nearest'}); }
+  }
+  renderInfo(); renderRight();
+}
+
+/* ---- вкладки ---- */
+document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => { TAB = b.dataset.t; store.set('tab', TAB); renderRight(); });
+function renderRight(){
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === TAB));
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('on', v.id === 'v-' + TAB));
+  ({pie: renderPie, map: renderMap, det: renderDetails, ext: renderExt, age: renderAge, top: renderTop, dup: renderDup})[TAB]();
+}
+
+/* ---- диаграмма (treemap) ---- */
+const cv = $('#map'), ctx = cv.getContext('2d'), wrap = $('#mapwrap'), tip = $('#tip'), hl = $('#hl'), msel = $('#msel');
+const dark = matchMedia('(prefers-color-scheme: dark)');
+let RECTS = [];
+const HEAD = 17, PAD = 3;
+
+function dirFill(depth){
+  return dark.matches
+    ? `hsl(213 ${Math.max(62 - depth*4, 30)}% ${Math.min(24 + depth*6, 50)}%)`
+    : `hsl(213 ${Math.max(66 - depth*4, 34)}% ${Math.min(40 + depth*8, 84)}%)`;
+}
+const dirText = depth => dark.matches ? '#e6eaf0' : (40 + depth*8 < 62 ? '#ffffff' : '#0d2a4d');
+
+function squarify(items, x, y, w, h){
+  const out = []; let total = 0;
+  for (const it of items) total += it.v;
+  let i = 0;
+  while (i < items.length && w > 0.5 && h > 0.5 && total > 0){
+    const short = Math.min(w, h), scale = w * h / total, amax = items[i].v * scale;
+    let j = i, sum = 0, best = Infinity;
+    while (j < items.length){
+      const a = items[j].v * scale, s2 = sum + a;
+      const worst = Math.max(short*short*amax/(s2*s2), (s2*s2)/(short*short*a));
+      if (worst > best) break;
+      best = worst; sum = s2; j++;
+    }
+    if (w >= h){ const rw = sum / h; let yy = y; for (let k = i; k < j; k++){ const ih = items[k].v*scale/rw; out.push({n: items[k].n, x, y: yy, w: rw, h: ih}); yy += ih; } x += rw; w -= rw; }
+    else { const rh = sum / w; let xx = x; for (let k = i; k < j; k++){ const iw = items[k].v*scale/rh; out.push({n: items[k].n, x: xx, y, w: iw, h: rh}); xx += iw; } y += rh; h -= rh; }
+    for (let k = i; k < j; k++) total -= items[k].v;
+    i = j;
+  }
+  return out;
+}
+function clipText(t, maxW){
+  if (ctx.measureText(t).width <= maxW) return t;
+  let lo = 0, hi = t.length;
+  while (lo < hi){ const mid = (lo + hi + 1) >> 1; if (ctx.measureText(t.slice(0, mid) + '…').width <= maxW) lo = mid; else hi = mid - 1; }
+  return lo > 1 ? t.slice(0, lo) + '…' : '';
+}
+function shade(hex, k){ // k>0 светлее, k<0 темнее
+  const n = parseInt(hex.slice(1), 16); let r = n >> 16, g = (n >> 8) & 255, b = n & 255;
+  const t = k > 0 ? 255 : 0, a = Math.abs(k);
+  r = Math.round(r + (t - r) * a); g = Math.round(g + (t - g) * a); b = Math.round(b + (t - b) * a);
+  return `rgb(${r},${g},${b})`;
+}
+function tile(n, x, y, w, h, depth){
+  let base;
+  if (n.t === 1) base = GROUPS[n.g][2];
+  else if (n.t === 2) base = dark.matches ? '#3a404a' : '#c9d0da';
+  else base = null;
+  const X = Math.round(x), Y = Math.round(y), W = Math.max(1, Math.round(x + w) - X - 1), H = Math.max(1, Math.round(y + h) - Y - 1);
+  if (!base){ ctx.fillStyle = dirFill(depth); ctx.fillRect(X, Y, W, H); }
+  else if (W > 6 && H > 6){
+    const g = ctx.createLinearGradient(X, Y, X + W, Y + H);
+    g.addColorStop(0, shade(base, .28)); g.addColorStop(1, shade(base, -.18));
+    ctx.fillStyle = g; ctx.fillRect(X, Y, W, H);
+  } else { ctx.fillStyle = base; ctx.fillRect(X, Y, W, H); }
+  if (W > 34 && H > 14){
+    ctx.fillStyle = n.t === 2 ? (dark.matches ? '#b8c0cc' : '#4a5361') : (n.t === 0 ? dirText(depth) : '#ffffff');
+    ctx.font = '11px -apple-system,system-ui,sans-serif';
+    const t1 = clipText(n.name, W - 8); if (t1) ctx.fillText(t1, X + 4, Y + 12);
+    if (H > 28){ ctx.globalAlpha = .8; const t2 = clipText(fmt(V(n)), W - 8); if (t2) ctx.fillText(t2, X + 4, Y + 25); ctx.globalAlpha = 1; }
+  }
+}
+function drawNode(n, x, y, w, h, depth){
+  if (w < 1 || h < 1) return;
+  RECTS.push({n, x, y, w, h});
+  const items = n.t === 0 && n.k ? kids(n).filter(c => V(c) > 0) : null;
+  if (items && items.length && w >= 24 && h >= HEAD + 10){
+    const X = Math.round(x), Y = Math.round(y), W = Math.round(x + w) - X - 1, H = Math.round(y + h) - Y - 1;
+    ctx.fillStyle = dirFill(depth); ctx.fillRect(X, Y, W, H);
+    ctx.fillStyle = dirText(depth); ctx.font = '600 11px -apple-system,system-ui,sans-serif';
+    const t = clipText(`${n.p ? n.name : ROOT_NAME} · ${fmt(V(n))}`, W - 8);
+    if (t) ctx.fillText(t, X + 4, Y + 12);
+    for (const r of squarify(items.map(c => ({v: V(c), n: c})), x + PAD, y + HEAD, w - 2*PAD - 1, h - HEAD - PAD - 1))
+      drawNode(r.n, r.x, r.y, r.w, r.h, depth + 1);
+  } else tile(n, x, y, w, h, depth);
+}
+function renderMap(){
+  const view = dirOf(SEL);
+  renderCrumbs(view);
+  const r = wrap.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  if (r.width < 2 || r.height < 2) return;
+  cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--gap'); ctx.fillRect(0, 0, r.width, r.height);
+  RECTS = [];
+  if (V(view) > 0) drawNode(view, 0, 0, r.width, r.height, 0);
+  else { ctx.fillStyle = '#888'; ctx.font = '13px system-ui'; ctx.fillText('Папка пустая', 16, 24); }
+  placeBox(msel, MSEL && RECTS.find(q => q.n === MSEL));
+  hl.style.display = 'none';
+}
+function renderCrumbs(view, sel = '#crumbs'){
+  const chain = []; for (let a = view; a; a = a.p) chain.unshift(a);
+  $(sel).innerHTML = `<button class="up" data-id="${view.p ? view.p.id : ''}" ${view.p ? '' : 'disabled'}>↑ Вверх</button>` +
+    chain.map((a, i) => (i ? '<span>›</span>' : '') + `<button data-id="${a.id}">${esc(a.p ? a.name : D.root)}</button>`).join('');
+}
+document.querySelectorAll('.crumbs').forEach(c => c.addEventListener('click', e => { const b = e.target.closest('button'); if (b && b.dataset.id !== '') select(NODES[+b.dataset.id]); }));
+function placeBox(el, q){
+  if (!q){ el.style.display = 'none'; return; }
+  Object.assign(el.style, {display: 'block', left: q.x + 'px', top: q.y + 'px', width: Math.max(q.w - 1, 2) + 'px', height: Math.max(q.h - 1, 2) + 'px'});
+}
+function hit(e){
+  const r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+  for (let i = RECTS.length - 1; i >= 0; i--){ const q = RECTS[i]; if (x >= q.x && x < q.x + q.w && y >= q.y && y < q.y + q.h) return q; }
+  return null;
+}
+cv.addEventListener('mousemove', e => {
+  const q = hit(e);
+  if (!q){ tip.style.display = 'none'; hl.style.display = 'none'; return; }
+  placeBox(hl, q);
+  const n = q.n, view = dirOf(SEL);
+  const rel = pathOf(n).slice(pathOf(view).length).replace(/^\//, '') || pathOf(n);
+  tip.innerHTML = `<b>${esc(rel)}</b>${fmt(V(n))} · ${pctTxt(V(view) ? V(n)/V(view) : 0)} от показанного` +
+    (n.t !== 1 ? `<br><span class="m">${plural(n.f,'файл','файла','файлов')}${n.d ? ', ' + plural(n.d,'папка','папки','папок') : ''}</span>` : `<br><span class="m">${GROUPS[n.g][1]}</span>`) +
+    (n.c ? `<br><span class="m">только в облаке: ${fmt(n.c)}</span>` : '') +
+    `<br><span class="m">изменён ${dateTxt(n.m)}</span>` +
+    `<br><span class="m">клик — выделить, двойной клик — открыть</span>`;
+  tip.style.display = 'block';
+  const tw = tip.offsetWidth, th = tip.offsetHeight;
+  tip.style.left = Math.min(e.clientX + 14, innerWidth - tw - 8) + 'px';
+  tip.style.top = (e.clientY + 16 + th > innerHeight ? e.clientY - th - 10 : e.clientY + 16) + 'px';
+});
+cv.addEventListener('mouseleave', () => { tip.style.display = 'none'; hl.style.display = 'none'; });
+cv.addEventListener('click', e => {
+  const q = hit(e); if (!q) return;
+  MSEL = q.n; placeBox(msel, q); $('#spath').textContent = pathOf(q.n);
+});
+cv.addEventListener('dblclick', e => {
+  const q = hit(e); if (!q) return;
+  // открыть папку первого уровня под текущей, по пути к кликнутому элементу
+  const view = dirOf(SEL); let n = q.n;
+  while (n.p && n.p !== view) n = n.p;
+  if (n.t === 0 && n !== view) select(n); else if (n === view && view.p) select(view.p);
+});
+$('#legend').innerHTML = `<span><i style="background:${dirFill(0)}"></i>папки (темнее — выше уровнем)</span>` +
+  GROUPS.map(g => `<span><i style="background:${g[2]}"></i>${g[1]}</span>`).join('') +
+  `<span><i style="background:${dark.matches ? '#3a404a' : '#c9d0da'}"></i>мелочь</span>`;
+let rz = 0;
+new ResizeObserver(() => { cancelAnimationFrame(rz); rz = requestAnimationFrame(() => TAB === 'map' && renderMap()); }).observe(wrap);
+dark.addEventListener('change', () => renderRight());
+
+/* ---- круговая диаграмма ---- */
+const PIE = {light: ['#2a78d6','#eb6834','#1baf7a','#eda100','#e87ba4','#008300','#4a3aa7','#e34948'],
+             dark:  ['#3987e5','#d95926','#199e70','#c98500','#d55181','#008300','#9085e9','#e66767']};
+let SLICES = [];
+function arc(R, r, a0, a1){
+  const big = a1 - a0 > Math.PI ? 1 : 0, c = Math.cos, s = Math.sin, f = v => v.toFixed(3);
+  return `M${f(R*c(a0))} ${f(R*s(a0))}A${R} ${R} 0 ${big} 1 ${f(R*c(a1))} ${f(R*s(a1))}L${f(r*c(a1))} ${f(r*s(a1))}A${r} ${r} 0 ${big} 0 ${f(r*c(a0))} ${f(r*s(a0))}Z`;
+}
+function renderPie(){
+  const view = dirOf(SEL), tot = V(view);
+  renderCrumbs(view, '#crumbsPie');
+  const cols = dark.matches ? PIE.dark : PIE.light, grey = dark.matches ? '#5d646f' : '#b9c1cc';
+  SLICES = []; const rest = [];
+  for (const c of kids(view)){
+    if (V(c) <= 0) continue;
+    if (SLICES.length < 8 && c.t !== 2 && V(c) / tot >= 0.01) SLICES.push({n: c, v: V(c), col: cols[SLICES.length]});
+    else rest.push(c);
+  }
+  if (rest.length) SLICES.push({n: null, v: rest.reduce((s, c) => s + V(c), 0), col: grey, rest});
+  const R = 100, r = 60;
+  let a = -Math.PI / 2, paths = '';
+  SLICES.forEach((sl, i) => {
+    const da = tot ? sl.v / tot * Math.PI * 2 : 0;
+    const d = da > Math.PI * 2 - 1e-4 ? arc(R, r, -Math.PI/2, Math.PI*1.5 - 1e-4) : arc(R, r, a, a + da);
+    sl.mid = a + da / 2;
+    paths += `<path d="${d}" fill="${sl.col}" data-i="${i}"/>`;
+    a += da;
+  });
+  const title = view.p ? view.name : ROOT_NAME || '/';
+  $('#pie').innerHTML = tot ? paths + `<text class="c1" y="2">${fmt(tot)}</text><text class="c2" y="20">${esc(title.length > 22 ? title.slice(0, 21) + '…' : title)}</text>`
+                            : '<text class="c2" y="4">Папка пустая</text>';
+  const sub = sl => sl.n ? (sl.n.t === 0 ? plural(sl.n.f,'файл','файла','файлов') + (sl.n.d ? ', ' + plural(sl.n.d,'папка','папки','папок') : '') : GROUPS[sl.n.g][1])
+                         : plural(sl.rest.length,'элемент','элемента','элементов') + ' помельче';
+  $('#pieleg').innerHTML = SLICES.map((sl, i) => `<div class="lg" data-i="${i}"><i style="background:${sl.col}"></i><span class="n">${sl.n ? (sl.n.t === 0 ? '<b>' + esc(sl.n.name) + '</b>' : esc(sl.n.name)) : 'Прочее'}<small>${sub(sl)}${sl.n && sl.n.c ? ` · <span class="cltxt">☁ ${fmt(sl.n.c)}</span>` : ''}</small></span><span class="s">${fmt(sl.v)}</span><span class="q">${pctTxt(tot ? sl.v / tot : 0)}</span></div>`).join('') +
+    (SLICES.length ? '<p class="muted hint">Клик по сектору или строке открывает папку. Дерево слева — то же самое, полосками.</p>' : '');
+}
+function pieHover(i, e){
+  const svg = $('#pie');
+  svg.classList.toggle('hov', i != null);
+  svg.querySelectorAll('path').forEach(p => p.classList.toggle('on', +p.dataset.i === i));
+  document.querySelectorAll('#pieleg .lg').forEach(l => l.classList.toggle('on', +l.dataset.i === i));
+  if (i == null || !e){ tip.style.display = 'none'; return; }
+  const sl = SLICES[i], tot = V(dirOf(SEL));
+  tip.innerHTML = `<b>${esc(sl.n ? sl.n.name : 'Прочее')}</b>${fmt(sl.v)} · ${pctTxt(tot ? sl.v / tot : 0)}` +
+    (sl.rest ? `<br><span class="m">${sl.rest.slice(0, 6).map(c => esc(c.name) + ' — ' + fmt(V(c))).join('<br>')}${sl.rest.length > 6 ? '<br>…' : ''}</span>` : '') +
+    (sl.n && sl.n.c ? `<br><span class="m">только в облаке: ${fmt(sl.n.c)}</span>` : '') +
+    (sl.n ? `<br><span class="m">изменено ${dateTxt(sl.n.m)}</span>` : '');
+  tip.style.display = 'block';
+  const tw = tip.offsetWidth, th = tip.offsetHeight;
+  tip.style.left = Math.min(e.clientX + 14, innerWidth - tw - 8) + 'px';
+  tip.style.top = (e.clientY + 16 + th > innerHeight ? e.clientY - th - 10 : e.clientY + 16) + 'px';
+}
+function pieClick(i){
+  const sl = SLICES[i]; if (!sl) return;
+  if (!sl.n){ TAB = 'det'; renderRight(); return; }
+  if (sl.n.t === 0) select(sl.n);
+  else { MSEL = sl.n; $('#spath').textContent = pathOf(sl.n); }
+}
+for (const el of [$('#pie'), $('#pieleg')]){
+  el.addEventListener('mousemove', e => { const t = e.target.closest('[data-i]'); pieHover(t ? +t.dataset.i : null, e); });
+  el.addEventListener('mouseleave', () => pieHover(null));
+  el.addEventListener('click', e => { const t = e.target.closest('[data-i]'); if (t){ pieHover(null); pieClick(+t.dataset.i); } });
+}
+
+/* ---- детали ---- */
+let DSORT = {k: 'v', dir: -1};
+const DCOLS = [
+  ['name','Имя',''], ['s','Размер','r'], ['a','На диске','r'], ['c','Только в облаке','r'],
+  ['f','Файлов','r'], ['d','Папок','r'], ['p','% от родителя',''], ['m','Изменено','r'],
+];
+function renderDetails(){
+  const view = dirOf(SEL), tot = V(view);
+  let list = kids(view).slice();
+  const k = DSORT.k;
+  if (k !== 'v') list.sort((x, y) => { const a = k === 'name' ? x.name.toLowerCase() : k === 'p' ? V(x) : x[k], b = k === 'name' ? y.name.toLowerCase() : k === 'p' ? V(y) : y[k]; return (a < b ? -1 : a > b ? 1 : 0) * DSORT.dir; });
+  const head = '<thead><tr>' + DCOLS.map(([key, label, c]) => `<th class="${c}" data-k="${key}">${label}${DSORT.k === key ? ` <span class="ar">${DSORT.dir < 0 ? '↓' : '↑'}</span>` : ''}</th>`).join('') + '</tr></thead>';
+  const body = list.map(n => {
+    const p = tot ? V(n) / tot : 0;
+    const ic = n.t === 0 ? '<span class="ic"></span>' : n.t === 1 ? `<span class="ic f" style="--c:${GROUPS[n.g][2]}"></span>` : '<span class="ic a"></span>';
+    return `<tr data-id="${n.id}" class="${n === MSEL ? 'sel' : ''}"><td class="name">${ic}${n.t === 0 ? '<b>' + esc(n.name) + '</b>' : esc(n.name)}</td>` +
+      `<td class="r">${fmt(n.s)}</td><td class="r">${fmt(n.a)}</td><td class="r cl">${n.c ? fmt(n.c) : ''}</td>` +
+      `<td class="r">${NF.format(n.f)}</td><td class="r">${n.t === 1 ? '' : NF.format(n.d)}</td>` +
+      `<td><span class="pbar"><i style="width:${(p*100).toFixed(2)}%"></i></span><span>${pctTxt(p)}</span></td><td class="r">${dateTxt(n.m)}</td></tr>`;
+  }).join('');
+  $('#det').innerHTML = head + '<tbody>' + (body || '<tr><td class="muted" colspan="8">Пусто</td></tr>') + '</tbody>';
+}
+$('#det').addEventListener('click', e => {
+  const th = e.target.closest('th');
+  if (th){ const k = th.dataset.k; DSORT = DSORT.k === k ? {k, dir: -DSORT.dir} : {k, dir: k === 'name' ? 1 : -1}; if (k === 's' && MODE === 's' || k === 'a' && MODE === 'a') DSORT.k = DSORT.dir < 0 ? 'v' : k; renderDetails(); return; }
+  const tr = e.target.closest('tr[data-id]'); if (!tr) return;
+  MSEL = NODES[+tr.dataset.id]; $('#spath').textContent = pathOf(MSEL);
+  $('#det').querySelectorAll('tr.sel').forEach(x => x.classList.remove('sel')); tr.classList.add('sel');
+});
+$('#det').addEventListener('dblclick', e => { const tr = e.target.closest('tr[data-id]'); if (!tr) return; const n = NODES[+tr.dataset.id]; if (n.t === 0) select(n); });
+
+/* ---- расширения ---- */
+function renderExt(){
+  const total = D.ext.reduce((s, e) => s + e[1], 0) || 1;
+  const gs = GROUPS.map(() => [0, 0]);
+  for (const [ext, s, c] of D.ext){ const g = gs[groupOf(ext)]; g[0] += s; g[1] += c; }
+  const order = GROUPS.map((g, i) => i).sort((a, b) => gs[b][0] - gs[a][0]);
+  $('#stack').innerHTML = order.filter(i => gs[i][0] > 0).map(i => `<i style="flex:${gs[i][0]} 1 0;background:${GROUPS[i][2]}" title="${GROUPS[i][1]}: ${fmt(gs[i][0])}"></i>`).join('');
+  $('#glist').innerHTML = order.filter(i => gs[i][0] > 0).map(i => `<span><i style="background:${GROUPS[i][2]}"></i>${GROUPS[i][1]} <b>${fmt(gs[i][0])}</b> <span class="muted">${pctTxt(gs[i][0]/total)}</span></span>`).join('');
+  $('#ext').innerHTML = '<thead><tr><th>Расширение</th><th>Тип</th><th class="r">Размер</th><th>Доля</th><th class="r">Файлов</th><th class="r">Только в облаке</th></tr></thead><tbody>' +
+    D.ext.slice(0, 300).map(([ext, s, c, cl]) => { const g = GROUPS[groupOf(ext)]; const p = s / total;
+      return `<tr><td><span class="ic f" style="--c:${g[2]};display:inline-block;vertical-align:-2px"></span><b>${ext ? '.' + esc(ext) : '(без расширения)'}</b></td><td class="muted">${g[1]}</td><td class="r">${fmt(s)}</td><td><span class="pbar"><i style="width:${(p*100).toFixed(2)}%"></i></span><span>${pctTxt(p)}</span></td><td class="r">${NF.format(c)}</td><td class="r cl">${cl ? fmt(cl) : ''}</td></tr>`; }).join('') + '</tbody>';
+}
+
+/* ---- возраст ---- */
+function renderAge(){
+  const total = D.age.reduce((s, a) => s + a[1], 0) || 1, max = Math.max(...D.age.map(a => a[1]), 1);
+  $('#ageNote').innerHTML = 'Распределение по дате последнего изменения файла, по всему скану. Старое и большое — первые кандидаты в архив.';
+  $('#age').innerHTML = D.age.map(([label, s, c]) => `<span>${label}</span><div class="b"><i style="width:${(s/max*100).toFixed(2)}%"></i></div><span class="v">${fmt(s)}</span><span class="muted">${pctTxt(s/total)} · ${plural(c,'файл','файла','файлов')}</span>`).join('');
+}
+
+/* ---- топ файлов ---- */
+function inView(path){ const vp = pathOf(dirOf(SEL)); return !dirOf(SEL).p || path.startsWith(vp.endsWith('/') ? vp : vp + '/'); }
+function renderTop(){
+  const view = dirOf(SEL), vp = pathOf(view);
+  const list = D.top.filter(t => inView(t[1]));
+  $('#topNote').innerHTML = view.p
+    ? `<b>${NF.format(list.length)}</b> из ${NF.format(D.top.length)} крупнейших файлов скана лежат в «${esc(view.name)}».`
+    : `${NF.format(D.top.length)} крупнейших файлов. Выберите папку в дереве, чтобы оставить только её файлы.`;
+  const cut = vp.endsWith('/') ? vp.length : vp.length + 1;
+  $('#top').innerHTML = '<thead><tr><th class="r">#</th><th>Файл</th><th class="r">Размер</th><th class="r">На диске</th><th class="r">Изменён</th><th></th></tr></thead><tbody>' +
+    list.map(([s, p, a, c, m], i) => { const slash = p.lastIndexOf('/'); const dir = p.slice(cut, slash) || '.';
+      return `<tr data-p="${esc(p)}"><td class="r muted">${i+1}</td><td class="path"><b>${esc(p.slice(slash+1))}</b>${c ? ' <span class="cltxt" title="только в облаке">☁</span>' : ''}<small>${esc(dir)}</small></td><td class="r"><b>${fmt(s)}</b></td><td class="r">${fmt(a)}</td><td class="r">${dateTxt(m)}</td><td><button class="cp" data-p="${esc(p)}" title="Скопировать путь">⧉</button></td></tr>`; }).join('') + '</tbody>';
+}
+
+/* ---- дубли ---- */
+function renderDup(){
+  const groups = D.dups.filter(g => g[1].some(inView));
+  const waste = groups.reduce((s, g) => s + g[0] * (g[1].length - 1), 0);
+  $('#dupNote').innerHTML = `Файлы от ${fmt(D.dupMin)} с одинаковым размером и расширением. Содержимое не сверялось, чтобы не скачивать облачные файлы, поэтому <b>это кандидаты, а не доказанные дубли</b>. ` +
+    `Если все окажутся копиями, освободится до <b>${fmt(waste)}</b> (${NF.format(groups.length)} групп${groups.length < D.dups.length ? `, из ${NF.format(D.dups.length)} по всему скану` : ''}).`;
+  $('#dup').innerHTML = groups.map(([s, ps]) => `<div class="dup"><div class="h"><b>${fmt(s)}</b><span class="muted">× ${ps.length} — лишних ${fmt(s * (ps.length - 1))}</span></div><ul>${ps.map(p => `<li data-p="${esc(p)}">${esc(p)} <button class="cp" data-p="${esc(p)}" title="Скопировать путь">⧉</button></li>`).join('')}</ul></div>`).join('') ||
+    '<div class="note">Кандидатов в дубли не нашлось.</div>';
+}
+
+/* ---- контекстное меню и действия ---- */
+const menu = $('#menu');
+let MENU_ACTIONS = [];
+function findByPath(path){
+  if (path === D.root) return ROOT;
+  const pre = D.root.endsWith('/') ? D.root : D.root + '/';
+  if (!path.startsWith(pre)) return null;
+  let n = ROOT;
+  for (const part of path.slice(pre.length).split('/')){
+    n = (n.k || []).find(c => c.t !== 2 && c.name === part);
+    if (!n) return null;
+  }
+  return n;
+}
+const ignoredAncestor = n => { for (let a = n && n.p; a; a = a.p) if (a.si) return a; return null; };
+const effIgn = n => ignoredAncestor(n) ? n.s : n.x;
+function openMenu(e, node, path){
+  e.preventDefault(); tip.style.display = 'none';
+  if (node && node.t === 2) return;
+  if (!node && path) node = findByPath(path);
+  if (node) path = pathOf(node);
+  if (!path) return;
+  const isRoot = node === ROOT;
+  const name = path.split('/').pop() || path;
+  const items = [];
+  if (API) items.push(['Показать в Finder', () => api('reveal', path)]);
+  items.push(['Скопировать путь', () => copy(path)]);
+  if (API && !isRoot){
+    items.push('-');
+    const anc = node && ignoredAncestor(node);
+    if (IS_DBX && anc) items.push(`Не синхронизируется: исключена папка «${esc(anc.name)}»`);
+    else if (IS_DBX && node && node.si) items.push(['Снова синхронизировать с Dropbox', () => doIgnore(node, path, false)]);
+    else if (IS_DBX) items.push(['Не синхронизировать с Dropbox', () => doIgnore(node, path, true)]);
+    items.push(['Переместить в корзину…', () => doTrash(node, path), 'danger']);
+  }
+  if (!API) items.push('-', 'Удаление и «не синхронизировать» работают, если открыть отчёт через TreeSize.command');
+  MENU_ACTIONS = [];
+  menu.innerHTML = `<div class="h">${esc(name)}<small>${node ? fmt(node.s) + (node.t === 0 ? ' · ' + plural(node.f,'файл','файла','файлов') : '') : ''}</small></div>` +
+    items.map(it => it === '-' ? '<hr>' : typeof it === 'string' ? `<div class="off">${it}</div>` :
+      `<button data-a="${MENU_ACTIONS.push(it[1]) - 1}" class="${it[2] || ''}">${it[0]}</button>`).join('');
+  menu.classList.add('on');
+  const mw = menu.offsetWidth, mh = menu.offsetHeight;
+  menu.style.left = Math.min(e.clientX, innerWidth - mw - 6) + 'px';
+  menu.style.top = Math.min(e.clientY, innerHeight - mh - 6) + 'px';
+}
+const closeMenu = () => menu.classList.remove('on');
+menu.addEventListener('click', e => { const b = e.target.closest('button[data-a]'); if (!b) return; closeMenu(); MENU_ACTIONS[+b.dataset.a](); });
+addEventListener('mousedown', e => { if (!menu.contains(e.target)) closeMenu(); });
+addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
+addEventListener('blur', closeMenu);
+
+// Внутри мак-приложения (WKWebView) действия идут в Swift через мост, в браузере — на локальный сервер
+const BRIDGE = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.treesize;
+async function apiJ(body){
+  if (BRIDGE){
+    const j = await BRIDGE.postMessage(Object.assign({}, body));
+    if (!j || !j.ok) throw new Error((j && j.error) || 'ошибка приложения');
+    return j;
+  }
+  const r = await fetch('/api', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(Object.assign({t: API}, body))});
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || !j.ok) throw new Error(j.error || (r.status === 403 ? 'сервер отчёта не принял запрос — перезапустите TreeSize.command' : 'ошибка ' + r.status));
+  return j;
+}
+async function api(action, path){
+  try {
+    await apiJ({action, path});
+    return true;
+  } catch (err) {
+    alert('Не получилось: ' + (err.message === 'Failed to fetch' ? 'сервер отчёта выключен — запустите TreeSize.command заново' : err.message));
+    return false;
+  }
+}
+function rerenderAll(){ sortCache.clear(); renderTree(); renderInfo(); renderRight(); }
+function trashDelta(node, path){
+  if (node) return {s: node.s, a: node.a, c: node.c, f: node.f, d: node.d + (node.t === 0 ? 1 : 0), eff: effIgn(node)};
+  const t = D.top.find(t => t[1] === path), g = D.dups.find(g => g[1].includes(path));
+  const sz = t ? t[0] : g ? g[0] : 0;
+  return {s: sz, a: t ? t[2] : sz, c: t ? t[3] : 0, f: 1, d: 0, eff: 0};
+}
+function shiftUp(from, dl, sign){
+  for (let a = from; a; a = a.p){
+    a.s -= sign*dl.s; a.a -= sign*dl.a; a.c -= sign*dl.c; a.f -= sign*dl.f; a.d -= sign*dl.d;
+    a.x = a.si ? a.s : a.x - sign*dl.eff;
+    if (a.t === 2) a.name = aggName(a);
+  }
+}
+// убрать из отчёта сразу, до ответа сервера; возвращает функцию отката
+function removeLocal(node, path){
+  const saved = {top: D.top, dups: D.dups, SEL, MSEL}, pre = path + '/';
+  const dl = trashDelta(node, path);            // до чистки списков: размер берётся из топа
+  D.top = D.top.filter(t => t[1] !== path && !t[1].startsWith(pre));
+  D.dups = D.dups.map(g => [g[0], g[1].filter(p => p !== path && !p.startsWith(pre))]).filter(g => g[1].length > 1);
+  let start = null, parent = null, idx = -1;
+  if (node && node.p){
+    parent = node.p; idx = parent.k.indexOf(node);
+    parent.k.splice(idx, 1); start = parent;
+    for (let a = SEL; a; a = a.p) if (a === node){ SEL = parent; break; }
+  } else if (!node){
+    // файла нет в дереве поимённо — он внутри «[N помельче]» ближайшей сохранённой папки
+    let dir = ROOT; const pre0 = D.root.endsWith('/') ? D.root : D.root + '/';
+    for (const part of path.slice(pre0.length).split('/').slice(0, -1)){
+      const c = (dir.k || []).find(c => c.t === 0 && c.name === part); if (!c) break; dir = c;
+    }
+    start = (dir.k || []).find(c => c.t === 2) || dir;
+  }
+  if (start) shiftUp(start, dl, 1);
+  MSEL = null;
+  return () => {
+    if (start) shiftUp(start, dl, -1);
+    if (parent) parent.k.splice(idx, 0, node);
+    D.top = saved.top; D.dups = saved.dups; SEL = saved.SEL; MSEL = saved.MSEL;
+  };
+}
+async function doTrash(node, path){
+  const what = node ? `${fmt(node.s)}${node.t === 0 ? ', ' + plural(node.f,'файл','файла','файлов') : ''}` : '';
+  const note = IS_DBX && !(node && (node.si || ignoredAncestor(node)))
+    ? 'Из Dropbox удалится на всех устройствах. Вернуть можно из корзины мака или из удалённых файлов на dropbox.com.'
+    : 'Вернуть можно из корзины.';
+  if (!confirm(`Переместить в корзину?\n\n${path}\n${what}\n\n${note}`)) return;
+  const undo = removeLocal(node, path);
+  rerenderAll();
+  const name = path.split('/').pop();
+  toast('Перемещаю в корзину: ' + name);
+  if (await api('trash', path)) toast('В корзине: ' + name);
+  else { undo(); rerenderAll(); }
+}
+async function doIgnore(node, path, on){
+  if (on && !confirm(`Не синхронизировать с Dropbox?\n\n${path}\n\nНа этом маке всё останется, но из облака и с других устройств удалится и перестанет занимать квоту. Вернуть — правый клик → «Снова синхронизировать».`)) return;
+  if (!await api(on ? 'ignore' : 'unignore', path)) return;
+  if (node){
+    const old = node.x;
+    node.si = on;
+    node.x = on ? node.s : (node.k || []).reduce((s, c) => s + c.x, 0);
+    for (let a = node.p; a; a = a.p) a.x += node.x - old;
+  }
+  rerenderAll();
+  toast(on ? 'Больше не синхронизируется: ' + path.split('/').pop() : 'Снова синхронизируется: ' + path.split('/').pop());
+}
+treeEl.addEventListener('contextmenu', e => { const r = e.target.closest('.row'); if (r){ const n = ROWS[+r.dataset.i][0]; if (n.t !== 2 && n !== SEL) select(n); openMenu(e, n); } });
+$('#det').addEventListener('contextmenu', e => { const tr = e.target.closest('tr[data-id]'); if (tr) openMenu(e, NODES[+tr.dataset.id]); });
+$('#pie').addEventListener('contextmenu', e => { const t = e.target.closest('[data-i]'); if (t && SLICES[+t.dataset.i].n) openMenu(e, SLICES[+t.dataset.i].n); });
+$('#pieleg').addEventListener('contextmenu', e => { const t = e.target.closest('[data-i]'); if (t && SLICES[+t.dataset.i].n) openMenu(e, SLICES[+t.dataset.i].n); });
+cv.addEventListener('contextmenu', e => { const q = hit(e); if (q) openMenu(e, q.n); });
+for (const id of ['#top', '#dup']) $(id).addEventListener('contextmenu', e => { const t = e.target.closest('[data-p]'); if (t) openMenu(e, null, t.dataset.p); });
+async function runScan(path){      // path не задан — пересканировать текущую папку
+  const busy = $('#busy'), t0 = Date.now();
+  $('#busyH').textContent = path ? 'Сканирую ' + path : 'Пересканирую…';
+  $('#busyT').textContent = ''; $('#busyP').textContent = '';
+  busy.classList.add('on');
+  let alive = true;
+  (async () => {
+    while (alive){
+      try {
+        const j = await apiJ({action: 'progress'});
+        if (!alive) break;
+        $('#busyT').textContent = `${plural(j.files,'файл','файла','файлов')} · ${fmt(j.bytes)} · ${Math.round((Date.now() - t0) / 1000)} с`;
+        $('#busyP').textContent = j.cur ? (j.cur.length > 70 ? '…' + j.cur.slice(-69) : j.cur) : '';
+      } catch (e) {}
+      await new Promise(r => setTimeout(r, 800));
+    }
+  })();
+  const ok = await api(path ? 'scan' : 'rescan', path || '');
+  alive = false;
+  if (!ok){ busy.classList.remove('on'); return; }
+  try { if (!path) sessionStorage.setItem('ts.back', pathOf(SEL)); } catch (e) {}
+  location.reload();
+}
+const placesEl = $('#places');
+const closePlaces = () => placesEl.classList.remove('on');
+function renderPlaces(ps){
+  const cur = D.root.replace(/\/$/, '');
+  const row = p => {
+    if (p.kind === 'disk'){
+      const used = p.total - p.free, u = p.total ? used / p.total : 0;
+      return `<div class="pl${p.path === cur ? ' cur' : ''}" data-p="${esc(p.path)}"><span class="pi">💽</span><span class="pn">${esc(p.name)}</span><span class="pv">свободно ${fmt(p.free)} из ${fmt(p.total)}</span><span class="dbar"><i class="${u > .9 ? 'hi' : ''}" style="width:${(u*100).toFixed(1)}%"></i></span></div>`;
+    }
+    return `<div class="pl${p.path === cur ? ' cur' : ''}" data-p="${esc(p.path)}"><span class="pi">📁</span><span class="pn">${esc(p.name)}<small>${esc(p.path.replace(/^\/Users\/[^/]+/, '~'))}</small></span><span></span></div>`;
+  };
+  const disks = ps.filter(p => p.kind === 'disk'), dirs = ps.filter(p => p.kind !== 'disk');
+  $('#plist').innerHTML = disks.map(row).join('') + (disks.length && dirs.length ? '<div class="psep"></div>' : '') + dirs.map(row).join('');
+}
+$('#openBtn').onclick = async e => {
+  if (!placesEl.classList.toggle('on')) return;
+  $('#plist').innerHTML = '<div class="muted" style="padding:8px">Загружаю список дисков…</div>';
+  try { renderPlaces((await apiJ({action: 'places'})).places); }
+  catch (err) { $('#plist').innerHTML = `<div class="muted" style="padding:8px">${esc(err.message)}</div>`; }
+};
+$('#plist').addEventListener('click', e => { const r = e.target.closest('[data-p]'); if (r){ closePlaces(); runScan(r.dataset.p); } });
+$('#choose').onclick = async () => {
+  closePlaces();
+  try { const j = await apiJ({action: 'choose'}); if (j.path) runScan(j.path); }
+  catch (err) { alert('Не получилось открыть диалог: ' + err.message); }
+};
+$('#pform').addEventListener('submit', e => { e.preventDefault(); const v = $('#ppath').value.trim(); if (v){ closePlaces(); runScan(v); } });
+addEventListener('mousedown', e => { if (!placesEl.contains(e.target) && e.target !== $('#openBtn')) closePlaces(); });
+addEventListener('keydown', e => { if (e.key === 'Escape') closePlaces(); });
+if (API){ $('#rescan').hidden = false; $('#rescan').onclick = () => runScan(null); $('#openBtn').hidden = false; }
+if (API){ $('#reveal').hidden = false; $('#reveal').onclick = () => api('reveal', $('#spath').textContent); }
+
+/* ---- общее ---- */
+function toast(t){ const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toast.h); toast.h = setTimeout(() => el.classList.remove('on'), 1400); }
+async function copy(t){
+  try { if (BRIDGE) await apiJ({action: 'copy', path: t}); else await navigator.clipboard.writeText(t); }
+  catch(e){ const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
+  toast('Путь скопирован — в Finder: ⌘⇧G и вставить');
+}
+document.addEventListener('click', e => { const b = e.target.closest('.cp'); if (b) copy(b.dataset.p); });
+$('#copy').onclick = () => copy($('#spath').textContent);
+
+document.querySelectorAll('#mode button').forEach(b => {
+  b.classList.toggle('on', b.dataset.m === MODE);
+  b.onclick = () => { MODE = b.dataset.m; store.set(MODE_KEY, MODE); document.querySelectorAll('#mode button').forEach(x => x.classList.toggle('on', x === b)); renderTree(); renderInfo(); renderRight(); };
+});
+
+// разделитель панелей
+(() => {
+  const main = $('#main'), saved = store.get('lw'); if (saved) main.style.setProperty('--lw', saved);
+  $('#split').addEventListener('pointerdown', e => {
+    e.preventDefault(); const r = main.getBoundingClientRect();
+    const mv = ev => { const w = Math.min(Math.max(ev.clientX - r.left, 220), r.width - 320); main.style.setProperty('--lw', w + 'px'); };
+    const up = () => { removeEventListener('pointermove', mv); removeEventListener('pointerup', up); store.set('lw', main.style.getPropertyValue('--lw')); };
+    addEventListener('pointermove', mv); addEventListener('pointerup', up);
+  });
+})();
+
+// после пересканирования вернуться к той же папке (или ближайшей сохранившейся)
+let back = null;
+try { back = sessionStorage.getItem('ts.back'); sessionStorage.removeItem('ts.back'); } catch (e) {}
+let start = ROOT;
+for (let p = back; p && p.length >= D.root.length; p = p.slice(0, p.lastIndexOf('/'))){ const n = findByPath(p); if (n){ start = n; break; } }
+select(start, {expand: true});
+treeEl.focus();
+</script>
+</body>
+</html>
