@@ -8,7 +8,7 @@ Requires macOS 14+ and Swift 5.9+ (Command Line Tools are enough, Xcode is not r
 
 ```bash
 swift build -c release
-scripts/make_app.sh          # builds build/TreeBars.app
+scripts/make_app.sh          # builds "build/TreeScan Size.app"
 ```
 
 ## Checks
@@ -28,9 +28,9 @@ tools/check_task.sh 03                           # model / format / action facts
 
 UI strings live in `Sources/TreeSizeCore/L10n_<code>.swift`. The Russian source string is the key. To add a language:
 
-1. Copy `L10n_en.swift` to `L10n_<code>.swift` and translate the values (keep leading/trailing spaces, emoji and `**bold**` markers).
+1. Copy `L10n_en.swift` to `L10n_<code>.swift` and translate the values (keep leading/trailing spaces, emoji, `**bold**` markers and the `{app}` placeholder — it is replaced with the app name).
 2. Register the table in `L10n.tables` in `L10n.swift`.
-3. Check it: `TREEBARS_LANG=<code> .build/release/TreeSizeApp --root /tmp/ts-fixture --snapshot /tmp/snap.png --tab pie`.
+3. Check it: `python3 tools/check_l10n.py`, then `TREEBARS_LANG=<code> .build/release/TreeSizeApp --root /tmp/ts-fixture --snapshot /tmp/snap.png --tab pie`.
 
 Native-speaker reviews of the existing translations (zh, ja, ko, de, es, fr, pt) are very welcome too — they were drafted by a language model.
 

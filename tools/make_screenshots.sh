@@ -19,3 +19,6 @@ shot zh pie-zh            --tab pie
 shot ja pie-ja            --tab pie
 shot ko pie-ko            --tab pie
 shot de pie-de            --tab pie
+shot en welcome-en        --welcome
+shot en access-en         --access
+shot en live-en           --live-demo
