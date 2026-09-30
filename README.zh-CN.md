@@ -29,7 +29,7 @@
 
 需要 **macOS 14 或更高版本**，**Apple 芯片**。
 
-1. 从 [Releases](https://github.com/gorbarov/treescan-size/releases) 下载 `TreeScan Size.zip`，解压后把 `TreeScan Size.app` 拖到"应用程序"。
+1. 从 [Releases](https://github.com/gorbarov/treescan-size/releases) 下载 `TreeScan-Size.zip`，解压后把 `TreeScan Size.app` 拖到"应用程序"。
 2. 当前版本**尚未公证**，首次打开会被拦截：
    - **macOS 15 及以上：** 先打开一次并点"完成"，然后到 **系统设置 → 隐私与安全性**，点击 **仍要打开**。
    - **macOS 14：** 右键点击应用 → **打开** → **打开**。

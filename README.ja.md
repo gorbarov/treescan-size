@@ -29,7 +29,7 @@ Finder では、どのフォルダがディスクを食っているのかわか�
 
 **macOS 14 以降**、**Apple シリコン**搭載の Mac が必要です。
 
-1. [Releases](https://github.com/gorbarov/treescan-size/releases) から `TreeScan Size.zip` をダウンロードして展開し、`TreeScan Size.app` をアプリケーションフォルダへ移動します。
+1. [Releases](https://github.com/gorbarov/treescan-size/releases) から `TreeScan-Size.zip` をダウンロードして展開し、`TreeScan Size.app` をアプリケーションフォルダへ移動します。
 2. 現在のビルドは**まだ公証されていない**ため、初回起動はブロックされます。
    - **macOS 15 以降**：一度開いて「完了」を押し、**システム設定 → プライバシーとセキュリティ**で**このまま開く**をクリック。
    - **macOS 14**：アプリを右クリック → **開く** → **開く**。

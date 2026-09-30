@@ -58,7 +58,7 @@ Finder can't tell you which folders ate your disk. Most disk analyzers for the M
 
 Requires **macOS 14 Sonoma or later** on **Apple Silicon**.
 
-1. Download **TreeScan Size.zip** from [Releases](https://github.com/gorbarov/treescan-size/releases/latest), unzip it and move the app to Applications.
+1. Download **TreeScan-Size.zip** from [Releases](https://github.com/gorbarov/treescan-size/releases/latest), unzip it and move the app to Applications.
 2. The build is **not notarized yet**, so macOS blocks the first launch:
    - **macOS 15 and later:** open the app once, click *Done*, then **System Settings → Privacy & Security → Open Anyway**.
    - **macOS 14:** right-click the app → **Open** → **Open**.
